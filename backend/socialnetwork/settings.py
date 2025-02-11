@@ -38,7 +38,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'core'
+    'core',
+    'corsheaders',
+    'rest_framework'
 ]
 
 MIDDLEWARE = [
@@ -49,6 +51,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware', 
+    'django.middleware.common.CommonMiddleware'
 ]
 
 ROOT_URLCONF = 'socialnetwork.urls'
@@ -71,6 +75,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'socialnetwork.wsgi.application'
 
+# Allow React App to connect to the backend
+CORS_ALLOWED_ORIGINS = [ "http://localhost:3000" ]
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
