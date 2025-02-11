@@ -1,36 +1,35 @@
 services:
-  db:
-    image: postgres
-    environment:
-      POSTGRES_DB: database
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-    ports:
-      - "5432:5432"
-    volumes:
-      - db_data:/var/lib/postgresql/data
+    db:
+        container_name: db
+        image: postgres
+        ports:
+        - "5432:5432"
+        volumes:
+        - db_data:/var/lib/postgresql/data
+        env_file:
+        - .env.db
 
-  backend:
-    build: ./backend
-    command: python manage.py runserver 0.0.0.0:8000
-    ports:
-      - "8000:8000"
-    depends_on:
-      - db
-    volumes:
-      - ./backend:/app
-    environment:
-      - DATABASE_URL=postgres://user:password@db:5432/database
+    backend:
+        build: ./backend
+        command: python manage.py runserver 0.0.0.0:8000
+        ports:
+        - "8000:8000"
+        depends_on:
+        - db
+        volumes:
+        - ./backend:/app
+        env_file:
+        - .env
 
-  frontend:
-    build: ./frontend
-    command: npm start
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./frontend:/app
-    depends_on:
-      - backend
+    frontend:
+        build: ./frontend
+        command: npm start
+        ports:
+        - "3000:3000"
+        volumes:
+        - ./frontend:/app
+        depends_on:
+        - backend
 
 volumes:
-  db_data:
+    db_data:
