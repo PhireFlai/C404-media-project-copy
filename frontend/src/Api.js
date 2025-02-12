@@ -7,7 +7,18 @@ export const api = createApi({
     getTest: builder.query({
       query: () => "core/test",
     }),
+    createUser: builder.mutation({
+      query: (userData) => ({
+        url: "core/api/signup/",
+        method: "POST",
+        body: userData,
+      }),
+    }),
   }),
 });
 
-export const { useGetTestQuery } = api;
+export const { useGetTestQuery, useCreateUserMutation } = api;
+
+
+
+

@@ -1,6 +1,7 @@
 import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import HomePage from "./pages/HomePage";
+import SignUp from "./components/signup";
 
 const App = () => {
   return (
@@ -12,6 +13,7 @@ const App = () => {
         <div className="container">
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/signup" element={<SignUp />} />
           </Routes>
         </div>
       </Router>
