@@ -9,7 +9,7 @@ export const api = createApi({
     }),
     createUser: builder.mutation({
       query: (userData) => ({
-        url: "core/api/signup/",
+        url: "api/signup/",
         method: "POST",
         body: userData,
       }),

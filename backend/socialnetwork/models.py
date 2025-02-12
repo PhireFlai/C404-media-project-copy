@@ -9,6 +9,9 @@ class User(models.Model):
     followers = models.ManyToManyField(
         'self', symmetrical=False, related_name='following', blank=True
     )
+    friends = models.ManyToManyField(
+        'self', symmetrical=True, blank=True
+    )
     
     
     

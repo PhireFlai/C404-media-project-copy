@@ -38,6 +38,7 @@ cd backend || { echo "Failed to navigate to the backend directory"; echo "Make s
 pip install -r requirements.txt
 
 python3 manage.py makemigrations
+python3 manage.py makemigrations socialnetwork
 python3 manage.py migrate
 
 # Create superuser
