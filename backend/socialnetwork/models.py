@@ -11,9 +11,18 @@ class User(models.Model):
     )
     friends = models.ManyToManyField(
         'self', symmetrical=True, blank=True
-    )
-    
-    
+    )       
     
     # revist adding profile pictures later
     # profile_picture = models.ImageField()
+
+
+class Post(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False) 
+    # Author Now optional
+    author = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)  
+    title = models.CharField(max_length=255)
+    content = models.TextField()
+    image = models.ImageField(upload_to="post_images/", blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
