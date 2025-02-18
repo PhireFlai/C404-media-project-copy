@@ -38,6 +38,13 @@ export const api = createApi({
         body: userData,
       }),
     }),
+    loginUser: builder.mutation({
+      query: (credentials) => ({
+        url: "api/login/",
+        method: "POST",
+        body: credentials,
+      }),
+    }),
   }),
 });
 
@@ -48,5 +55,11 @@ export const {
   useDeletePostMutation,
   useGetTestQuery,
   useCreateUserMutation,
+  useLoginUserMutation,
   useEditPostMutation,
 } = api;
+
+
+
+
+

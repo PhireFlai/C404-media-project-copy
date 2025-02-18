@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useCreateUserMutation } from '../Api';
+import { useNavigate } from 'react-router-dom';
+import { useCreateUserMutation, useLoginUserMutation } from '../Api';
 
 const CreateUser = () => {
   const [formData, setFormData] = useState({
@@ -7,7 +8,11 @@ const CreateUser = () => {
     password: '',
   });
 
+  const navigate = useNavigate();
+
   const [createUser] = useCreateUserMutation();
+  const [loginUser] = useLoginUserMutation();
+
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -24,12 +29,30 @@ const CreateUser = () => {
     setErrorMessage(''); 
 
     try {
-      const response = await createUser(formData).unwrap();
-      console.log('User created:', response);
-      setSuccessMessage('User created successfully!');
+      // Step 1: Create the user
+      const createResponse = await createUser(formData).unwrap();
+      console.log('User created:', createResponse);
+
+      // Step 2: Log the user in
+      const loginResponse = await loginUser({
+        username: formData.username,
+        password: formData.password,
+      }).unwrap();
+      console.log('User logged in:', loginResponse);
+
+      setSuccessMessage('User created and logged in successfully!');
+      // Optionally, save the token or user data to local storage or state
+      localStorage.setItem('token', loginResponse.token);
+      localStorage.setItem('user', JSON.stringify({
+        id: loginResponse.user_id,
+        username: loginResponse.username,
+      }));
+
+      navigate('/');
+
     } catch (err) {
-      console.error('Error creating user:', err);
-      setErrorMessage(err.data?.message || 'Failed to create user. Please try again.');
+      console.error('Error:', err);
+      setErrorMessage(err.data?.message || 'Failed to create or log in user.');
     }
   };
 

@@ -41,7 +41,8 @@ INSTALLED_APPS = [
     'core',
     'socialnetwork',
     'corsheaders',
-    'rest_framework'
+    'rest_framework',
+    'rest_framework.authtoken',
 ]
 
 MIDDLEWARE = [
@@ -95,6 +96,8 @@ DATABASES = {
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
+
+# AUTH_USER_MODEL = 'socialnetwork.User'
 
 AUTH_PASSWORD_VALIDATORS = [
     {
