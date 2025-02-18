@@ -1,6 +1,7 @@
 import uuid
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
 
 class User(AbstractUser):
     # username = models.CharField(max_length=32, unique=True)
@@ -29,3 +30,10 @@ class Post(models.Model):
     image = models.ImageField(upload_to="post_images/", blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+class Comment(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    author = models.ForeignKey(User, on_delete=models.CASCADE)
+    content = models.CharField(max_length=500)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(default=timezone.now())
