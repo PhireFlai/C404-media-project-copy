@@ -2,9 +2,9 @@ import uuid
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-class User(models.Model):
-    username = models.CharField(max_length=32, unique=True)
-    password = models.CharField(max_length=32)
+class User(AbstractUser):
+    # username = models.CharField(max_length=32, unique=True)
+    # password = models.CharField(max_length=128)
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     followers = models.ManyToManyField(
         'self', symmetrical=False, related_name='following', blank=True
@@ -13,6 +13,12 @@ class User(models.Model):
         'self', symmetrical=True, blank=True
     )
     
+    # Fix conflict with Django’s auth system
+    groups = models.ManyToManyField("auth.Group", related_name="socialnetwork_users", blank=True)
+    user_permissions = models.ManyToManyField("auth.Permission", related_name="socialnetwork_users_permissions", blank=True)
+    
+    def __str__(self):
+        return self.username  # Display the username in the admin panel
 
 class Post(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False) 
