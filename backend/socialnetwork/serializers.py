@@ -2,11 +2,11 @@ from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.hashers import make_password
 from .models import User, Post
-
+import markdown
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
-        model = User
+        model = User        
         fields = ['id', 'username', 'password', 'email', 'followers', 'friends']
         extra_kwargs = {
             'password': {'write_only': True},  # Ensure password is write-only
@@ -20,6 +20,7 @@ class UserSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
+
         # Extract and remove many-to-many fields
         followers_data = validated_data.pop('followers', [])
         friends_data = validated_data.pop('friends', [])
