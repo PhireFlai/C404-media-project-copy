@@ -121,8 +121,8 @@
 
 // export default HomePage;
 
-import React from "react";
-import { useGetPostsQuery, useDeletePostMutation } from "../Api";
+import React, { useState } from "react";
+import { useGetPostsQuery, useDeletePostMutation, useCreateCommentMutation, useGetCommentsQuery } from "../Api";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw"; // Allow rendering HTML inside Markdown
 import remarkGfm from "remark-gfm"; // Support GitHub Flavored Markdown (tables, strikethroughs, etc.)
@@ -130,10 +130,37 @@ import remarkGfm from "remark-gfm"; // Support GitHub Flavored Markdown (tables,
 const HomePage = () => {
   const { data: posts, refetch } = useGetPostsQuery();
   const [deletePost] = useDeletePostMutation();
+  const [createComment] = useCreateCommentMutation();
+  const [showCommentBox, setShowCommentBox] = useState(false);
+  const [comment, setComment] = useState("");
+  const [currentPostId, setCurrentPostId] = useState(null);
 
   const handleDelete = async (postId) => {
     await deletePost(postId);
     refetch();
+  };
+
+  const { data: comments, refetch: refetchComments } = useGetCommentsQuery(currentPostId, { skip: !currentPostId });
+
+  const handleCommentClick = (postId) => {
+    if (currentPostId === postId) {
+      setShowCommentBox(false);
+      setCurrentPostId(null); // Close the comment box
+    } else {
+      setShowCommentBox(true);
+      setCurrentPostId(postId); // Open the comment box
+    }
+  };
+
+  const handleCommentSubmit = async (pk) => {
+    try {
+      const response = await createComment({ pk, commentData: { content: comment } }).unwrap();
+      console.log("Comment created:", response);
+      refetchComments();
+    } catch (err){
+      console.error(err);
+    }
+    setComment("");
   };
 
   return (
@@ -161,6 +188,35 @@ const HomePage = () => {
             >
               {post.content}
             </ReactMarkdown>
+            
+            {/* Display Comments */}
+            {showCommentBox && currentPostId === post.id && (
+              <div style={{ marginTop: "10px", paddingLeft: "10px", borderLeft: "2px solid #ddd" }}>
+                <h4>Comments</h4>
+                {comments?.length > 0 ? (
+                    comments.map((comment) => (
+                      <div key={comment.id} style={{ padding: "5px", borderBottom: "1px solid #eee" }}>
+                        <p>{comment.content}</p>
+                        <p><small>{comment.created_at}</small></p>
+                      </div>
+                    ))
+                  ) : (
+                    <p>No comments yet.</p>
+                )}
+                <input 
+                    type="text"
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    placeholder="Leave a comment..." 
+                />
+                <button onClick={() => handleCommentSubmit(post.id)}>Submit</button>
+              </div>
+            )}
+            <button
+              onClick={() => handleCommentClick(post.id)}
+              >
+                {currentPostId === post.id ? "Close Comments" : " View Comments"}
+            </button>
             <button
               onClick={() => handleDelete(post.id)}
               style={{ background: "red", color: "white" }}

@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.hashers import make_password
-from .models import User, Post
+from .models import *
 import markdown
 
 class UserSerializer(serializers.ModelSerializer):
@@ -39,7 +39,28 @@ class UserSerializer(serializers.ModelSerializer):
         user.followers.set(followers_data)
         user.friends.set(friends_data)
 
-        return user   
+        return user  
+
+class CommentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = ["id", "author", "content", "post", "created_at"]
+
+    def validate(self, data):
+        content = data.get('content')
+
+        if not content or len(content) < 1:
+            raise serializers.ValidationError("Invalid comment.")
+        
+        return data
+    
+    def create(self, validated_data):
+        author = validated_data.get('author')
+        content = validated_data.get('content')
+        post = validated_data.get('post')
+
+        comment = Comment.objects.create(author=author, content=content, post=post)
+        return comment 
     
 class PostSerializer(serializers.ModelSerializer):
     formatted_content = serializers.SerializerMethodField()  # Add formatted content
