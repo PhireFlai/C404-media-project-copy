@@ -45,6 +45,16 @@ export const api = createApi({
         body: credentials,
       }),
     }),
+    createComment: builder.mutation({
+      query: ({ pk, commentData }) => ({
+        url: `api/posts/${pk}/comment/`,
+        method: "POST",
+        body: commentData,
+      }),
+    }),
+    getComments: builder.query({
+      query: (pk) => `api/posts/${pk}/comments/`,
+    }),
   }),
 });
 
@@ -57,6 +67,8 @@ export const {
   useCreateUserMutation,
   useLoginUserMutation,
   useEditPostMutation,
+  useCreateCommentMutation,
+  useGetCommentsQuery,
 } = api;
 
 

@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import include, path
 from socialnetwork.views import createUser
-from .views import PostListCreateView, PostDetailView
+from .views import *
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -16,5 +16,6 @@ urlpatterns = [
     path('api/login/', loginUser, name='user-login'),
     path("api/posts/", PostListCreateView.as_view(), name="post-list"),
     path("api/posts/<uuid:pk>/", PostDetailView.as_view(), name="post-detail"),
-
+    path("api/posts/<uuid:pk>/comment/", CreateComment, name='comment'),
+    path("api/posts/<uuid:pk>/comments/", CommentsList.as_view(), name="comment-list"),
 ]

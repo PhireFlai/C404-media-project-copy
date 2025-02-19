@@ -1,11 +1,11 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from rest_framework.decorators import api_view
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework import status, generics  
 from .models import User, Post
-from .serializers import UserSerializer, PostSerializer
+from .serializers import *
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
@@ -70,3 +70,25 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
         # Temporarily allow editing for testing
         # needs to be changed to authenticate user 
         serializer.save()
+
+@api_view(['POST'])
+def CreateComment(request, pk):
+    post = get_object_or_404(Post, id=pk)
+    
+    author = request.user.id
+    content = request.data.get('content')
+    serializer = CommentSerializer(data={'author': author, 'content': content, 'post': post.id})
+    
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    print(serializer.errors)
+    return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
+
+class CommentsList(generics.ListCreateAPIView):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+
+    def get_queryset(self):
+        post_id = self.kwargs['pk']
+        return Comment.objects.filter(post_id=post_id)
