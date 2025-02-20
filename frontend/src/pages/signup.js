@@ -48,7 +48,8 @@ const CreateUser = () => {
         username: loginResponse.username,
       }));
 
-      navigate('/');
+      navigate(`/${loginResponse.username}`);
+
 
     } catch (err) {
       console.error('Error:', err);

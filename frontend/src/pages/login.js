@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 import { useLoginUserMutation } from '../Api';
+import { loginUser as loginUserAction } from '../UserContext/userActions';
 
 const LoginUser = () => {
     const [formData, setFormData] = useState({
@@ -9,6 +11,7 @@ const LoginUser = () => {
     });
 
     const navigate = useNavigate();
+    const dispatch = useDispatch();
 
     const [loginUser] = useLoginUserMutation();
 
@@ -35,14 +38,22 @@ const LoginUser = () => {
             console.log('User logged in:', loginResponse);
 
             setSuccessMessage('User logged in successfully!');
+
+            const userData = {
+                id: loginResponse.user_id,
+                username: loginResponse.username,
+            };
+
+            dispatch(loginUserAction(userData));
             // Save the token or user data to local storage or state
+            setSuccessMessage('User created and logged in successfully!');
             localStorage.setItem('token', loginResponse.token);
             localStorage.setItem('user', JSON.stringify({
                 id: loginResponse.user_id,
                 username: loginResponse.username,
             }));
 
-            navigate('/');
+            navigate(`/${loginResponse.username}`);
 
         } catch (err) {
             console.error('Error:', err);
