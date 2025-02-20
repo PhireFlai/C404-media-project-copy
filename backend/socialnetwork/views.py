@@ -73,9 +73,9 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 # Acquires a user's profile
 @api_view(['GET'])
-def getUserProfile(request, username):
+def getUserProfile(request, userId):
     try:
-        user = User.objects.get(username=username)
+        user = User.objects.get(id=userId)
     except User.DoesNotExist:
         return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -87,14 +87,14 @@ def getUserProfile(request, username):
 @api_view(['PUT'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
-def updateUserProfile(request, username):
+def updateUserProfile(request, userId):
     try:
-        user = User.objects.get(username=username)
+        user = User.objects.get(id=userId)
     except User.DoesNotExist:
         return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
     # Ensure the authenticated user is the owner of the profile
-    if username != user.username:
+    if userId != user.id:
         return Response({'error': 'You do not have permission to update this profile'}, status=status.HTTP_403_FORBIDDEN)
 
     # Update the profile picture
@@ -109,9 +109,9 @@ def updateUserProfile(request, username):
 @api_view(['PUT'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
-def updateUsername(request, username):
+def updateUsername(request, userId):
     try:
-        user = User.objects.get(username=username)
+        user = User.objects.get(id=userId)
     except User.DoesNotExist:
         return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 

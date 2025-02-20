@@ -62,19 +62,19 @@ export const api = createApi({
       }),
     }),
     updateProfilePicture: builder.mutation({
-      query: ({ username, profilePicture }) => {
+      query: ({ userId, profilePicture }) => {
         const formData = new FormData();
         formData.append('profile_picture', profilePicture);
         return {
-          url: `api/profile/${username}/update-picture/`,
+          url: `api/profile/${userId}/update-picture/`,
           method: 'PUT',
           body: formData,
         }
       },
     }),
     updateUsername: builder.mutation({
-      query: ({ username, newUsername }) => ({
-        url: `api/profile/${username}/update-username/`,
+      query: ({ userId, newUsername }) => ({
+        url: `api/profile/${userId}/update-username/`,
         method: 'PUT',
         body: { newUsername },
         headers: {
@@ -86,7 +86,7 @@ export const api = createApi({
       query: (pk) => `api/posts/${pk}/comments/`,
     }),
     getUserProfile: builder.query({
-      query: (username) => `api/profile/${username}/`, // Fetch profile by username
+      query: (userId) => `api/profile/${userId}/`, // Fetch profile by userId
     }),
 
   }),
