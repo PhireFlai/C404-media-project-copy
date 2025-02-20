@@ -145,10 +145,10 @@ const HomePage = () => {
   const handleCommentClick = (postId) => {
     if (currentPostId === postId) {
       setShowCommentBox(false);
-      setCurrentPostId(null); // Close the comment box
+      setCurrentPostId(null);
     } else {
       setShowCommentBox(true);
-      setCurrentPostId(postId); // Open the comment box
+      setCurrentPostId(postId);
     }
   };
 
@@ -166,6 +166,7 @@ const HomePage = () => {
   return (
     <div>
       <h1>Recent Posts</h1>
+      <a href="/create">Create a post</a>
       {!posts || posts.length === 0 ? (
         <p style={{ color: "gray", fontSize: "18px", textAlign: "center" }}>
           No posts yet. <a href="/create">Create one!</a>
@@ -196,7 +197,7 @@ const HomePage = () => {
                 {comments?.length > 0 ? (
                     comments.map((comment) => (
                       <div key={comment.id} style={{ padding: "5px", borderBottom: "1px solid #eee" }}>
-                        <p>{comment.content}</p>
+                        <p>{comment.author}: {comment.content}</p>
                         <p><small>{comment.created_at}</small></p>
                       </div>
                     ))

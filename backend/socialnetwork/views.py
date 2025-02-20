@@ -38,6 +38,10 @@ def loginUser(request):
         }, status=status.HTTP_200_OK)
     else:
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
+    
+class UsersList(generics.ListCreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
 
 class PostListCreateView(generics.ListCreateAPIView):
     queryset = Post.objects.all()

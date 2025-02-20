@@ -14,6 +14,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),    # Django has a built in admin panel we will use later
     path('api/signup/', createUser, name='createUser'),
     path('api/login/', loginUser, name='user-login'),
+    path('api/authors/', UsersList.as_view(), name='authors'),
     path("api/posts/", PostListCreateView.as_view(), name="post-list"),
     path("api/posts/<uuid:pk>/", PostDetailView.as_view(), name="post-detail"),
     path("api/posts/<uuid:pk>/comment/", CreateComment, name='comment'),
