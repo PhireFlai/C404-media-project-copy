@@ -122,7 +122,13 @@
 // export default HomePage;
 
 import React, { useState } from "react";
-import { useGetPostsQuery, useDeletePostMutation, useCreateCommentMutation, useGetCommentsQuery } from "../Api";
+import {
+  useGetPostsQuery,
+  useDeletePostMutation,
+  useCreateCommentMutation,
+  useGetCommentsQuery,
+} from "../Api";
+import { useSelector } from "react-redux"; // Import Redux selector
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw"; // Allow rendering HTML inside Markdown
 import remarkGfm from "remark-gfm"; // Support GitHub Flavored Markdown (tables, strikethroughs, etc.)
@@ -134,13 +140,17 @@ const HomePage = () => {
   const [showCommentBox, setShowCommentBox] = useState(false);
   const [comment, setComment] = useState("");
   const [currentPostId, setCurrentPostId] = useState(null);
+  const user = useSelector((state) => state.user.user); // Get logged-in user
 
   const handleDelete = async (postId) => {
     await deletePost(postId);
     refetch();
   };
 
-  const { data: comments, refetch: refetchComments } = useGetCommentsQuery(currentPostId, { skip: !currentPostId });
+  const { data: comments, refetch: refetchComments } = useGetCommentsQuery(
+    currentPostId,
+    { skip: !currentPostId }
+  );
 
   const handleCommentClick = (postId) => {
     if (currentPostId === postId) {
@@ -154,10 +164,13 @@ const HomePage = () => {
 
   const handleCommentSubmit = async (pk) => {
     try {
-      const response = await createComment({ pk, commentData: { content: comment } }).unwrap();
+      const response = await createComment({
+        pk,
+        commentData: { content: comment },
+      }).unwrap();
       console.log("Comment created:", response);
       refetchComments();
-    } catch (err){
+    } catch (err) {
       console.error(err);
     }
     setComment("");
@@ -166,11 +179,13 @@ const HomePage = () => {
   return (
     <div>
       <h1>Recent Posts</h1>
-      {!posts || posts.length === 0 ? (
-        <p style={{ color: "gray", fontSize: "18px", textAlign: "center" }}>
-          No posts yet. <a href="/create">Create one!</a>
-        </p>
-      ) : (
+
+      {/* Keep "Create a Post" message always visible */}
+      <p style={{ color: "gray", fontSize: "18px", textAlign: "center" }}>
+        <a href="/create">Create a Post</a>
+      </p>
+
+      {posts && posts.length > 0 ? (
         posts.map((post) => (
           <div
             key={post.id}
@@ -188,34 +203,22 @@ const HomePage = () => {
             >
               {post.content}
             </ReactMarkdown>
-            
-            {/* Display Comments */}
-            {showCommentBox && currentPostId === post.id && (
-              <div style={{ marginTop: "10px", paddingLeft: "10px", borderLeft: "2px solid #ddd" }}>
-                <h4>Comments</h4>
-                {comments?.length > 0 ? (
-                    comments.map((comment) => (
-                      <div key={comment.id} style={{ padding: "5px", borderBottom: "1px solid #eee" }}>
-                        <p>{comment.content}</p>
-                        <p><small>{comment.created_at}</small></p>
-                      </div>
-                    ))
-                  ) : (
-                    <p>No comments yet.</p>
-                )}
-                <input 
-                    type="text"
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                    placeholder="Leave a comment..." 
-                />
-                <button onClick={() => handleCommentSubmit(post.id)}>Submit</button>
-              </div>
-            )}
-            <button
-              onClick={() => handleCommentClick(post.id)}
+
+            {/* Show Edit button only for post owner */}
+            {user && user.id === post.author && (
+              <button
+                style={{
+                  background: "blue",
+                  color: "white",
+                  marginRight: "5px",
+                }}
               >
-                {currentPostId === post.id ? "Close Comments" : " View Comments"}
+                Edit
+              </button>
+            )}
+
+            <button onClick={() => handleCommentClick(post.id)}>
+              {currentPostId === post.id ? "Close Comments" : " View Comments"}
             </button>
             <button
               onClick={() => handleDelete(post.id)}
@@ -223,8 +226,49 @@ const HomePage = () => {
             >
               Delete
             </button>
+
+            {/* Display Comments */}
+            {showCommentBox && currentPostId === post.id && (
+              <div
+                style={{
+                  marginTop: "10px",
+                  paddingLeft: "10px",
+                  borderLeft: "2px solid #ddd",
+                }}
+              >
+                <h4>Comments</h4>
+                {comments?.length > 0 ? (
+                  comments.map((comment) => (
+                    <div
+                      key={comment.id}
+                      style={{ padding: "5px", borderBottom: "1px solid #eee" }}
+                    >
+                      <p>{comment.content}</p>
+                      <p>
+                        <small>{comment.created_at}</small>
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <p>No comments yet.</p>
+                )}
+                <input
+                  type="text"
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="Leave a comment..."
+                />
+                <button onClick={() => handleCommentSubmit(post.id)}>
+                  Submit
+                </button>
+              </div>
+            )}
           </div>
         ))
+      ) : (
+        <p style={{ color: "gray", fontSize: "18px", textAlign: "center" }}>
+          No posts yet.
+        </p>
       )}
     </div>
   );
