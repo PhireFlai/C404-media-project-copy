@@ -4,6 +4,7 @@ import HomePage from "./pages/HomePage";
 import CreatePostPage from "./pages/CreatePostPage";
 import SignUp from "./pages/signup";
 import Login from "./pages/login";
+import Profile from './pages/Profile';
 import Navbar from "./components/navbar";
 
 const App = () => {
@@ -19,6 +20,7 @@ const App = () => {
             <Route path="/signup" element={<SignUp />} />
             <Route path="/login" element={<Login />} />
             <Route path="/create" element={<CreatePostPage />} />
+            <Route path="/:username" element={<Profile />} />
           </Routes>
         </div>
       </Router>

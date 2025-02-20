@@ -15,6 +15,7 @@ urlpatterns = [
     path('api/signup/', createUser, name='createUser'),
     path('api/login/', loginUser, name='user-login'),
     path("api/posts/", PostListCreateView.as_view(), name="post-list"),
+    path('api/profile/<str:username>/', getUserProfile, name='get-user-profile'),
     path("api/posts/<uuid:pk>/", PostDetailView.as_view(), name="post-detail"),
     path("api/posts/<uuid:pk>/comment/", CreateComment, name='comment'),
     path("api/posts/<uuid:pk>/comments/", CommentsList.as_view(), name="comment-list"),

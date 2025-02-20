@@ -1,12 +1,12 @@
 from django.shortcuts import render, get_object_or_404
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view,  permission_classes
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework import status, generics  
 from .models import User, Post
 from .serializers import *
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
 
@@ -71,6 +71,17 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
         # needs to be changed to authenticate user 
         serializer.save()
 
+# Acquires a user's profile
+@api_view(['GET'])
+def getUserProfile(request, username):
+    try:
+        user = User.objects.get(username=username)
+        serializer = UserSerializer(user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except User.DoesNotExist:
+        return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+
 @api_view(['POST'])
 def CreateComment(request, pk):
     post = get_object_or_404(Post, id=pk)
@@ -85,6 +96,7 @@ def CreateComment(request, pk):
     print(serializer.errors)
     return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
 
+
 class CommentsList(generics.ListCreateAPIView):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
@@ -92,3 +104,5 @@ class CommentsList(generics.ListCreateAPIView):
     def get_queryset(self):
         post_id = self.kwargs['pk']
         return Comment.objects.filter(post_id=post_id)
+    
+    

@@ -46,9 +46,14 @@ const LoginUser = () => {
 
             dispatch(loginUserAction(userData));
             // Save the token or user data to local storage or state
+            setSuccessMessage('User created and logged in successfully!');
             localStorage.setItem('token', loginResponse.token);
+            localStorage.setItem('user', JSON.stringify({
+                id: loginResponse.user_id,
+                username: loginResponse.username,
+            }));
 
-            navigate('/');
+            navigate(`/profile/${loginResponse.username}`);
 
         } catch (err) {
             console.error('Error:', err);
