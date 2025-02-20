@@ -15,6 +15,7 @@ const ProfilePictureUpload = ({ username }) => {
       try {
         await updateProfilePicture({ username, profilePicture }).unwrap();
         alert('Profile picture updated successfully!');
+        window.location.reload(); // Refresh the page to reflect the changes
       } catch (err) {
         console.error('Failed to update profile picture:', err);
       }

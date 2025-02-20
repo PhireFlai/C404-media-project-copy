@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
@@ -9,7 +9,7 @@ from .serializers import *
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
-
+from rest_framework.authentication import TokenAuthentication
 
 # Creates a new user
 @api_view(['POST'])
@@ -71,35 +71,69 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
         # needs to be changed to authenticate user 
         serializer.save()
 
-# Acquires a user's profile or allows editing with a put request
-@api_view(['GET', 'PUT'])
+# Acquires a user's profile
+@api_view(['GET'])
 def getUserProfile(request, username):
     try:
         user = User.objects.get(username=username)
     except User.DoesNotExist:
         return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
-    if request.method == 'GET':
-        # No authentication required for GET requests
-        serializer = UserSerializer(user)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    # No authentication required for GET requests
+    serializer = UserSerializer(user)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
-    elif request.method == 'PUT':
-        def put_view(request, user):
-            if username != user.username:
-                return Response({'error': 'You do not have permission to update this profile'}, status=status.HTTP_403_FORBIDDEN)
 
-            # Update the profile picture
-            profile_picture = request.FILES.get('profile_picture')
-            if profile_picture:
-                user.profile_picture = profile_picture
-                user.save()
-                return Response({'message': 'Profile picture updated successfully'}, status=status.HTTP_200_OK)
-            else:
-                return Response({'error': 'No profile picture provided'}, status=status.HTTP_400_BAD_REQUEST)
+@api_view(['PUT'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def updateUserProfile(request, username):
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        # Call the nested PUT view
-        return put_view(request, user)
+    # Ensure the authenticated user is the owner of the profile
+    if username != user.username:
+        return Response({'error': 'You do not have permission to update this profile'}, status=status.HTTP_403_FORBIDDEN)
+
+    # Update the profile picture
+    profile_picture = request.FILES.get('profile_picture')
+    if profile_picture:
+        user.profile_picture = profile_picture
+        user.save()
+        return Response({'message': 'Profile picture updated successfully'}, status=status.HTTP_200_OK)
+    else:
+        return Response({'error': 'No profile picture provided'}, status=status.HTTP_400_BAD_REQUEST)
+    
+@api_view(['PUT'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def updateUsername(request, username):
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Ensure the authenticated user is the owner of the profile
+    if request.user != user:
+        return Response({'error': 'You do not have permission to update this profile'}, status=status.HTTP_403_FORBIDDEN)
+
+    new_username = request.data.get('newUsername')
+
+    if not new_username:
+        return Response({'error': 'New username is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Check if the new username is already taken
+    if User.objects.filter(username=new_username).exists():
+        return Response({'error': 'Username already taken'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Update the username
+    user.username = new_username
+    user.save()
+
+    return Response({'message': 'Username updated successfully'}, status=status.HTTP_200_OK)
+
 @api_view(['POST'])
 def CreateComment(request, pk):
     post = get_object_or_404(Post, id=pk)
