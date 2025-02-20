@@ -61,12 +61,23 @@ export const api = createApi({
         body: commentData,
       }),
     }),
+    updateProfilePicture: builder.mutation({
+      query: ({ username, profilePicture }) => {
+        const formData = new FormData();
+        formData.append('profile_picture', profilePicture);
+        return {
+          url: `api/profile/${username}/`,
+          method: 'PUT',
+          body: formData,
+        }},
+      }),
     getComments: builder.query({
       query: (pk) => `api/posts/${pk}/comments/`,
     }),
     getUserProfile: builder.query({
       query: (username) => `api/profile/${username}/`, // Fetch profile by username
     }),
+    
   }),
 });
 
@@ -81,5 +92,6 @@ export const {
   useEditPostMutation,
   useCreateCommentMutation,
   useGetCommentsQuery,
-  useGetUserProfileQuery, // Export the new hook
+  useGetUserProfileQuery,
+  useUpdateProfilePictureMutation,
 } = api;

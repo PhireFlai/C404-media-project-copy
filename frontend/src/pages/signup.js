@@ -48,7 +48,7 @@ const CreateUser = () => {
         username: loginResponse.username,
       }));
 
-      navigate(`/profile/${loginResponse.username}`);
+      navigate(`/${loginResponse.username}`);
 
 
     } catch (err) {

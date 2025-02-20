@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404
-from rest_framework.decorators import api_view,  permission_classes
+from rest_framework.decorators import api_view, permission_classes
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
@@ -71,17 +71,35 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
         # needs to be changed to authenticate user 
         serializer.save()
 
-# Acquires a user's profile
-@api_view(['GET'])
+# Acquires a user's profile or allows editing with a put request
+@api_view(['GET', 'PUT'])
 def getUserProfile(request, username):
     try:
         user = User.objects.get(username=username)
-        serializer = UserSerializer(user)
-        return Response(serializer.data, status=status.HTTP_200_OK)
     except User.DoesNotExist:
         return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-    
 
+    if request.method == 'GET':
+        # No authentication required for GET requests
+        serializer = UserSerializer(user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    elif request.method == 'PUT':
+        def put_view(request, user):
+            if username != user.username:
+                return Response({'error': 'You do not have permission to update this profile'}, status=status.HTTP_403_FORBIDDEN)
+
+            # Update the profile picture
+            profile_picture = request.FILES.get('profile_picture')
+            if profile_picture:
+                user.profile_picture = profile_picture
+                user.save()
+                return Response({'message': 'Profile picture updated successfully'}, status=status.HTTP_200_OK)
+            else:
+                return Response({'error': 'No profile picture provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Call the nested PUT view
+        return put_view(request, user)
 @api_view(['POST'])
 def CreateComment(request, pk):
     post = get_object_or_404(Post, id=pk)

@@ -20,3 +20,7 @@ urlpatterns = [
     path("api/posts/<uuid:pk>/comment/", CreateComment, name='comment'),
     path("api/posts/<uuid:pk>/comments/", CommentsList.as_view(), name="comment-list"),
 ]
+
+# Serve media files during development
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

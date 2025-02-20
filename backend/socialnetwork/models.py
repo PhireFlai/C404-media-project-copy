@@ -2,11 +2,18 @@ import uuid
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
+from django.db import models
+from django.contrib.auth.models import AbstractUser
+import uuid
+
+def user_profile_picture_path(instance, filename):
+    return f'profile_pictures/{instance.username}/{filename}'
 
 class User(AbstractUser):
     # username = models.CharField(max_length=32, unique=True)
     # password = models.CharField(max_length=128)
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    profile_picture = models.ImageField(upload_to=user_profile_picture_path, null=True, blank=True)
     followers = models.ManyToManyField(
         'self', symmetrical=False, related_name='following', blank=True
     )
