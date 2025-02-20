@@ -34,7 +34,7 @@ def createUser(request):
     if not username or not password:
         return Response({'error': 'Username and password required'}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Check if username already exists
+    # Checks if username already exists
     if User.objects.filter(username=username).exists():
         return Response({'error': 'Username already taken'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -72,7 +72,7 @@ def loginUser(request):
 class PostListCreateView(generics.ListCreateAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
-    permission_classes = [IsAuthenticated]  # ✅ Requires authentication
+    permission_classes = [IsAuthenticated]  # Requires authentication
 
     def perform_create(self, serializer):
         if not self.request.user.is_authenticated:
@@ -85,18 +85,18 @@ class PostListCreateView(generics.ListCreateAPIView):
 class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
+    permission_classes = [IsAuthenticated]  # Require authentication
 
     def perform_destroy(self, instance):
-        # Temporarily allow deletion for testing only
-        # needs to be changed to authenticate user 
+        if self.request.user != instance.author:
+            # Restrict deletion
+            raise PermissionDenied("You can only delete your own posts.")  
         instance.delete()
 
     def perform_update(self, serializer):
-        print("Request User:", self.request.user)  # Debugging
-        print("Post Author:", serializer.instance.author)  # Debugging
-
-        # Temporarily allow editing for testing
-        # needs to be changed to authenticate user 
+        if self.request.user != serializer.instance.author:
+            # Restrict editing
+            raise PermissionDenied("You can only edit your own posts.")  
         serializer.save()
 
 @api_view(['POST'])

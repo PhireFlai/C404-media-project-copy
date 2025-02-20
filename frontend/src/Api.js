@@ -5,9 +5,9 @@ export const api = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: "http://127.0.0.1:8000/",
     prepareHeaders: (headers) => {
-      const token = localStorage.getItem("token"); // 🔥 Get the token from storage
+      const token = localStorage.getItem("token"); // Get the token from storage
       if (token) {
-        headers.set("Authorization", `Token ${token}`); // 🔥 Include token in headers
+        headers.set("Authorization", `Token ${token}`); // Include token in headers
       }
       return headers;
     },
