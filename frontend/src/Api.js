@@ -2,7 +2,16 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 export const api = createApi({
   reducerPath: "api",
-  baseQuery: fetchBaseQuery({ baseUrl: "http://127.0.0.1:8000/" }), // Common base URL
+  baseQuery: fetchBaseQuery({
+    baseUrl: "http://127.0.0.1:8000/",
+    prepareHeaders: (headers) => {
+      const token = localStorage.getItem("token"); // 🔥 Get the token from storage
+      if (token) {
+        headers.set("Authorization", `Token ${token}`); // 🔥 Include token in headers
+      }
+      return headers;
+    },
+  }),
   endpoints: (builder) => ({
     getPosts: builder.query({
       query: () => "api/posts/",
@@ -70,8 +79,3 @@ export const {
   useCreateCommentMutation,
   useGetCommentsQuery,
 } = api;
-
-
-
-
-

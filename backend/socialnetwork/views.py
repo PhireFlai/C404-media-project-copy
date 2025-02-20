@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework import status, generics  
 from .models import User, Post
 from .serializers import *
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny,IsAuthenticated
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
 
@@ -72,15 +72,13 @@ def loginUser(request):
 class PostListCreateView(generics.ListCreateAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
+    permission_classes = [IsAuthenticated]  # ✅ Requires authentication
 
     def perform_create(self, serializer):
-        # Use the imported User model instead of `get_user_model()`
-        admin_user = User.objects.filter(username="Admin").first()
-
-        if not admin_user:
-            admin_user = User.objects.create(username="Admin", password="defaultpassword")
-        
-        serializer.save(author=admin_user)  # Assign a single user instance
+        if not self.request.user.is_authenticated:
+            raise PermissionDenied("You must be logged in to create a post.")
+    
+        serializer.save(author=self.request.user)
 
 
 # Handles GET /api/posts/<id>/, PUT /api/posts/<id>/, DELETE /api/posts/<id>/
