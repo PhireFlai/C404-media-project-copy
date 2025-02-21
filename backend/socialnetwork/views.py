@@ -9,7 +9,7 @@ from .serializers import *
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
-
+from rest_framework.parsers import MultiPartParser, FormParser
 
 # Creates a new user
 @api_view(['POST'])
@@ -42,6 +42,7 @@ def loginUser(request):
 class PostListCreateView(generics.ListCreateAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
+    parser_classes = (MultiPartParser, FormParser)  # Allow image file uploads
 
     def perform_create(self, serializer):
         # Use the imported User model instead of `get_user_model()`
