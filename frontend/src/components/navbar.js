@@ -34,7 +34,7 @@ const Navbar = () => {
               <Link to="/create">Create Post</Link>
             </li>
             <li>
-              <span>Welcome, {user.username}</span>
+              <span>Welcome, <Link to={`/${user.id}`} >{user.username}</Link></span>
             </li>
             <li>
               <button onClick={handleLogout}>Logout</button>
