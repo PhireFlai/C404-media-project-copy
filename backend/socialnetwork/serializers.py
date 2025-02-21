@@ -54,7 +54,8 @@ class CommentSerializer(serializers.ModelSerializer):
         return data
     
     def create(self, validated_data):
-        author = validated_data.get('author')
+        author_id = validated_data.get('author')
+        author = User.objects.filter(id=author_id).first()
         content = validated_data.get('content')
         post = validated_data.get('post')
 

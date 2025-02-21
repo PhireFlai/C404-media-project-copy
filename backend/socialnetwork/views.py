@@ -152,6 +152,12 @@ def CreateComment(request, pk):
     print(serializer.errors)
     return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
 
+@api_view(['POST'])
+def PostComment(request, author):
+    author_instance = User.objects.get(id=author)
+    comment = Comment.objects.get(id=request.data.get('comment_id'))
+    return Response({"message": "Comment posted to author inbox", "commentId": comment.id}, status=status.HTTP_200_OK)
+
 
 class CommentsList(generics.ListCreateAPIView):
     queryset = Comment.objects.all()

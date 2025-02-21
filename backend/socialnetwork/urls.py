@@ -20,6 +20,7 @@ urlpatterns = [
     path('api/profile/<str:username>/update-picture/', updateUserProfile, name='update-user-profile'),  # PUT profile
     path('api/profile/<str:username>/update-username/', updateUsername, name='update-username'),  # PUT username
     path("api/posts/<uuid:pk>/", PostDetailView.as_view(), name="post-detail"),
+    path("api/authors/<uuid:author>/inbox/", PostComment, name='post-comment'),
     path("api/posts/<uuid:pk>/comment/", CreateComment, name='comment'),
     path("api/posts/<uuid:pk>/comments/", CommentsList.as_view(), name="comment-list"),
 ]

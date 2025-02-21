@@ -122,7 +122,8 @@
 // export default HomePage;
 
 import React, { useState } from "react";
-import { useGetPostsQuery, useDeletePostMutation, useCreateCommentMutation, useGetCommentsQuery } from "../Api";
+import { useSelector } from "react-redux";
+import { useGetPostsQuery, useDeletePostMutation, useCreateCommentMutation, useGetCommentsQuery, usePostCommentMutation } from "../Api";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw"; // Allow rendering HTML inside Markdown
 import remarkGfm from "remark-gfm"; // Support GitHub Flavored Markdown (tables, strikethroughs, etc.)
@@ -131,6 +132,7 @@ const HomePage = () => {
   const { data: posts, refetch } = useGetPostsQuery();
   const [deletePost] = useDeletePostMutation();
   const [createComment] = useCreateCommentMutation();
+  const [postComment] = usePostCommentMutation();
   const [showCommentBox, setShowCommentBox] = useState(false);
   const [comment, setComment] = useState("");
   const [currentPostId, setCurrentPostId] = useState(null);
@@ -152,10 +154,12 @@ const HomePage = () => {
     }
   };
 
-  const handleCommentSubmit = async (pk) => {
+  const handleCommentSubmit = async (pk, author) => {
     try {
-      const response = await createComment({ pk, commentData: { content: comment } }).unwrap();
-      console.log("Comment created:", response);
+      const createResponse = await createComment({ pk, commentData: { content: comment } }).unwrap();
+      console.log("Comment created:", createResponse);
+      const postResponse = await postComment({ author, commentId: createResponse.id }).unwrap();
+      console.log("Comment created:", postResponse);
       refetchComments();
     } catch (err){
       console.error(err);
@@ -210,7 +214,7 @@ const HomePage = () => {
                     onChange={(e) => setComment(e.target.value)}
                     placeholder="Leave a comment..." 
                 />
-                <button onClick={() => handleCommentSubmit(post.id)}>Submit</button>
+                <button onClick={() => handleCommentSubmit(post.id, post.author)}>Submit</button>
               </div>
             )}
             <button
