@@ -12,12 +12,13 @@ services:
     backend:
         build: ./backend
         command: python manage.py runserver 0.0.0.0:8000
+        volumes:
+        - ./socialnetwork/media:/app/socialnetwork/media  # Store images persistently
+        - ./backend:/app  # Ensures backend code is available inside container
         ports:
         - "8000:8000"
         depends_on:
         - db
-        volumes:
-        - ./backend:/app
         env_file:
         - .env
 
@@ -33,3 +34,4 @@ services:
 
 volumes:
     db_data:
+    media:  # Persistent storage for images

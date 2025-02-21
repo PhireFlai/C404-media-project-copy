@@ -9,6 +9,7 @@ from .serializers import *
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated, AllowAny
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.authentication import TokenAuthentication
 
 # Creates a new user
@@ -58,10 +59,15 @@ def loginUser(request):
         }, status=status.HTTP_200_OK)
     else:
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
+    
+class UsersList(generics.ListCreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
 
 class PostListCreateView(generics.ListCreateAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
+    parser_classes = (MultiPartParser, FormParser)  # Allow image file uploads
     permission_classes = [IsAuthenticated]  # Requires authentication
 
     def perform_create(self, serializer):
@@ -156,15 +162,21 @@ def updateUsername(request, userId):
 def CreateComment(request, pk):
     post = get_object_or_404(Post, id=pk)
     
-    author = request.user.id
+    author = request.user
     content = request.data.get('content')
-    serializer = CommentSerializer(data={'author': author, 'content': content, 'post': post.id})
+    serializer = CommentSerializer(data={'author': author.id, 'content': content, 'post': post.id})
     
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     print(serializer.errors)
     return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+def PostComment(request, author):
+    author_instance = User.objects.get(id=author)
+    comment = Comment.objects.get(id=request.data.get('comment_id'))
+    return Response({"message": "Comment posted to author inbox", "commentId": comment.id}, status=status.HTTP_200_OK)
 
 
 class CommentsList(generics.ListCreateAPIView):

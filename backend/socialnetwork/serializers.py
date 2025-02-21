@@ -63,10 +63,11 @@ class CommentSerializer(serializers.ModelSerializer):
     
 class PostSerializer(serializers.ModelSerializer):
     formatted_content = serializers.SerializerMethodField()  # Add formatted content
+    image = serializers.ImageField(required=False)  # Allow image uploads
 
     class Meta:
         model = Post
-        fields = ["id", "author", "title", "content", "formatted_content", "created_at"]
+        fields = ["id", "author", "title", "content", "image", "formatted_content", "created_at"]
 
     def get_formatted_content(self, obj):
         return markdown.markdown(obj.content)

@@ -61,6 +61,13 @@ export const api = createApi({
         body: commentData,
       }),
     }),
+    postComment: builder.mutation({
+      query: ({ author, commentId }) => ({
+        url: `api/authors/${author}/inbox/`,
+        method: "POST",
+        body: {"comment_id": commentId},
+      }),
+    }),
     updateProfilePicture: builder.mutation({
       query: ({ userId, profilePicture }) => {
         const formData = new FormData();
@@ -102,4 +109,5 @@ export const {
   useGetUserProfileQuery,
   useUpdateProfilePictureMutation,
   useUpdateUsernameMutation,
+  usePostCommentMutation,
 } = api;
