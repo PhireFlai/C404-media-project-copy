@@ -4,12 +4,14 @@ import HomePage from "./pages/HomePage";
 import CreatePostPage from "./pages/CreatePostPage";
 import SignUp from "./pages/signup";
 import Login from "./pages/login";
+import Profile from './pages/Profile';
+import Navbar from "./components/navbar";
 
 const App = () => {
   return (
     <div>
       <Router>
-        {/* <Navbar /> */}
+        <Navbar />
         {/* This is a global component that will be shown on all the route/pages we declare here. I haven't implemented it, it is just an example
          */}
         <div className="container">
@@ -18,6 +20,7 @@ const App = () => {
             <Route path="/signup" element={<SignUp />} />
             <Route path="/login" element={<Login />} />
             <Route path="/create" element={<CreatePostPage />} />
+            <Route path="/:userId" element={<Profile />} />
           </Routes>
         </div>
       </Router>

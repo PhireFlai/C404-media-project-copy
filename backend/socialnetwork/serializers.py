@@ -7,7 +7,7 @@ import markdown
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User        
-        fields = ['id', 'username', 'password', 'email', 'followers', 'friends']
+        fields = ['id', 'username', 'password', 'email', 'profile_picture', 'followers', 'friends']
         extra_kwargs = {
             'password': {'write_only': True},  # Ensure password is write-only
             'followers': {'required': False},  # Make followers optional
@@ -20,7 +20,6 @@ class UserSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
-
         # Extract and remove many-to-many fields
         followers_data = validated_data.pop('followers', [])
         friends_data = validated_data.pop('friends', [])
@@ -39,7 +38,7 @@ class UserSerializer(serializers.ModelSerializer):
         user.followers.set(followers_data)
         user.friends.set(friends_data)
 
-        return user  
+        return user
 
 class CommentSerializer(serializers.ModelSerializer):
     class Meta:

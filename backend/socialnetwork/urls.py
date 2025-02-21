@@ -10,17 +10,19 @@ from socialnetwork.views import createUser, loginUser
 # this urlpatterns is different from the polls urlpatterns because lab3 is a project rather than an app. 
 # This urls.py is the base and forwards requests to the urls.py of the applications
 urlpatterns = [
-    path("core/", include("core.urls")),  # All requests sent to polls/ should be handled by polls/urls.py
-    path("admin/", admin.site.urls),    # Django has a built in admin panel we will use later
+    path("core/", include("core.urls")),
+    path("admin/", admin.site.urls),
     path('api/signup/', createUser, name='createUser'),
     path('api/login/', loginUser, name='user-login'),
     path("api/posts/", PostListCreateView.as_view(), name="post-list"),
+    path('api/profile/<uuid:userId>/', getUserProfile, name='get-user-profile'),  # GET profile
+    path('api/profile/<uuid:userId>/update-picture/', updateUserProfile, name='update-user-profile'),  # PUT profile
+    path('api/profile/<uuid:userId>/update-username/', updateUsername, name='update-username'),  # PUT username
     path("api/posts/<uuid:pk>/", PostDetailView.as_view(), name="post-detail"),
     path("api/posts/<uuid:pk>/comment/", CreateComment, name='comment'),
     path("api/posts/<uuid:pk>/comments/", CommentsList.as_view(), name="comment-list"),
 ]
 
-# To serve images during development:
-
+# Serve media files during development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
