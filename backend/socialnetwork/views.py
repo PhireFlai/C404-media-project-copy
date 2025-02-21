@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework import status, generics  
 from .models import User, Post
 from .serializers import *
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated, AllowAny
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
 from rest_framework.authentication import TokenAuthentication
