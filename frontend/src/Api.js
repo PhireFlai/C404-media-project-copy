@@ -3,18 +3,8 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 export const api = createApi({
   reducerPath: "api",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://127.0.0.1:8000/",
-    prepareHeaders: (headers) => {
-      const token = localStorage.getItem("token"); // Get the token from storage
-      if (token) {
-        headers.set("Authorization", `Token ${token}`); // Include token in headers
-      }
-      return headers;
-    },
-  }),
-  baseQuery: fetchBaseQuery({
     baseUrl: "http://127.0.0.1:8000/", // Common base URL
-    prepareHeaders: (headers, { getState }) => {
+    prepareHeaders: (headers) => {
       const token = localStorage.getItem("token"); // Get the token from local storage
       if (token) {
         headers.set("Authorization", `Token ${token}`); // Add the token to the headers
@@ -87,9 +77,6 @@ export const api = createApi({
         url: `api/profile/${userId}/update-username/`,
         method: "PUT",
         body: { newUsername },
-        headers: {
-          Authorization: `Token ${localStorage.getItem("token")}`,
-        },
       }),
     }),
     getComments: builder.query({
