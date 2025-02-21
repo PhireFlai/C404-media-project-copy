@@ -59,6 +59,10 @@ def loginUser(request):
         }, status=status.HTTP_200_OK)
     else:
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
+    
+class UsersList(generics.ListCreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
 
 class PostListCreateView(generics.ListCreateAPIView):
     queryset = Post.objects.all()
@@ -158,15 +162,21 @@ def updateUsername(request, userId):
 def CreateComment(request, pk):
     post = get_object_or_404(Post, id=pk)
     
-    author = request.user.id
+    author = request.user
     content = request.data.get('content')
-    serializer = CommentSerializer(data={'author': author, 'content': content, 'post': post.id})
+    serializer = CommentSerializer(data={'author': author.id, 'content': content, 'post': post.id})
     
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     print(serializer.errors)
     return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+def PostComment(request, author):
+    author_instance = User.objects.get(id=author)
+    comment = Comment.objects.get(id=request.data.get('comment_id'))
+    return Response({"message": "Comment posted to author inbox", "commentId": comment.id}, status=status.HTTP_200_OK)
 
 
 class CommentsList(generics.ListCreateAPIView):

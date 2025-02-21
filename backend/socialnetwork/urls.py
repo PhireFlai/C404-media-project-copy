@@ -14,11 +14,13 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path('api/signup/', createUser, name='createUser'),
     path('api/login/', loginUser, name='user-login'),
+    path('api/authors/', UsersList.as_view(), name='authors'),
     path("api/posts/", PostListCreateView.as_view(), name="post-list"),
     path('api/profile/<uuid:userId>/', getUserProfile, name='get-user-profile'),  # GET profile
     path('api/profile/<uuid:userId>/update-picture/', updateUserProfile, name='update-user-profile'),  # PUT profile
     path('api/profile/<uuid:userId>/update-username/', updateUsername, name='update-username'),  # PUT username
     path("api/posts/<uuid:pk>/", PostDetailView.as_view(), name="post-detail"),
+    path("api/authors/<uuid:author>/inbox/", PostComment, name='post-comment'),
     path("api/posts/<uuid:pk>/comment/", CreateComment, name='comment'),
     path("api/posts/<uuid:pk>/comments/", CommentsList.as_view(), name="comment-list"),
 ]
