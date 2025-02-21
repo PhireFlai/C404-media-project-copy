@@ -54,8 +54,7 @@ class CommentSerializer(serializers.ModelSerializer):
         return data
     
     def create(self, validated_data):
-        author_id = validated_data.get('author')
-        author = User.objects.filter(id=author_id).first()
+        author = validated_data.get('author')
         content = validated_data.get('content')
         post = validated_data.get('post')
 
@@ -64,10 +63,11 @@ class CommentSerializer(serializers.ModelSerializer):
     
 class PostSerializer(serializers.ModelSerializer):
     formatted_content = serializers.SerializerMethodField()  # Add formatted content
+    image = serializers.ImageField(required=False)  # Allow image uploads
 
     class Meta:
         model = Post
-        fields = ["id", "author", "title", "content", "formatted_content", "created_at"]
+        fields = ["id", "author", "title", "content", "image", "formatted_content", "created_at"]
 
     def get_formatted_content(self, obj):
         return markdown.markdown(obj.content)

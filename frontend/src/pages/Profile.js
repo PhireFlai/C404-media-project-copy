@@ -3,17 +3,17 @@ import { useParams } from 'react-router-dom';
 import { useGetUserProfileQuery, useUpdateUsernameMutation } from '../Api';
 import ProfilePicUpload from '../components/ProfilePicUpload';
 import { useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+// import { useNavigate } from 'react-router-dom';
 
 const Profile = () => {
-  const { username } = useParams();
-  const { data: user, isLoading, error } = useGetUserProfileQuery(username);
+  const { userId } = useParams();
+  const { data: user, isLoading, error } = useGetUserProfileQuery(userId);
   const curUser = useSelector((state) => state.user.user);
   const [isEditing, setIsEditing] = useState(false); // State for editing mode
   const [newUsername, setNewUsername] = useState(''); // State for new username
   const [updateUsername] = useUpdateUsernameMutation(); // Mutation for updating username
 
-  const navigate = useNavigate();
+//   const navigate = useNavigate();
 
 
   const handleEditClick = () => {
@@ -24,9 +24,9 @@ const Profile = () => {
   const handleSaveClick = async () => {
     try {
       // Call the updateUsername mutation
-      await updateUsername({ username, newUsername }).unwrap();
+      await updateUsername({ userId, newUsername }).unwrap();
       setIsEditing(false); // Disable editing mode
-      navigate(`/${newUsername}`); // Redirect to the new profile URL
+      window.location.reload(); // Refresh the page to reflect the changes
     } catch (err) {
       console.error('Failed to update username:', err);
     }
@@ -58,7 +58,7 @@ const Profile = () => {
       {/* Conditionally render the ProfilePicUpload component */}
       {curUser && curUser.username === user.username && (
         <div>
-          <ProfilePicUpload username={curUser.username} />
+          <ProfilePicUpload username={curUser.id} />
 
           {/* Button to toggle editing mode */}
           {!isEditing ? (

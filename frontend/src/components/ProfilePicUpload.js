@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useUpdateProfilePictureMutation } from '../Api';
 
-const ProfilePictureUpload = ({ username }) => {
+const ProfilePictureUpload = ({ userId }) => {
   const [profilePicture, setProfilePicture] = useState(null);
   const [updateProfilePicture, { isLoading, error }] = useUpdateProfilePictureMutation();
 
@@ -13,7 +13,7 @@ const ProfilePictureUpload = ({ username }) => {
     e.preventDefault();
     if (profilePicture) {
       try {
-        await updateProfilePicture({ username, profilePicture }).unwrap();
+        await updateProfilePicture({ userId, profilePicture }).unwrap();
         alert('Profile picture updated successfully!');
         window.location.reload(); // Refresh the page to reflect the changes
       } catch (err) {

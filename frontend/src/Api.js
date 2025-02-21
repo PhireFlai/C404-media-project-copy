@@ -3,11 +3,21 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 export const api = createApi({
   reducerPath: "api",
   baseQuery: fetchBaseQuery({
+    baseUrl: "http://127.0.0.1:8000/",
+    prepareHeaders: (headers) => {
+      const token = localStorage.getItem("token"); // Get the token from storage
+      if (token) {
+        headers.set("Authorization", `Token ${token}`); // Include token in headers
+      }
+      return headers;
+    },
+  }),
+  baseQuery: fetchBaseQuery({
     baseUrl: "http://127.0.0.1:8000/", // Common base URL
     prepareHeaders: (headers, { getState }) => {
-      const token = localStorage.getItem('token'); // Get the token from local storage
+      const token = localStorage.getItem("token"); // Get the token from local storage
       if (token) {
-        headers.set('Authorization', `Token ${token}`); // Add the token to the headers
+        headers.set("Authorization", `Token ${token}`); // Add the token to the headers
       }
       return headers;
     },
@@ -69,23 +79,23 @@ export const api = createApi({
       }),
     }),
     updateProfilePicture: builder.mutation({
-      query: ({ username, profilePicture }) => {
+      query: ({ userId, profilePicture }) => {
         const formData = new FormData();
-        formData.append('profile_picture', profilePicture);
+        formData.append("profile_picture", profilePicture);
         return {
-          url: `api/profile/${username}/update-picture/`,
-          method: 'PUT',
+          url: `api/profile/${userId}/update-picture/`,
+          method: "PUT",
           body: formData,
-        }
+        };
       },
     }),
     updateUsername: builder.mutation({
-      query: ({ username, newUsername }) => ({
-        url: `api/profile/${username}/update-username/`,
-        method: 'PUT',
+      query: ({ userId, newUsername }) => ({
+        url: `api/profile/${userId}/update-username/`,
+        method: "PUT",
         body: { newUsername },
         headers: {
-          Authorization: `Token ${localStorage.getItem('token')}`,
+          Authorization: `Token ${localStorage.getItem("token")}`,
         },
       }),
     }),
@@ -93,9 +103,8 @@ export const api = createApi({
       query: (pk) => `api/posts/${pk}/comments/`,
     }),
     getUserProfile: builder.query({
-      query: (username) => `api/profile/${username}/`, // Fetch profile by username
+      query: (userId) => `api/profile/${userId}/`, // Fetch profile by userId
     }),
-
   }),
 });
 

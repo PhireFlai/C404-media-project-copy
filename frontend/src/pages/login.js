@@ -53,7 +53,7 @@ const LoginUser = () => {
                 username: loginResponse.username,
             }));
 
-            navigate(`/${loginResponse.username}`);
+            navigate(`/${loginResponse.user_id}`);
 
         } catch (err) {
             console.error('Error:', err);
