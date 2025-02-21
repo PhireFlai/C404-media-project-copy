@@ -48,6 +48,7 @@ const Profile = () => {
 
   return (
     <div>
+
       <h1>{user.username}'s Profile</h1>
       <p>Followers: {user.followers.length}</p>
       <p>Friends: {user.friends.length}</p>
@@ -62,9 +63,9 @@ const Profile = () => {
       )}
 
       {/* Conditionally render the ProfilePicUpload component */}
-      {curUser && curUser.username === user.username && (
+      {curUser && curUser.id === userId && (
         <div>
-          <ProfilePicUpload username={curUser.id} />
+          <ProfilePicUpload userId={curUser.id} />
 
           {/* Button to toggle editing mode */}
           {!isEditing ? (
