@@ -91,7 +91,7 @@ CORS_ALLOWED_ORIGINS = [ "http://localhost:3000" ]
 DATABASES = {
     "default": {
         "ENGINE": os.environ.get("DB_ENGINE", "django.db.backends.postgresql"),
-        "NAME": os.environ.get("DB_DATABASE", str(BASE_DIR / "db.sqlite3")),
+        "NAME": os.environ.get("DB_DATABASE", "primary_db"),
         "USER": os.environ.get("DB_USER", "user"),
         "PASSWORD": os.environ.get("DB_PASSWORD", "password"),
         "HOST": os.environ.get("DB_HOST", "db"),
