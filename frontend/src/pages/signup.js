@@ -50,8 +50,8 @@ const CreateUser = () => {
       };
 
       dispatch(loginUserAction(userData)); // Immediately updates Redux state
-      localStorage.setItem("token", loginResponse.token);
-      localStorage.setItem("user", JSON.stringify(userData));
+      // localStorage.setItem("token", loginResponse.token);
+      // localStorage.setItem("user", JSON.stringify(userData));
 
       setSuccessMessage("User created and logged in successfully!");
       navigate("/");

@@ -5,9 +5,13 @@ from django.utils import timezone
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 import uuid
+import os
 
 def user_profile_picture_path(instance, filename):
-    return f'profile_pictures/{instance.username}/{filename}'
+    # Extract the file extension from the original filename
+    extension = os.path.splitext(filename)[1]
+    # Return the new file path with the user's ID and the original file extension
+    return f'profile_pictures/{instance.id}{extension}'
 
 class User(AbstractUser):
     # username = models.CharField(max_length=32, unique=True)
@@ -28,6 +32,15 @@ class User(AbstractUser):
     def __str__(self):
         return self.username  # Display the username in the admin panel
 
+
+    def save(self, *args, **kwargs):
+        # Check if the profile picture is being updated
+        if self.pk:
+            old_user = User.objects.get(pk=self.pk)
+            if old_user.profile_picture and old_user.profile_picture != self.profile_picture:
+                old_user.profile_picture.delete(save=False)
+        super().save(*args, **kwargs)
+        
 class Post(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False) 
     # Author Now optional

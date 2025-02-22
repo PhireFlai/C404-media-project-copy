@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useGetUserProfileQuery, useUpdateUsernameMutation } from '../Api';
 import ProfilePicUpload from '../components/ProfilePicUpload';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { loginUser as loginUserAction } from '../UserContext/userActions';
+
 // import { useNavigate } from 'react-router-dom';
 
 const Profile = () => {
@@ -12,13 +14,14 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false); // State for editing mode
   const [newUsername, setNewUsername] = useState(''); // State for new username
   const [updateUsername] = useUpdateUsernameMutation(); // Mutation for updating username
+  const dispatch = useDispatch();
 
 //   const navigate = useNavigate();
 
 
   const handleEditClick = () => {
-    setIsEditing(true); // Enable editing mode
-    setNewUsername(user.username); // Pre-fill the input with the current username
+    setIsEditing(true);
+    setNewUsername(user.username); 
   };
 
   const handleSaveClick = async () => {
@@ -26,6 +29,9 @@ const Profile = () => {
       // Call the updateUsername mutation
       await updateUsername({ userId, newUsername }).unwrap();
       setIsEditing(false); // Disable editing mode
+      const updatedUser = { ...curUser, username: newUsername };
+      dispatch(loginUserAction(updatedUser));
+
       window.location.reload(); // Refresh the page to reflect the changes
     } catch (err) {
       console.error('Failed to update username:', err);
@@ -42,6 +48,7 @@ const Profile = () => {
 
   return (
     <div>
+
       <h1>{user.username}'s Profile</h1>
       <p>Followers: {user.followers.length}</p>
       <p>Friends: {user.friends.length}</p>
@@ -56,9 +63,9 @@ const Profile = () => {
       )}
 
       {/* Conditionally render the ProfilePicUpload component */}
-      {curUser && curUser.username === user.username && (
+      {curUser && curUser.id === userId && (
         <div>
-          <ProfilePicUpload username={curUser.id} />
+          <ProfilePicUpload userId={curUser.id} />
 
           {/* Button to toggle editing mode */}
           {!isEditing ? (
