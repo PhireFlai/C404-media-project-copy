@@ -81,6 +81,7 @@ const HomePage = () => {
             }}
           >
             <h3>{post.title}</h3>
+            <p>Visibility: {post.visibility}</p>
             {/* Enable rendering of images in markdown */}
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}

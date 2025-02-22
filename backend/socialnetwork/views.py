@@ -70,6 +70,9 @@ class PostListCreateView(generics.ListCreateAPIView):
     parser_classes = (MultiPartParser, FormParser)  # Allow image file uploads
     permission_classes = [IsAuthenticated]  # Requires authentication
 
+    def get_queryset(self):
+            return Post.objects.exclude(visibility=Post.DELETED)
+    
     def perform_create(self, serializer):
         if not self.request.user.is_authenticated:
             raise PermissionDenied("You must be logged in to create a post.")
@@ -87,7 +90,8 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
         if self.request.user != instance.author:
             # Restrict deletion
             raise PermissionDenied("You can only delete your own posts.")  
-        instance.delete()
+        instance.visibility = Post.DELETED
+        instance.save()
 
     def perform_update(self, serializer):
         if self.request.user != serializer.instance.author:
