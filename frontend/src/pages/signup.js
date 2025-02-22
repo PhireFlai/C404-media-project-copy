@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useCreateUserMutation, useLoginUserMutation } from "../Api";
 import { useDispatch } from "react-redux";
 import { loginUser as loginUserAction } from "../UserContext/userActions";
+import './css/signup.css';
 
 const CreateUser = () => {
   const [formData, setFormData] = useState({
@@ -62,7 +63,7 @@ const CreateUser = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} className="signup-form">
       <div>
         <label>Username:</label>
         <input
@@ -81,7 +82,10 @@ const CreateUser = () => {
           onChange={handleChange}
         />
       </div>
-      <button type="submit">Create User</button>
+      <div className="button-row">
+          <button type="submit">Create User</button>
+          <button type="button" onClick={() => navigate('/login')}>Back to Login</button>
+        </div>
 
       {/* Success and error messages for testing*/}
       {successMessage && <p style={{ color: "green" }}>{successMessage}</p>}
