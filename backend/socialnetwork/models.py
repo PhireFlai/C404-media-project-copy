@@ -6,6 +6,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 import uuid
 import os
+from django.core.exceptions import ObjectDoesNotExist
 
 def user_profile_picture_path(instance, filename):
     # Extract the file extension from the original filename
@@ -34,12 +35,16 @@ class User(AbstractUser):
 
 
     def save(self, *args, **kwargs):
-        # Check if the profile picture is being updated
-        if self.pk:
-            old_user = User.objects.get(pk=self.pk)
-            if old_user.profile_picture and old_user.profile_picture != self.profile_picture:
-                old_user.profile_picture.delete(save=False)
-        super().save(*args, **kwargs)
+        if self.pk:  # Ensure self.pk is not None
+            try:
+                old_user = User.objects.get(pk=self.pk)
+                if old_user.profile_picture and old_user.profile_picture != self.profile_picture:
+                    old_user.profile_picture.delete(save=False)  # Delete old picture
+            except ObjectDoesNotExist:
+                pass  # User doesn't exist yet, so nothing to delete
+
+        super().save(*args, **kwargs)  # Save the instance
+
         
 class Post(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False) 
