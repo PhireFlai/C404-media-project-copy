@@ -88,13 +88,15 @@ CORS_ALLOWED_ORIGINS = [ "http://localhost:3000" ]
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+# with this setting it should work for people that want to use
+# dev_script and for those who only want to use docker for both fronts
 DATABASES = {
     "default": {
         "ENGINE": os.environ.get("DB_ENGINE", "django.db.backends.postgresql"),
         "NAME": os.environ.get("DB_DATABASE", "primary_db"),
         "USER": os.environ.get("DB_USER", "user"),
         "PASSWORD": os.environ.get("DB_PASSWORD", "password"),
-        "HOST": os.environ.get("DB_HOST", "db"),
+        "HOST": os.environ.get("DB_HOST", "localhost"),
         "PORT": os.environ.get("DB_PORT", "5432"),
     }
 }

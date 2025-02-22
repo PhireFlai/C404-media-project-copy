@@ -123,14 +123,19 @@ const HomePage = () => {
               >
                 <h4>Comments</h4>
                 {comments?.length > 0 ? (
-                    comments.map((comment) => (
-                      <div key={comment.id} style={{ padding: "5px", borderBottom: "1px solid #eee" }}>
-                        <p>{comment.content}</p>
-                        <p><small>{comment.created_at}</small></p>
-                      </div>
-                    ))
-                  ) : (
-                    <p>No comments yet.</p>
+                  comments.map((comment) => (
+                    <div
+                      key={comment.id}
+                      style={{ padding: "5px", borderBottom: "1px solid #eee" }}
+                    >
+                      <p>{comment.content}</p>
+                      <p>
+                        <small>{comment.created_at}</small>
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <p>No comments yet.</p>
                 )}
                 <input
                   type="text"
@@ -138,7 +143,11 @@ const HomePage = () => {
                   onChange={(e) => setComment(e.target.value)}
                   placeholder="Leave a comment..."
                 />
-                <button onClick={() => handleCommentSubmit(post.id, post.author)}>Submit</button>
+                <button
+                  onClick={() => handleCommentSubmit(post.id, post.author)}
+                >
+                  Submit
+                </button>
               </div>
             )}
           </div>
