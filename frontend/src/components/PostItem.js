@@ -103,16 +103,19 @@ const PostItem = ({ post, refetchPosts }) => {
 
       <div className="post-actions">
         {user && user.id === post.author && !isEditing && (
+          <>
           <button onClick={handleEditClick} className="edit-button">
             Edit
           </button>
+          <button onClick={() => handleDelete(post.id)} className="delete-button">
+            Delete
+          </button>
+          </>
         )}
         <button onClick={() => handleCommentClick(post.id)}>
           {currentPostId === post.id ? "Close Comments" : "View Comments"}
         </button>
-        <button onClick={() => handleDelete(post.id)} className="delete-button">
-          Delete
-        </button>
+
       </div>
 
       {showCommentBox && currentPostId === post.id && (
