@@ -27,10 +27,10 @@ const Navbar = () => {
             <li>
                 <Dropdown label={`${user.username}`}>
                     <li>
-                    <Link to={`/${user.id}`}>Profile</Link>
+                        <Link to={`/${user.id}`}>Profile</Link>
                     </li>
                     <li>
-                    <button onClick={handleLogout}>Logout</button>
+                        <button onClick={handleLogout}>Logout</button>
                     </li>
                 </Dropdown>
             </li>

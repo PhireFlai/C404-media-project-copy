@@ -20,7 +20,7 @@
 }
   
 .dropdown-menu li {
-    padding: 5px 10px;
+    padding: 5px;
 }
   
 .dropdown-menu li a,
@@ -32,10 +32,14 @@
     cursor: pointer;
     width: 100%;
     text-align: left;
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 16px;
+    padding: 2px;
+    border-radius: 5px;
 }
   
 .dropdown-menu li a:hover,
 .dropdown-menu li button:hover {
     background-color: #f0f0f0;
+    border: none;
 }
-

@@ -26,7 +26,7 @@ const Dropdown = ({ label, children }) => {
         <div ref={dropdownRef} className={`dropdown ${dropdownOpen ? 'open' : ''}`} onClick={toggleDropdown}>
             <span>
                 {label}
-                <span className="arrow">▼</span>
+                <span className="arrow">{dropdownOpen ? ' ▲' : ' ▼'}</span>
             </span>
             {dropdownOpen && (
                 <ul className="dropdown-menu">
