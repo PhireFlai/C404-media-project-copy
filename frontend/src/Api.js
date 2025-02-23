@@ -73,7 +73,7 @@ export const api = createApi({
         const formData = new FormData();
         formData.append("profile_picture", profilePicture);
         return {
-          url: `api/profile/${userId}/update-picture/`,
+          url: `api/authors/${userId}/update-picture/`,
           method: "PUT",
           body: formData,
         };
@@ -81,7 +81,7 @@ export const api = createApi({
     }),
     updateUsername: builder.mutation({
       query: ({ userId, newUsername }) => ({
-        url: `api/profile/${userId}/update-username/`,
+        url: `api/authors/${userId}/`,
         method: "PUT",
         body: { newUsername },
       }),
@@ -90,7 +90,7 @@ export const api = createApi({
       query: (pk) => `api/posts/${pk}/comments/`,
     }),
     getUserProfile: builder.query({
-      query: (userId) => `api/profile/${userId}/`, // Fetch profile by userId
+      query: (userId) => `api/authors/${userId}/`, // Fetch profile by userId
     }),
     getUserPosts: builder.query({
       query: (userId) => `api/user-posts/${userId}/`,  // Updated endpoint
