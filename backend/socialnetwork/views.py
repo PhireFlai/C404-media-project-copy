@@ -11,6 +11,8 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.authentication import TokenAuthentication
+from rest_framework.generics import ListAPIView
+
 
 # Creates a new user
 @api_view(['POST'])
@@ -78,7 +80,15 @@ class PostListCreateView(generics.ListCreateAPIView):
             raise PermissionDenied("You must be logged in to create a post.")
     
         serializer.save(author=self.request.user)
+        
+# Gets all post that was written by a given user and not deleted
+class UserPostsView(ListAPIView):
+    serializer_class = PostSerializer
+    permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        user_id = self.kwargs['userId']
+        return Post.objects.filter(author_id=user_id).exclude(visibility=Post.DELETED)
 
 # Handles GET /api/posts/<id>/, PUT /api/posts/<id>/, DELETE /api/posts/<id>/
 class PostDetailView(generics.RetrieveUpdateDestroyAPIView):

@@ -23,6 +23,7 @@ urlpatterns = [
     path("api/authors/<uuid:author>/inbox/", PostComment, name='post-comment'),
     path("api/posts/<uuid:pk>/comment/", CreateComment, name='comment'),
     path("api/posts/<uuid:pk>/comments/", CommentsList.as_view(), name="comment-list"),
+    path("api/user-posts/<uuid:userId>/", UserPostsView.as_view(), name="user-posts"), 
 ]
 
 # Serve media files during development

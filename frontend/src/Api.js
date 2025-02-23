@@ -92,6 +92,9 @@ export const api = createApi({
     getUserProfile: builder.query({
       query: (userId) => `api/profile/${userId}/`, // Fetch profile by userId
     }),
+    getUserPosts: builder.query({
+      query: (userId) => `api/user-posts/${userId}/`,  // Updated endpoint
+    }),
   }),
 });
 
@@ -110,4 +113,5 @@ export const {
   useUpdateProfilePictureMutation,
   useUpdateUsernameMutation,
   usePostCommentMutation,
+  useGetUserPostsQuery
 } = api;

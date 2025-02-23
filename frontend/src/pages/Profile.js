@@ -1,23 +1,20 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useGetUserProfileQuery, useUpdateUsernameMutation } from '../Api';
+import { useGetUserProfileQuery, useUpdateUsernameMutation, useGetUserPostsQuery } from '../Api';
 import ProfilePicUpload from '../components/ProfilePicUpload';
+import UserPosts from '../components/UserPosts';
 import { useSelector, useDispatch } from 'react-redux';
 import { loginUser as loginUserAction } from '../UserContext/userActions';
-
-// import { useNavigate } from 'react-router-dom';
 
 const Profile = () => {
   const { userId } = useParams();
   const { data: user, isLoading, error } = useGetUserProfileQuery(userId);
+  const { data: posts, isLoading: postsLoading, error: postsError } = useGetUserPostsQuery(userId);
   const curUser = useSelector((state) => state.user.user);
   const [isEditing, setIsEditing] = useState(false); // State for editing mode
   const [newUsername, setNewUsername] = useState(''); // State for new username
   const [updateUsername] = useUpdateUsernameMutation(); // Mutation for updating username
   const dispatch = useDispatch();
-
-//   const navigate = useNavigate();
-
 
   const handleEditClick = () => {
     setIsEditing(true);
@@ -48,7 +45,6 @@ const Profile = () => {
 
   return (
     <div>
-
       <h1>{user.username}'s Profile</h1>
       <p>Followers: {user.followers.length}</p>
       <p>Friends: {user.friends.length}</p>
@@ -83,6 +79,16 @@ const Profile = () => {
             </div>
           )}
         </div>
+      )}
+
+      {/* Display the user's posts */}
+      <h2>{user.username}'s Posts</h2>
+      {postsLoading ? (
+        <div>Loading posts...</div>
+      ) : postsError ? (
+        <div>Error loading posts: {postsError.data?.error || 'Failed to fetch posts'}</div>
+      ) : (
+        <UserPosts posts={posts} />
       )}
     </div>
   );
