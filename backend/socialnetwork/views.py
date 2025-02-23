@@ -11,6 +11,51 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.authentication import TokenAuthentication
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
+
+@swagger_auto_schema(
+    method="post",
+    operation_summary="Create a new user",
+    operation_description="Registers a new user with a username and password. A token is generated upon successful registration.",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            "username": openapi.Schema(
+                type=openapi.TYPE_STRING, 
+                description="Unique username for the new user"
+            ),
+            "password": openapi.Schema(
+                type=openapi.TYPE_STRING, 
+                format=openapi.FORMAT_PASSWORD,
+                description="Secure password for authentication"
+            ),
+        },
+        required=["username", "password"],
+    ),
+    responses={
+        201: openapi.Response(
+            "User successfully created",
+            openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "token": openapi.Schema(type=openapi.TYPE_STRING, description="Authentication token for the user"),
+                    "user_id": openapi.Schema(type=openapi.TYPE_INTEGER, description="Unique ID of the created user"),
+                    "username": openapi.Schema(type=openapi.TYPE_STRING, description="Registered username"),
+                },
+            ),
+        ),
+        400: openapi.Response(
+            "Bad Request",
+            openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "error": openapi.Schema(type=openapi.TYPE_STRING, description="Error message")
+                },
+            ),
+        ),
+    },
+)
 
 # Creates a new user
 @api_view(['POST'])

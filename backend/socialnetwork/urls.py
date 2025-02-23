@@ -1,15 +1,34 @@
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, re_path
 from socialnetwork.views import createUser
 from .views import *
 from django.conf import settings
 from django.conf.urls.static import static
+from rest_framework import permissions
+from drf_yasg.views import get_schema_view
+from drf_yasg import openapi
 
 
 from socialnetwork.views import createUser, loginUser
+
+schema_view = get_schema_view(
+    openapi.Info(
+        title="Team Cyan API",
+        default_version="v1",
+        description="API documentation for Project Part 1",
+        terms_of_service="https://www.example.com/terms/",
+        contact=openapi.Contact(email="support@example.com"),
+        license=openapi.License(name="MIT License"),
+    ),
+    public=True,
+    permission_classes=(permissions.AllowAny,),
+)
+
 # this urlpatterns is different from the polls urlpatterns because lab3 is a project rather than an app. 
 # This urls.py is the base and forwards requests to the urls.py of the applications
 urlpatterns = [
+    path("swagger/", schema_view.with_ui("swagger", cache_timeout=0), name="schema-swagger-ui"),
+    path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
     path("core/", include("core.urls")),
     path("admin/", admin.site.urls),
     path('api/signup/', createUser, name='createUser'),
