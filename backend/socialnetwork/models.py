@@ -47,12 +47,24 @@ class User(AbstractUser):
 
         
 class Post(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False) 
-    # Author Now optional
-    author = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)  
+    PUBLIC = 'public'
+    FRIENDS_ONLY = 'friends-only'
+    UNLISTED = 'unlisted'
+    DELETED = 'deleted'
+    
+    VISIBILITY_CHOICES = [
+        (PUBLIC, 'Public'),
+        (FRIENDS_ONLY, 'Friends Only'),
+        (UNLISTED, 'Unlisted'),
+        (DELETED, 'Deleted')
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    author = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     title = models.CharField(max_length=255)
     content = models.TextField()
     image = models.ImageField(upload_to="post_images/", blank=True, null=True)
+    visibility = models.CharField(max_length=20, choices=VISIBILITY_CHOICES, default=PUBLIC)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

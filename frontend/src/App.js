@@ -6,21 +6,23 @@ import SignUp from "./pages/signup";
 import Login from "./pages/login";
 import Profile from './pages/Profile';
 import Navbar from "./components/navbar";
+import PrivateRoute from "./components/PrivateRoute";
+import { useSelector } from "react-redux";
 
 const App = () => {
+  const user = useSelector((state) => state.user.user);
+
   return (
     <div>
       <Router>
-        <Navbar />
-        {/* This is a global component that will be shown on all the route/pages we declare here. I haven't implemented it, it is just an example
-         */}
+        {user && <Navbar />}
         <div className="container">
           <Routes>
-            <Route path="/" element={<HomePage />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/create" element={<CreatePostPage />} />
-            <Route path="/:userId" element={<Profile />} />
+            <Route path="/" element={<PrivateRoute element={HomePage} />} />
+            <Route path="/create" element={<PrivateRoute element={CreatePostPage} />} />
+            <Route path="/:userId" element={<PrivateRoute element={Profile} />} />
           </Routes>
         </div>
       </Router>
