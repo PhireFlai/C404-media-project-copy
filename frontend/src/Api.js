@@ -14,25 +14,25 @@ export const api = createApi({
   }),
   endpoints: (builder) => ({
     getPosts: builder.query({
-      query: () => "api/posts/",
+      query: () => `api/public-posts/`,  // Updated endpoint for public posts
     }),
     createPost: builder.mutation({
-      query: (formData) => ({
-        url: "api/posts/",
+      query: ({ userId, formData }) => ({
+        url: `api/authors/${userId}/posts/`,
         method: "POST",
         body: formData,
         formData: true,
       }),
     }),
     deletePost: builder.mutation({
-      query: (postId) => ({
-        url: `api/posts/${postId}/`,
+      query: ({ userId, postId }) => ({
+        url: `api/authors/${userId}/posts/${postId}/`,
         method: "DELETE",
       }),
     }),
     editPost: builder.mutation({
-      query: ({ postId, updatedPost }) => ({
-        url: `api/posts/${postId}/`,
+      query: ({ userId, postId, updatedPost }) => ({
+        url: `api/authors/${userId}/posts/${postId}/`,
         method: "PUT",
         body: updatedPost,
       }),
@@ -55,8 +55,8 @@ export const api = createApi({
       }),
     }),
     createComment: builder.mutation({
-      query: ({ pk, commentData }) => ({
-        url: `api/posts/${pk}/comment/`,
+      query: ({ userId, postId, commentData }) => ({
+        url: `api/authors/${userId}/posts/${postId}/comment/`,
         method: "POST",
         body: commentData,
       }),
@@ -65,7 +65,7 @@ export const api = createApi({
       query: ({ author, commentId }) => ({
         url: `api/authors/${author}/inbox/`,
         method: "POST",
-        body: {"comment_id": commentId},
+        body: { "comment_id": commentId },
       }),
     }),
     updateProfilePicture: builder.mutation({
@@ -87,13 +87,13 @@ export const api = createApi({
       }),
     }),
     getComments: builder.query({
-      query: (pk) => `api/posts/${pk}/comments/`,
+      query: ({ userId, postId }) => `api/authors/${userId}/posts/${postId}/comments/`,
     }),
     getUserProfile: builder.query({
       query: (userId) => `api/authors/${userId}/`, // Fetch profile by userId
     }),
     getUserPosts: builder.query({
-      query: (userId) => `api/user-posts/${userId}/`,  // Updated endpoint
+      query: (userId) => `api/authors/${userId}/posts/`,  // Updated endpoint
     }),
   }),
 });

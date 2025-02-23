@@ -15,14 +15,14 @@ urlpatterns = [
     path('api/signup/', createUser, name='createUser'),
     path('api/login/', loginUser, name='user-login'),
     path('api/authors/', UsersList.as_view(), name='authors'),
-    path("api/posts/", PostListCreateView.as_view(), name="post-list"),
+    path("api/authors/<uuid:userId>/posts/", PostListCreateView.as_view(), name="post-list"),
     path('api/authors/<uuid:userId>/', UserProfileView.as_view(), name='user-profile'),
     path('api/authors/<uuid:userId>/update-picture/', updateUserProfile, name='update-user-profile'),  
-    path("api/posts/<uuid:pk>/", PostDetailView.as_view(), name="post-detail"),
+    path("api/authors/<uuid:userId>/posts/<uuid:pk>/", PostDetailView.as_view(), name="post-detail"),
     path("api/authors/<uuid:author>/inbox/", PostComment, name='post-comment'),
-    path("api/posts/<uuid:pk>/comment/", CreateComment, name='comment'),
-    path("api/posts/<uuid:pk>/comments/", CommentsList.as_view(), name="comment-list"),
-    path("api/user-posts/<uuid:userId>/", UserPostsView.as_view(), name="user-posts"), 
+    path("api/authors/<uuid:userId>/posts/<uuid:pk>/comment/", CreateComment, name='comment'),
+    path("api/authors/<uuid:userId>/posts/<uuid:pk>/comments/", CommentsList.as_view(), name="comment-list"),
+    path("api/public-posts/", PublicPostsView.as_view(), name="public-posts"),  # New path for public posts
 ]
 
 # Serve media files during development

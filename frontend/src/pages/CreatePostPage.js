@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useCreatePostMutation, useGetPostsQuery } from "../Api";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import "./css/post.css";
 
 const CreatePostPage = () => {
@@ -11,6 +12,7 @@ const CreatePostPage = () => {
   const [createPost] = useCreatePostMutation();
   const { refetch } = useGetPostsQuery();
   const navigate = useNavigate();
+  const user = useSelector((state) => state.user.user); // Get the user from the Redux store
 
   const handleImageChange = (e) => {
     setImage(e.target.files[0]); // Store the selected file
@@ -27,21 +29,21 @@ const CreatePostPage = () => {
 
     formData.append("visibility", visibility);
 
-    await createPost(formData); // Send form data including image
+    await createPost({ userId: user.id, formData }); // Send form data including image
     await refetch();
     navigate("/");
   };
 
   return (
-    <div class="post-container">
-      <h1 class="create-post-title">Create a Post</h1>
+    <div className="post-container">
+      <h1 className="create-post-title">Create a Post</h1>
       <form
-        class="create-post-form"
+        className="create-post-form"
         onSubmit={handleSubmit}
         encType="multipart/form-data"
       >
         <input
-          class="post-title-input"
+          className="post-title-input"
           type="text"
           placeholder="Title"
           value={title}
@@ -50,7 +52,7 @@ const CreatePostPage = () => {
         />
         <br />
         <textarea
-          class="post-content-textarea"
+          className="post-content-textarea"
           placeholder="Content"
           value={content}
           onChange={(e) => setContent(e.target.value)}
@@ -59,7 +61,7 @@ const CreatePostPage = () => {
         <br />
         <p>Select a visibility option: </p>
         <select
-          class="visibility-select"
+          className="visibility-select"
           name="visibility"
           value={visibility}
           onChange={(e) => setVisibility(e.target.value)}
@@ -69,13 +71,13 @@ const CreatePostPage = () => {
           <option value="unlisted">Unlisted</option>
         </select>
         <input
-          class="image-upload-input"
+          className="image-upload-input"
           type="file"
           accept="image/*"
           onChange={handleImageChange}
         />
         <br />
-        <button class="submit-post-button" type="submit">
+        <button className="submit-post-button" type="submit">
           Post
         </button>
       </form>

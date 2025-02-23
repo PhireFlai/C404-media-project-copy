@@ -1,16 +1,19 @@
 import React, { useState } from "react";
 import { useGetCommentsQuery, useCreateCommentMutation, usePostCommentMutation } from "../Api";
+import { useSelector } from "react-redux";
 
 const CommentSection = ({ postId, author }) => {
   const [comment, setComment] = useState("");
-  const { data: comments, refetch: refetchComments } = useGetCommentsQuery(postId, { skip: !postId });
+  const user = useSelector((state) => state.user.user);
+  const { data: comments, refetch: refetchComments } = useGetCommentsQuery({ userId: user.id, postId }, { skip: !postId });
   const [createComment] = useCreateCommentMutation();
   const [postComment] = usePostCommentMutation();
 
   const handleCommentSubmit = async () => {
     try {
       const createResponse = await createComment({
-        pk: postId,
+        userId: user.id,
+        postId,
         commentData: { content: comment },
       }).unwrap();
       console.log("Comment created:", createResponse);

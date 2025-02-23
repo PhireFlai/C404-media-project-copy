@@ -17,7 +17,7 @@ const PostItem = ({ post, refetchPosts }) => {
   const user = useSelector((state) => state.user.user);
 
   const handleDelete = async (postId) => {
-    await deletePost(postId);
+    await deletePost({ userId: user.id, postId });
     refetchPosts();
   };
 
@@ -38,6 +38,7 @@ const PostItem = ({ post, refetchPosts }) => {
   const handleSaveClick = async () => {
     try {
       await editPost({
+        userId: user.id,
         postId: post.id,
         updatedPost: {
           title: editTitle,
