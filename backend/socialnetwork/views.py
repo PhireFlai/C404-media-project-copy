@@ -13,6 +13,9 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.authentication import TokenAuthentication
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework.generics import ListAPIView
+from .models import *
+from .serializers import *
 
 @swagger_auto_schema(
     method="post",
@@ -56,9 +59,6 @@ from drf_yasg.utils import swagger_auto_schema
         ),
     },
 )
-from rest_framework.generics import ListAPIView
-from .models import *
-from .serializers import *
 
 # Creates a new user
 @api_view(['POST'])
