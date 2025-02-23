@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useCreatePostMutation, useGetPostsQuery } from "../Api";
 import { useNavigate } from "react-router-dom";
+import "./css/post.css";
 
 const CreatePostPage = () => {
   const [title, setTitle] = useState("");
@@ -32,10 +33,15 @@ const CreatePostPage = () => {
   };
 
   return (
-    <div>
-      <h1>Create a Post</h1>
-      <form onSubmit={handleSubmit} encType="multipart/form-data">
+    <div class="post-container">
+      <h1 class="create-post-title">Create a Post</h1>
+      <form
+        class="create-post-form"
+        onSubmit={handleSubmit}
+        encType="multipart/form-data"
+      >
         <input
+          class="post-title-input"
           type="text"
           placeholder="Title"
           value={title}
@@ -44,6 +50,7 @@ const CreatePostPage = () => {
         />
         <br />
         <textarea
+          class="post-content-textarea"
           placeholder="Content"
           value={content}
           onChange={(e) => setContent(e.target.value)}
@@ -52,17 +59,25 @@ const CreatePostPage = () => {
         <br />
         <p>Select a visibility option: </p>
         <select
+          class="visibility-select"
           name="visibility"
-          value={visibility} // Bind the select value to the state
+          value={visibility}
           onChange={(e) => setVisibility(e.target.value)}
         >
           <option value="public">Public</option>
           <option value="friends-only">Friends Only</option>
           <option value="unlisted">Unlisted</option>
         </select>
-        <input type="file" accept="image/*" onChange={handleImageChange} />
+        <input
+          class="image-upload-input"
+          type="file"
+          accept="image/*"
+          onChange={handleImageChange}
+        />
         <br />
-        <button type="submit">Post</button>
+        <button class="submit-post-button" type="submit">
+          Post
+        </button>
       </form>
     </div>
   );

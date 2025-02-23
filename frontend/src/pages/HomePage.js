@@ -10,6 +10,7 @@ import { useSelector } from "react-redux"; // Import Redux selector
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw"; // Allow rendering HTML inside Markdown
 import remarkGfm from "remark-gfm"; // Support GitHub Flavored Markdown (tables, strikethroughs, etc.)
+import "./css/home.css";
 
 const HomePage = () => {
   const { data: posts, refetch } = useGetPostsQuery();
@@ -62,73 +63,51 @@ const HomePage = () => {
   };
 
   return (
-    <div>
-      <h1>Recent Posts</h1>
+    <div class="recent-posts-container">
+      <h1 class="recent-posts-title">Recent Posts</h1>
 
-      {/* Keep "Create a Post" message always visible */}
-      <p style={{ color: "gray", fontSize: "18px", textAlign: "center" }}>
+      <p class="create-post-link">
         <a href="/create">Create a Post</a>
       </p>
 
       {posts && posts.length > 0 ? (
         posts.map((post) => (
-          <div
-            key={post.id}
-            style={{
-              border: "1px solid #ddd",
-              padding: "10px",
-              marginBottom: "10px",
-            }}
-          >
-            <h3>{post.title}</h3>
-            <p>Visibility: {post.visibility}</p>
-            {/* Enable rendering of images in markdown */}
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeRaw]}
-            >
-              {post.content}
-            </ReactMarkdown>
+          <div class="post-item" key={post.id}>
+            <h3 class="post-title">{post.title}</h3>
+            <p class="post-visibility">Visibility: {post.visibility}</p>
 
-            {/* Show Edit button only for post owner */}
-            {user && user.id === post.author && (
-              <button
-                style={{
-                  background: "blue",
-                  color: "white",
-                  marginRight: "5px",
-                }}
+            <div class="post-content">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeRaw]}
               >
-                Edit
+                {post.content}
+              </ReactMarkdown>
+            </div>
+
+            <div class="post-actions">
+              {user && user.id === post.author && (
+                <button class="edit-button">Edit</button>
+              )}
+              <button onClick={() => handleCommentClick(post.id)}>
+                {currentPostId === post.id
+                  ? "Close Comments"
+                  : " View Comments"}
               </button>
-            )}
-
-            <button onClick={() => handleCommentClick(post.id)}>
-              {currentPostId === post.id ? "Close Comments" : " View Comments"}
-            </button>
-            <button
-              onClick={() => handleDelete(post.id)}
-              style={{ background: "red", color: "white" }}
-            >
-              Delete
-            </button>
-
-            {/* Display Comments */}
-            {showCommentBox && currentPostId === post.id && (
-              <div
-                style={{
-                  marginTop: "10px",
-                  paddingLeft: "10px",
-                  borderLeft: "2px solid #ddd",
-                }}
+              <button
+                onClick={() => handleDelete(post.id)}
+                class="delete-button"
               >
+                Delete
+              </button>
+            </div>
+
+            {showCommentBox && currentPostId === post.id && (
+              <div class="comment-section">
                 <h4>Comments</h4>
                 {comments?.length > 0 ? (
                   comments.map((comment) => (
-                    <div
-                      key={comment.id}
-                      style={{ padding: "5px", borderBottom: "1px solid #eee" }}
-                    >
+                    <div class="comment-item" key={comment.id}>
                       <p>{comment.content}</p>
                       <p>
                         <small>{comment.created_at}</small>
@@ -138,25 +117,25 @@ const HomePage = () => {
                 ) : (
                   <p>No comments yet.</p>
                 )}
-                <input
-                  type="text"
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  placeholder="Leave a comment..."
-                />
-                <button
-                  onClick={() => handleCommentSubmit(post.id, post.author)}
-                >
-                  Submit
-                </button>
+                <div class="comment-form">
+                  <input
+                    type="text"
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    placeholder="Leave a comment..."
+                  />
+                  <button
+                    onClick={() => handleCommentSubmit(post.id, post.author)}
+                  >
+                    Submit
+                  </button>
+                </div>
               </div>
             )}
           </div>
         ))
       ) : (
-        <p style={{ color: "gray", fontSize: "18px", textAlign: "center" }}>
-          No posts yet.
-        </p>
+        <p class="no-posts-message">No posts yet.</p>
       )}
     </div>
   );
