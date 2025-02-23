@@ -2,25 +2,29 @@ import React, { useState } from "react";
 import {
   useGetPostsQuery,
   useDeletePostMutation,
+  useEditPostMutation, // Fixed import
   useCreateCommentMutation,
   useGetCommentsQuery,
   usePostCommentMutation,
 } from "../Api";
-import { useSelector } from "react-redux"; // Import Redux selector
+import { useSelector } from "react-redux";
 import ReactMarkdown from "react-markdown";
-import rehypeRaw from "rehype-raw"; // Allow rendering HTML inside Markdown
-import remarkGfm from "remark-gfm"; // Support GitHub Flavored Markdown (tables, strikethroughs, etc.)
-import "./css/home.css";
+import rehypeRaw from "rehype-raw";
+import remarkGfm from "remark-gfm";
 
 const HomePage = () => {
   const { data: posts, refetch } = useGetPostsQuery();
   const [deletePost] = useDeletePostMutation();
+  const [editPost] = useEditPostMutation();
   const [createComment] = useCreateCommentMutation();
   const [postComment] = usePostCommentMutation();
   const [showCommentBox, setShowCommentBox] = useState(false);
   const [comment, setComment] = useState("");
   const [currentPostId, setCurrentPostId] = useState(null);
-  const user = useSelector((state) => state.user.user); // Get logged-in user
+  const [isEditing, setIsEditing] = useState(null);
+  const [editTitle, setEditTitle] = useState(""); // Editable title
+  const [editContent, setEditContent] = useState(""); // Editable content
+  const user = useSelector((state) => state.user.user);
 
   const handleDelete = async (postId) => {
     await deletePost(postId);
@@ -62,52 +66,132 @@ const HomePage = () => {
     setComment("");
   };
 
-  return (
-    <div class="recent-posts-container">
-      <h1 class="recent-posts-title">Recent Posts</h1>
+  const handleEditClick = (post) => {
+    setIsEditing(post.id);
+    setEditTitle(post.title); // Set title for editing
+    setEditContent(post.content); // Set content for editing
+  };
 
-      <p class="create-post-link">
+  const handleEditSubmit = async (postId) => {
+    try {
+      const response = await editPost({
+        postId,
+        updatedPost: {
+          title: editTitle, // Updated title
+          content: editContent, // Updated content
+        },
+      }).unwrap();
+
+      console.log("Updated Post Response:", response); // Debugging log
+
+      refetch(); // Refresh posts to reflect changes
+      setIsEditing(null); // Exit edit mode after saving
+    } catch (err) {
+      console.error("Error updating post:", err);
+    }
+  };
+
+  return (
+    <div>
+      <h1>Recent Posts</h1>
+
+      <p style={{ color: "gray", fontSize: "18px", textAlign: "center" }}>
         <a href="/create">Create a Post</a>
       </p>
 
       {posts && posts.length > 0 ? (
         posts.map((post) => (
-          <div class="post-item" key={post.id}>
-            <h3 class="post-title">{post.title}</h3>
-            <p class="post-visibility">Visibility: {post.visibility}</p>
+          <div
+            key={post.id}
+            style={{
+              border: "1px solid #ddd",
+              padding: "10px",
+              marginBottom: "10px",
+            }}
+          >
+            {isEditing === post.id ? (
+              <div>
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  style={{ width: "100%", marginBottom: "5px", padding: "5px" }}
+                  placeholder="Edit title"
+                />
+                <textarea
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  rows={5}
+                  style={{ width: "100%" }}
+                  placeholder="Edit content"
+                />
+                <button
+                  onClick={() => handleEditSubmit(post.id)}
+                  style={{
+                    background: "green",
+                    color: "white",
+                    marginRight: "5px",
+                  }}
+                >
+                  Save
+                </button>
+                <button
+                  onClick={() => setIsEditing(null)}
+                  style={{ background: "gray", color: "white" }}
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <>
+                <h3>{post.title}</h3>
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeRaw]}
+                >
+                  {post.content}
+                </ReactMarkdown>
+              </>
+            )}
 
-            <div class="post-content">
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                rehypePlugins={[rehypeRaw]}
-              >
-                {post.content}
-              </ReactMarkdown>
-            </div>
-
-            <div class="post-actions">
-              {user && user.id === post.author && (
-                <button class="edit-button">Edit</button>
-              )}
-              <button onClick={() => handleCommentClick(post.id)}>
-                {currentPostId === post.id
-                  ? "Close Comments"
-                  : " View Comments"}
-              </button>
+            {user && user.id === post.author && (
               <button
-                onClick={() => handleDelete(post.id)}
-                class="delete-button"
+                onClick={() => handleEditClick(post)}
+                style={{
+                  background: "blue",
+                  color: "white",
+                  marginRight: "5px",
+                }}
               >
-                Delete
+                Edit
               </button>
-            </div>
+            )}
+
+            <button onClick={() => handleCommentClick(post.id)}>
+              {currentPostId === post.id ? "Close Comments" : " View Comments"}
+            </button>
+            <button
+              onClick={() => handleDelete(post.id)}
+              style={{ background: "red", color: "white" }}
+            >
+              Delete
+            </button>
 
             {showCommentBox && currentPostId === post.id && (
-              <div class="comment-section">
+              <div
+                style={{
+                  marginTop: "10px",
+                  paddingLeft: "10px",
+                  borderLeft: "2px solid #ddd",
+                }}
+              >
                 <h4>Comments</h4>
                 {comments?.length > 0 ? (
                   comments.map((comment) => (
-                    <div class="comment-item" key={comment.id}>
+                    <div
+                      key={comment.id}
+                      style={{ padding: "5px", borderBottom: "1px solid #eee" }}
+                    >
                       <p>{comment.content}</p>
                       <p>
                         <small>{comment.created_at}</small>
@@ -117,25 +201,25 @@ const HomePage = () => {
                 ) : (
                   <p>No comments yet.</p>
                 )}
-                <div class="comment-form">
-                  <input
-                    type="text"
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                    placeholder="Leave a comment..."
-                  />
-                  <button
-                    onClick={() => handleCommentSubmit(post.id, post.author)}
-                  >
-                    Submit
-                  </button>
-                </div>
+                <input
+                  type="text"
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="Leave a comment..."
+                />
+                <button
+                  onClick={() => handleCommentSubmit(post.id, post.author)}
+                >
+                  Submit
+                </button>
               </div>
             )}
           </div>
         ))
       ) : (
-        <p class="no-posts-message">No posts yet.</p>
+        <p style={{ color: "gray", fontSize: "18px", textAlign: "center" }}>
+          No posts yet.
+        </p>
       )}
     </div>
   );
