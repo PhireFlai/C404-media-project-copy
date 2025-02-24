@@ -4,8 +4,6 @@
 
 
 
-
-
 # URL: ://service/api/authors/{AUTHOR_SERIAL}/inbox
 POST [remote]: comment on a post by AUTHOR_SERIAL
 Body is a comment object

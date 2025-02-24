@@ -98,11 +98,15 @@ def loginUser(request):
         }, status=status.HTTP_200_OK)
     else:
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
-    
+
+# Lists all users
+@permission_classes([AllowAny])         
 class UsersList(generics.ListCreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
+
+# Gets all public posts
 class PublicPostsView(ListAPIView):
     serializer_class = PostSerializer
     permission_classes = [AllowAny]
@@ -110,6 +114,8 @@ class PublicPostsView(ListAPIView):
     def get_queryset(self):
         return Post.objects.filter(visibility=Post.PUBLIC)
 
+
+# Gets all posts for a given user
 class PostListCreateView(generics.ListCreateAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
@@ -127,6 +133,7 @@ class PostListCreateView(generics.ListCreateAPIView):
             raise PermissionDenied("You must be logged in to create a post.")
         serializer.save(author=self.request.user)
 
+# Gets, updates, or deletes a specific post
 class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
@@ -143,6 +150,8 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
             raise PermissionDenied("You can only edit your own posts.")  
         serializer.save()
 
+
+# Gets a user's profile or updates it
 class UserProfileView(APIView):
     def get_permissions(self):
         if self.request.method == 'PUT':
@@ -181,6 +190,7 @@ class UserProfileView(APIView):
 
         return Response({'message': 'Username updated successfully'}, status=status.HTTP_200_OK)
 
+# Updates a user's profile picture
 @api_view(['PUT'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
