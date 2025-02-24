@@ -68,6 +68,59 @@ class PostAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['content'], data['content'])
 
+    def test_get_user_profile(self):
+        """Test retrieving the user profile."""
+        response = self.client.get(f'/api/authors/{self.user.id}/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['username'], self.user.username)
+        self.assertEqual(response.data['id'], str(self.user.id))
+
+    def test_get_public_posts_for_user_profile(self):
+        """Test retrieving public posts for a user profile."""
+        response = self.client.get(f'/api/authors/{self.user.id}/posts/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['title'], self.post.title)
+        self.assertEqual(response.data[0]['visibility'], Post.PUBLIC)
+
+    def test_multiple_users(self):
+        """Test handling multiple users."""
+        # Create a post for other_user
+        self.client.login(username='otheruser', password='password')
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.other_token.key)
+        data = {"title": "Other User Post", "content": "Other User Content", "author": self.other_user.id}
+        response = self.client.post(f'/api/authors/{self.other_user.id}/posts/', data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['title'], data['title'])
+
+        # Retrieve posts for user
+        self.client.login(username='testuser', password='password')
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
+        response = self.client.get(f'/api/authors/{self.user.id}/posts/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['title'], self.post.title)
+
+        # Retrieve posts for other_user
+        self.client.login(username='otheruser', password='password')
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.other_token.key)
+        response = self.client.get(f'/api/authors/{self.other_user.id}/posts/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)  # Including the new post created above
+        self.assertEqual(response.data[1]['title'], data['title'])
+
+        # Create a comment for user's post by other_user
+        comment_data = {"content": "Other User Comment", "author": self.other_user.id}
+        response = self.client.post(f'/api/authors/{self.other_user.id}/posts/{self.post.id}/comment/', comment_data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['content'], comment_data['content'])
+
+        # Retrieve comments for user's post
+        response = self.client.get(f'/api/authors/{self.user.id}/posts/{self.post.id}/comments/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['content'], comment_data['content'])
+
     # These don't pass, probably because the token isn't being setup/torn properly
     # def test_other_user_cannot_edit_post(self):
     #     """Test that a different user cannot edit another user’s post."""
