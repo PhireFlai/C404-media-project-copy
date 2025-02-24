@@ -211,6 +211,7 @@ def updateUserProfile(request, userId):
     else:
         return Response({'error': 'No profile picture provided'}, status=status.HTTP_400_BAD_REQUEST)
     
+# Creates a comment on a post
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def CreateComment(request, userId, pk):
@@ -224,6 +225,7 @@ def CreateComment(request, userId, pk):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+# Posts a comment to an author's inbox
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def PostComment(request, author):
@@ -231,6 +233,7 @@ def PostComment(request, author):
     comment = Comment.objects.get(id=request.data.get('comment_id'))
     return Response({"message": "Comment posted to author inbox", "commentId": comment.id}, status=status.HTTP_200_OK)
 
+# Lists and creates comments for a specific post
 class CommentsList(generics.ListCreateAPIView):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer

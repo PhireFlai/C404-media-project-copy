@@ -6,6 +6,7 @@ import { loginUser as loginUserAction } from "../UserContext/userActions";
 import "./css/signup.css";
 
 const CreateUser = () => {
+  // State to manage form data
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -14,12 +15,14 @@ const CreateUser = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch(); // Add Redux dispatch
 
-  const [createUser] = useCreateUserMutation();
-  const [loginUser] = useLoginUserMutation();
+  const [createUser] = useCreateUserMutation(); // Mutation hook for creating a user
+  const [loginUser] = useLoginUserMutation(); // Mutation hook for logging in a user
 
+  // State to manage success and error messages
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
+  // Handle form input changes
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -27,6 +30,7 @@ const CreateUser = () => {
     });
   };
 
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSuccessMessage("");
@@ -55,7 +59,7 @@ const CreateUser = () => {
       // localStorage.setItem("user", JSON.stringify(userData));
 
       setSuccessMessage("User created and logged in successfully!");
-      navigate("/");
+      navigate("/"); // Redirect to the home page
     } catch (err) {
       console.error("Error:", err);
       setErrorMessage(err.data?.message || "Failed to create or log in user.");
@@ -91,7 +95,7 @@ const CreateUser = () => {
           </button>
         </div>
 
-        {/* Success and error messages for testing*/}
+        {/* Success and error messages */}
         {successMessage && <p style={{ color: "green" }}>{successMessage}</p>}
         {errorMessage && <p style={{ color: "red" }}>{errorMessage}</p>}
       </form>

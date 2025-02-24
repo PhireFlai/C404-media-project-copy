@@ -12,3 +12,5 @@ backend/db.sqlite3
 frontend/src/axiosInstance.js
 
 backend/socialnetwork/media/post_images/test_image.png
+# Images Folder
+backend/socialnetwork/media

@@ -54,7 +54,7 @@ class RESTfulInterfaceTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_create_and_retrieve_posts_with_different_visibilities(self):
-        """Test if all the posts including the deleted ones are stored and accessible from the database."""
+        """Test if all the posts including the deleted ones are stored and accessible from the database. NM-14"""
         # Create posts with different visibilities
         deleted_post = Post.objects.create(
             title="Deleted Post",
