@@ -52,5 +52,5 @@ class RESTfulInterfaceTestCase(APITestCase):
 
     def test_get_posts(self):
         """Test retrieving posts."""
-        response = self.client.get(reverse('post-list'))
+        response = self.client.get(reverse('post-list', kwargs={'userId': self.user.id}))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
