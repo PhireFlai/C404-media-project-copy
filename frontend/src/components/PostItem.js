@@ -5,6 +5,8 @@ import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
 import CommentSection from "./CommentSection";
 import { useSelector } from "react-redux";
+import "../pages/css/home.css";
+import "../pages/css/post.css";
 
 const PostItem = ({ post, refetchPosts }) => {
   const [deletePost] = useDeletePostMutation();
@@ -66,26 +68,22 @@ const PostItem = ({ post, refetchPosts }) => {
             type="text"
             value={editTitle}
             onChange={(e) => setEditTitle(e.target.value)}
-            style={{ width: "100%", marginBottom: "5px", padding: "5px" }}
+            className="post-title-input"
             placeholder="Edit title"
           />
+          <br />
           <textarea
             value={editContent}
             onChange={(e) => setEditContent(e.target.value)}
             rows={5}
-            style={{ width: "100%" }}
+            className="post-title-textarea"
             placeholder="Edit content"
           />
-          <button
-            onClick={handleSaveClick}
-            style={{ background: "green", color: "white", marginRight: "5px" }}
-          >
+          <br />
+          <button className="save-button" onClick={handleSaveClick}>
             Save
           </button>
-          <button
-            onClick={handleCancelClick}
-            style={{ background: "gray", color: "white" }}
-          >
+          <button className="delete-button" onClick={handleCancelClick}>
             Cancel
           </button>
         </div>
@@ -94,7 +92,10 @@ const PostItem = ({ post, refetchPosts }) => {
           <h3 className="post-title">{post.title}</h3>
           <p className="post-visibility">Visibility: {post.visibility}</p>
           <div className="post-content">
-            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeRaw]}
+            >
               {post.content}
             </ReactMarkdown>
           </div>
@@ -104,18 +105,20 @@ const PostItem = ({ post, refetchPosts }) => {
       <div className="post-actions">
         {user && user.id === post.author && !isEditing && (
           <>
-          <button onClick={handleEditClick} className="edit-button">
-            Edit
-          </button>
-          <button onClick={() => handleDelete(post.id)} className="delete-button">
-            Delete
-          </button>
+            <button onClick={handleEditClick} className="edit-button">
+              Edit
+            </button>
+            <button
+              onClick={() => handleDelete(post.id)}
+              className="delete-button"
+            >
+              Delete
+            </button>
           </>
         )}
         <button onClick={() => handleCommentClick(post.id)}>
           {currentPostId === post.id ? "Close Comments" : "View Comments"}
         </button>
-
       </div>
 
       {showCommentBox && currentPostId === post.id && (
