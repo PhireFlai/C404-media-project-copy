@@ -14,11 +14,11 @@ export const api = createApi({
   }),
   endpoints: (builder) => ({
     getPosts: builder.query({
-      query: () => `api/public-posts/`, // Updated endpoint for public posts
+      query: () => `api/public-posts/`, // Endpoint for fetching public posts
     }),
     createPost: builder.mutation({
       query: ({ userId, formData }) => ({
-        url: `api/authors/${userId}/posts/`,
+        url: `api/authors/${userId}/posts/`, // Endpoint for creating a post
         method: "POST",
         body: formData,
         formData: true,
@@ -26,44 +26,44 @@ export const api = createApi({
     }),
     deletePost: builder.mutation({
       query: ({ userId, postId }) => ({
-        url: `api/authors/${userId}/posts/${postId}/`,
+        url: `api/authors/${userId}/posts/${postId}/`, // Endpoint for deleting a post
         method: "DELETE",
       }),
     }),
     editPost: builder.mutation({
       query: ({ userId, postId, updatedPost }) => ({
-        url: `api/authors/${userId}/posts/${postId}/`,
+        url: `api/authors/${userId}/posts/${postId}/`, // Endpoint for editing a post
         method: "PUT",
         body: updatedPost,
       }),
     }),
     getTest: builder.query({
-      query: () => "core/test",
+      query: () => "core/test", // Endpoint for fetching test data
     }),
     createUser: builder.mutation({
       query: (userData) => ({
-        url: "api/signup/",
+        url: "api/signup/", // Endpoint for creating a user
         method: "POST",
         body: userData,
       }),
     }),
     loginUser: builder.mutation({
       query: (credentials) => ({
-        url: "api/login/",
+        url: "api/login/", // Endpoint for logging in a user
         method: "POST",
         body: credentials,
       }),
     }),
     createComment: builder.mutation({
       query: ({ userId, postId, commentData }) => ({
-        url: `api/authors/${userId}/posts/${postId}/comment/`,
+        url: `api/authors/${userId}/posts/${postId}/comment/`, // Endpoint for creating a comment
         method: "POST",
         body: commentData,
       }),
     }),
     postComment: builder.mutation({
       query: ({ author, commentId }) => ({
-        url: `api/authors/${author}/inbox/`,
+        url: `api/authors/${author}/inbox/`, // Endpoint for posting a comment to the author's inbox
         method: "POST",
         body: { comment_id: commentId },
       }),
@@ -73,7 +73,7 @@ export const api = createApi({
         const formData = new FormData();
         formData.append("profile_picture", profilePicture);
         return {
-          url: `api/authors/${userId}/update-picture/`,
+          url: `api/authors/${userId}/update-picture/`, // Endpoint for updating profile picture
           method: "PUT",
           body: formData,
         };
@@ -81,20 +81,20 @@ export const api = createApi({
     }),
     updateUsername: builder.mutation({
       query: ({ userId, newUsername }) => ({
-        url: `api/authors/${userId}/`,
+        url: `api/authors/${userId}/`, // Endpoint for updating username
         method: "PUT",
         body: { newUsername },
       }),
     }),
     getComments: builder.query({
       query: ({ userId, postId }) =>
-        `api/authors/${userId}/posts/${postId}/comments/`,
+        `api/authors/${userId}/posts/${postId}/comments/`, // Endpoint for fetching comments
     }),
     getUserProfile: builder.query({
-      query: (userId) => `api/authors/${userId}/`, // Fetch profile by userId
+      query: (userId) => `api/authors/${userId}/`, // Endpoint for fetching user profile by userId
     }),
     getUserPosts: builder.query({
-      query: (userId) => `api/authors/${userId}/posts/`, // Updated endpoint
+      query: (userId) => `api/authors/${userId}/posts/`, // Endpoint for fetching posts by userId
     }),
   }),
 });

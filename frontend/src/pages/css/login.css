@@ -3,8 +3,8 @@ body, html {
     margin: 0;
 }
 
-heading {
-    margin: 10px 44%;
+.heading {
+    text-align: center;
 }
 
 
