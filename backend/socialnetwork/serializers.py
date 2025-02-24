@@ -4,6 +4,7 @@ from django.contrib.auth.hashers import make_password
 from .models import *
 import markdown
 
+# Serializer for the User model
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User        
@@ -40,6 +41,7 @@ class UserSerializer(serializers.ModelSerializer):
 
         return user
 
+# Serializer for the Comment model
 class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
@@ -60,7 +62,8 @@ class CommentSerializer(serializers.ModelSerializer):
 
         comment = Comment.objects.create(author=author, content=content, post=post)
         return comment 
-    
+
+# Serializer for the Post model
 class PostSerializer(serializers.ModelSerializer):
     formatted_content = serializers.SerializerMethodField()  # Add formatted content
     image = serializers.ImageField(required=False)  # Allow image uploads
@@ -70,4 +73,5 @@ class PostSerializer(serializers.ModelSerializer):
         fields = ["id", "author", "title", "content", "image", "formatted_content", "created_at", "visibility"]
 
     def get_formatted_content(self, obj):
+        # Convert the content to formatted markdown
         return markdown.markdown(obj.content)

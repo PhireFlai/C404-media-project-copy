@@ -9,3 +9,6 @@ requirements.txt
 
 */db.sqlite3
 backend/db.sqlite3
+
+# Images Folder
+backend/socialnetwork/media

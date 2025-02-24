@@ -54,10 +54,12 @@ def loginUser(request):
     else:
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
     
+# Lists and creates users
 class UsersList(generics.ListCreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
+# Lists public posts
 class PublicPostsView(ListAPIView):
     serializer_class = PostSerializer
     permission_classes = [AllowAny]
@@ -65,6 +67,7 @@ class PublicPostsView(ListAPIView):
     def get_queryset(self):
         return Post.objects.filter(visibility=Post.PUBLIC)
 
+# Lists and creates posts for a specific user
 class PostListCreateView(generics.ListCreateAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
@@ -82,6 +85,7 @@ class PostListCreateView(generics.ListCreateAPIView):
             raise PermissionDenied("You must be logged in to create a post.")
         serializer.save(author=self.request.user)
 
+# Retrieves, updates, and deletes a specific post
 class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
@@ -98,6 +102,7 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
             raise PermissionDenied("You can only edit your own posts.")  
         serializer.save()
 
+# Retrieves and updates a user's profile
 class UserProfileView(APIView):
     def get_permissions(self):
         if self.request.method == 'PUT':
@@ -136,6 +141,7 @@ class UserProfileView(APIView):
 
         return Response({'message': 'Username updated successfully'}, status=status.HTTP_200_OK)
 
+# Updates a user's profile picture
 @api_view(['PUT'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
@@ -156,6 +162,7 @@ def updateUserProfile(request, userId):
     else:
         return Response({'error': 'No profile picture provided'}, status=status.HTTP_400_BAD_REQUEST)
     
+# Creates a comment on a post
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def CreateComment(request, userId, pk):
@@ -169,6 +176,7 @@ def CreateComment(request, userId, pk):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+# Posts a comment to an author's inbox
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def PostComment(request, author):
@@ -176,6 +184,7 @@ def PostComment(request, author):
     comment = Comment.objects.get(id=request.data.get('comment_id'))
     return Response({"message": "Comment posted to author inbox", "commentId": comment.id}, status=status.HTTP_200_OK)
 
+# Lists and creates comments for a specific post
 class CommentsList(generics.ListCreateAPIView):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer

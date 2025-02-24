@@ -6,7 +6,6 @@ import remarkGfm from "remark-gfm";
 import CommentSection from "./CommentSection";
 import { useSelector } from "react-redux";
 import "../pages/css/home.css";
-// import "../pages/css/post.css";
 
 const PostItem = ({ post, refetchPosts }) => {
   const [deletePost] = useDeletePostMutation();
@@ -16,13 +15,15 @@ const PostItem = ({ post, refetchPosts }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(post.title);
   const [editContent, setEditContent] = useState(post.content);
-  const user = useSelector((state) => state.user.user);
+  const user = useSelector((state) => state.user.user); // Get the current user from the Redux store
 
+  // Handle post deletion
   const handleDelete = async (postId) => {
     await deletePost({ userId: user.id, postId });
-    refetchPosts();
+    refetchPosts(); // Refetch posts after deletion
   };
 
+  // Handle comment section toggle
   const handleCommentClick = (postId) => {
     if (currentPostId === postId) {
       setShowCommentBox(false);
@@ -33,10 +34,12 @@ const PostItem = ({ post, refetchPosts }) => {
     }
   };
 
+  // Handle edit button click
   const handleEditClick = () => {
     setIsEditing(true);
   };
 
+  // Handle save button click
   const handleSaveClick = async () => {
     try {
       await editPost({
@@ -47,13 +50,14 @@ const PostItem = ({ post, refetchPosts }) => {
           content: editContent,
         },
       }).unwrap();
-      refetchPosts();
+      refetchPosts(); // Refetch posts after editing
       setIsEditing(false);
     } catch (err) {
       console.error("Error updating post:", err);
     }
   };
 
+  // Handle cancel button click
   const handleCancelClick = () => {
     setIsEditing(false);
     setEditTitle(post.title);
