@@ -204,8 +204,8 @@ class PostAPITestCase(APITestCase):
 
     def test_commonmark(self):
         data = {"title": "Markdown", "content": "**This should be bold**", "author": self.user.id}
-        response = self.client.post(f'/api/authors/{self.user.id}/posts/{self.post.id}/', data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response = self.client.post(f'/api/authors/{self.user.id}/posts/', data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['content'], data['content'])
 
     def test_get_user_profile(self):
