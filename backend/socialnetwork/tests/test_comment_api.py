@@ -29,13 +29,13 @@ class CommentAPITestCase(APITestCase):
     
     def test_get_comments(self):
         """Test retrieving comments for a post."""
-        response = self.client.get(f'/api/posts/{self.post.id}/comments/')
+        response = self.client.get(f'/api/authors/{self.user.id}/posts/{self.post.id}/comments/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertGreaterEqual(len(response.data), 1)
         # Need to expand to check that the data is correct
 
     def test_create_comment(self):
         data = {"content": "New comment", "author": self.user.id, "post": self.post.id}
-        response = self.client.get(f'/api/authors/{self.user.id}/inbox/')
+        response = self.client.post(f'/api/authors/{self.user.id}/inbox/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['content'], data['content'])

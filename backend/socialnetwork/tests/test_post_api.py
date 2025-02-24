@@ -27,14 +27,14 @@ class PostAPITestCase(APITestCase):
 
     def test_list_posts(self):
         """Test retrieving all posts."""
-        response = self.client.get('/api/posts/')
+        response = self.client.get(f'/api/authors/{self.user.id}/posts/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertGreaterEqual(len(response.data), 2)
         # Need to expand to check that the data is correct
 
     def test_retrieve_post(self):
         """Test retrieving a single post."""
-        response = self.client.get(f'/api/posts/{self.post.id}/')
+        response = self.client.get(f'/api/authors/{self.user.id}/posts/{self.post.id}/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['title'], self.post.title)
         # Need to expand to check that the data is correct
@@ -43,7 +43,7 @@ class PostAPITestCase(APITestCase):
     def test_create_post(self):
         """Test creating a new post."""
         data = {"title": "New Post", "content": "New Content", "author": self.user.id}
-        response = self.client.post('/api/posts/', data)
+        response = self.client.post(f'/api/authors/{self.user.id}/posts/', data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['title'], data['title'])
         # Need to expand to check that the data is correct
@@ -51,20 +51,20 @@ class PostAPITestCase(APITestCase):
     def test_update_post(self):
         """Test updating a post."""
         data = {"title": "Updated Title", "content": "Updated Content"}
-        response = self.client.put(f'/api/posts/{self.post.id}/', data)
+        response = self.client.put(f'/api/authors/{self.user.id}/posts/{self.post.id}/', data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['title'], data['title'])
         # Need to expand to check that the data is correct
 
     def test_delete_post(self):
         """Test deleting a post."""
-        response = self.client.delete(f'/api/posts/{self.post.id}/')
+        response = self.client.delete(f'/api/authors/{self.user.id}/posts/{self.post.id}/')
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         # Need to double check that the post is just updated in database with flag
 
     def test_commonmark(self):
         data = {"title": "Markdown", "content": "**This should be bold**", "author": self.user.id}
-        response = self.client.put(f'/api/posts/{self.post.id}/', data)
+        response = self.client.post(f'/api/authors/{self.user.id}/posts/{self.post.id}/', data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['content'], data['content'])
 
