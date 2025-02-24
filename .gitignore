@@ -9,6 +9,7 @@ requirements.txt
 
 */db.sqlite3
 backend/db.sqlite3
+frontend/src/axiosInstance.js
 
 # Images Folder
 backend/socialnetwork/media
