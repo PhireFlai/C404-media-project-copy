@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useDeletePostMutation, useEditPostMutation } from "../Api";
+import { useDeletePostMutation, useEditPostMutation, useGetUserProfileQuery } from "../Api";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
@@ -16,6 +16,10 @@ const PostItem = ({ post, refetchPosts }) => {
   const [editTitle, setEditTitle] = useState(post.title);
   const [editContent, setEditContent] = useState(post.content);
   const user = useSelector((state) => state.user.user); // Get the current user from the Redux store
+
+
+  // Fetch the author's profile
+  const { data: authorProfile } = useGetUserProfileQuery(post.author);
 
   // Handle post deletion
   const handleDelete = async (postId) => {
@@ -95,6 +99,7 @@ const PostItem = ({ post, refetchPosts }) => {
         <>
           <h3 className="post-title">{post.title}</h3>
           <p className="post-visibility">Visibility: {post.visibility}</p>
+          <p className="post-author">Author: {authorProfile ? authorProfile.username : ""}</p>
           <div className="post-content">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
