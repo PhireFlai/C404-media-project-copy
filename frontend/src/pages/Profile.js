@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import {
   useGetUserProfileQuery,
@@ -18,12 +18,17 @@ const Profile = () => {
     data: posts,
     isLoading: postsLoading,
     error: postsError,
+    refetch: refetchPosts,
   } = useGetUserPostsQuery(userId);
   const curUser = useSelector((state) => state.user.user);
   const [isEditing, setIsEditing] = useState(false); // State for editing mode
   const [newUsername, setNewUsername] = useState(""); // State for new username
   const [updateUsername] = useUpdateUsernameMutation(); // Mutation for updating username
   const dispatch = useDispatch();
+
+  useEffect(() => {
+    refetchPosts(); // Refetch posts every time the component is rendered
+  }, [refetchPosts]);
 
   const handleEditClick = () => {
     setIsEditing(true);
@@ -109,16 +114,23 @@ const Profile = () => {
       )}
 
       {/* User's Posts Section */}
-      <h2 className="user-posts-title">{user.username}'s Posts</h2>
       {postsLoading ? (
         <div className="loading-message">Loading posts...</div>
       ) : postsError ? (
-        <div className="error-message">
-          Error loading posts:{" "}
-          {postsError.data?.error || "Failed to fetch posts"}
-        </div>
+        postsError.status === 401 ? (
+          <></>
+        ) : (
+          <div className="error-message">
+            Error loading posts:{" "}
+            {postsError.data?.error || "Failed to fetch posts"} (Status code:{" "}
+            {postsError.status})
+          </div>
+        )
       ) : (
-        <UserPosts posts={posts} />
+        <>
+          <h2 className="user-posts-title">{user.username}'s Posts</h2>
+          <UserPosts posts={posts} />
+        </>
       )}
     </div>
   );
