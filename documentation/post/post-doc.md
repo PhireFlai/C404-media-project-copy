@@ -88,7 +88,15 @@ Content-Type: multipart/form-data
 ```json
 {
   "id": "b3cdd37d-f7e7-4a69-8a9b-2dc5b0e510c3",
-  "author": "550e8400-e29b-41d4-a716-446655440000",
+  "author":{
+        "type":"author",
+        "id":"http://nodeaaaa/api/authors/111",
+        "page":"http://nodeaaaa/authors/greg",
+        "host":"http://nodeaaaa/api/",
+        "displayName":"Greg Johnson",
+        "github": "http://github.com/gjohnson",
+        "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
+  },
   "title": "My First Post",
   "content": "This is the content of my first post!",
   "visibility": "public",
@@ -239,7 +247,15 @@ Authorization: Token abc123
 ```json
 {
   "id": "b3cdd37d-f7e7-4a69-8a9b-2dc5b0e510c3",
-  "author": "550e8400-e29b-41d4-a716-446655440000",
+  "author":{
+        "type":"author",
+        "id":"http://nodeaaaa/api/authors/111",
+        "page":"http://nodeaaaa/authors/greg",
+        "host":"http://nodeaaaa/api/",
+        "displayName":"Greg Johnson",
+        "github": "http://github.com/gjohnson",
+        "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
+  },
   "title": "Updated Post Title",
   "content": "Updated post content.",
   "visibility": "friends-only",
@@ -256,7 +272,7 @@ Authorization: Token abc123
 | Field        | Type   | Example Value                                               | Description                    |
 | ------------ | ------ | ----------------------------------------------------------- | ------------------------------ |
 | `id`         | string | `"b3cdd37d-f7e7-4a69-8a9b-2dc5b0e510c3"`                    | Unique identifier for the post |
-| `author`     | string | `"550e8400-e29b-41d4-a716-446655440000"`                    | ID of the author               |
+| `author`     | object | `"550e8400-e29b-41d4-a716-446655440000"`                    | Author object                  |
 | `title`      | string | `"Updated Post Title"`                                      | Title of the post              |
 | `content`    | string | `"Updated post content."`                                   | Content of the post            |
 | `visibility` | string | `"friends-only"`                                            | Who can view the post          |
@@ -362,7 +378,15 @@ Content-Type: application/json
 [
   {
     "id": "b3cdd37d-f7e7-4a69-8a9b-2dc5b0e510c3",
-    "author": "550e8400-e29b-41d4-a716-446655440000",
+    "author":{
+        "type":"author",
+        "id":"http://nodeaaaa/api/authors/111",
+        "page":"http://nodeaaaa/authors/greg",
+        "host":"http://nodeaaaa/api/",
+        "displayName":"Greg Johnson",
+        "github": "http://github.com/gjohnson",
+        "profileImage": "https://i.imgur.com/k7XVwpB.jpeg"
+  },
     "title": "A Public Post",
     "content": "This post is visible to everyone!",
     "visibility": "public",
@@ -380,7 +404,7 @@ Content-Type: application/json
 | Field        | Type   | Example Value                                               | Description                        |
 | ------------ | ------ | ----------------------------------------------------------- | ---------------------------------- |
 | `id`         | string | `"b3cdd37d-f7e7-4a69-8a9b-2dc5b0e510c3"`                    | Unique identifier for the post     |
-| `author`     | string | `"550e8400-e29b-41d4-a716-446655440000"`                    | ID of the author                   |
+| `author`     | object | `"550e8400-e29b-41d4-a716-446655440000"`                    | Author object                      |
 | `title`      | string | `"A Public Post"`                                           | Title of the post                  |
 | `content`    | string | `"This post is visible to everyone!"`                       | Content of the post                |
 | `visibility` | string | `"public"`                                                  | Visibility status of the post      |
