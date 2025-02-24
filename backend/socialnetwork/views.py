@@ -256,6 +256,7 @@ class CustomPagination(PageNumberPagination):
     page_size = 10
     page_size_query_param = 'page_size'
 
+
 @permission_classes([AllowAny])
 class GetCommented(generics.ListCreateAPIView):
     queryset = Comment.objects.all()
@@ -290,10 +291,11 @@ class GetCommented(generics.ListCreateAPIView):
         response = requests.post(f'http://localhost:8000/api/authors/{author}/inbox/', data=comment_data)
         return response
 
-@permission_classes[(AllowAny)]
+@permission_classes([AllowAny])
 class GetCommentFromCommented(generics.ListCreateAPIView):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
+    pagination_class = CustomPagination
 
     def get_queryset(self):
         authorID = self.kwargs['userId']

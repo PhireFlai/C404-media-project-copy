@@ -54,3 +54,8 @@ class CommentAPITestCase(APITestCase):
         response = self.client.post(f'/api/authors/{self.user.id}/commented')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['content'], data['content'])
+
+    def test_get_comment_from_commented(self):
+        response = self.client.get(f'/api/authors/{self.user.id}/commented/{self.comment.id}/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['content'], self.comment['content'])
