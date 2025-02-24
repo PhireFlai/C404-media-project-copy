@@ -29,9 +29,7 @@ class CommentAPITestCase(APITestCase):
     
     def test_get_comments(self):
         """Test retrieving comments for a post."""
-        response = self.client.get(f'/api/posts/{self.post.id}/comments/')
+        response = self.client.get(f'/api/authors/{self.user.id}/posts/{self.post.id}/comments/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertGreaterEqual(len(response.data), 1)
         # Need to expand to check that the data is correct
-
-    

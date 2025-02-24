@@ -25,7 +25,6 @@ class NoArrayFieldsTestCase(TestCase):
                 if ArrayField:
                     self.assertNotIsInstance(field, ArrayField, f"{model.__name__} has an ArrayField: {field.name}")
 
-
 class RelationalDatabaseTestCase(TestCase):
     """Test to ensure the application uses a relational database. NM11"""
 
@@ -33,7 +32,6 @@ class RelationalDatabaseTestCase(TestCase):
         db_engine = settings.DATABASES['default']['ENGINE']
         self.assertIn('django.db.backends.', db_engine, "The database engine is not a relational database.")
         self.assertNotIn('sqlite3', db_engine, "SQLite should only be used for local testing.")
-
 
 class RESTfulInterfaceTestCase(APITestCase):
     """Test to ensure the application provides a RESTful interface. NM5"""
@@ -52,11 +50,11 @@ class RESTfulInterfaceTestCase(APITestCase):
 
     def test_get_posts(self):
         """Test retrieving posts."""
-        response = self.client.get(reverse('post-list'))
+        response = self.client.get(reverse('post-list', kwargs={'userId': self.user.id}))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-    
+
     def test_create_and_retrieve_posts_with_different_visibilities(self):
-        """Test if all the posts including the deleted ones are stored and accesible from the database."""
+        """Test if all the posts including the deleted ones are stored and accessible from the database."""
         # Create posts with different visibilities
         deleted_post = Post.objects.create(
             title="Deleted Post",
