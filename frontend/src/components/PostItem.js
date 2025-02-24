@@ -17,6 +17,7 @@ const PostItem = ({ post, refetchPosts }) => {
   const [editContent, setEditContent] = useState(post.content);
   const user = useSelector((state) => state.user.user); // Get the current user from the Redux store
 
+  console.log(post);
 
   // Handle post deletion
   const handleDelete = async (postId) => {
@@ -107,9 +108,16 @@ const PostItem = ({ post, refetchPosts }) => {
               {post.content}
             </ReactMarkdown>
           </div>
+          <div className="post-image">
+            {post.image && (
+              <img
+                src={`${post.image}`}
+                alt="Post"
+              />
+            )}
+          </div>
         </>
       )}
-
       <div className="post-actions">
         {user && user.id === post.author.id && !isEditing && (
           <>
