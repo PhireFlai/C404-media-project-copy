@@ -57,7 +57,7 @@ body {
     gap: 10px;
 }
 
-.edit-button,
+.edit-post-button,
 .delete-button {
     padding: 8px 12px;
     border: none;
@@ -66,7 +66,7 @@ body {
     cursor: pointer;
 }
 
-.edit-button {
+.edit-post-button {
     background-color: blue;
     color: white;
 }

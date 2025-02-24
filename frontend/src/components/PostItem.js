@@ -6,7 +6,7 @@ import remarkGfm from "remark-gfm";
 import CommentSection from "./CommentSection";
 import { useSelector } from "react-redux";
 import "../pages/css/home.css";
-import "../pages/css/post.css";
+// import "../pages/css/post.css";
 
 const PostItem = ({ post, refetchPosts }) => {
   const [deletePost] = useDeletePostMutation();
@@ -105,7 +105,7 @@ const PostItem = ({ post, refetchPosts }) => {
       <div className="post-actions">
         {user && user.id === post.author && !isEditing && (
           <>
-            <button onClick={handleEditClick} className="edit-button">
+            <button onClick={handleEditClick} className="edit-post-button">
               Edit
             </button>
             <button
