@@ -42,7 +42,7 @@ body {
     color: #333;
 }
 
-.post-visibility {
+.post-visibility, .post-author {
     font-size: 16px;
     color: #666;
 }
