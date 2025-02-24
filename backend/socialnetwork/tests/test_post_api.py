@@ -62,7 +62,7 @@ class PostAPITestCase(APITestCase):
         # Need to double check that the post is just updated in database with flag
     
     def test_public_posts_in_stream(self):
-        """Test that only public posts are fetched for the stream page."""
+        """Test that only public posts are fetched for the stream page. R2, V6, V9"""
         # Create a private post
         private_post = Post.objects.create(
             title="Private Post",
@@ -102,7 +102,7 @@ class PostAPITestCase(APITestCase):
         self.assertNotIn(deleted_post.id, post_ids)
     
     def test_posts_in_profile(self):
-        """Test that all posts (other than deleted) are fetched for the profile page."""
+        """Test that all posts (other than deleted) are fetched for the profile page. V10, V9"""
         # Create a private post
         private_post = Post.objects.create(
             title="Private Post",
@@ -153,7 +153,7 @@ class PostAPITestCase(APITestCase):
         self.assertIn(str(public_post.id), post_ids)
 
     def test_author_can_delete_post(self):
-        """Test that an author can delete their own post."""
+        """Test that an author can delete their own post. P10"""
         # Create two posts
         post1 = Post.objects.create(
             title="Post to be deleted",

@@ -6,6 +6,7 @@ import { loginUser as loginUserAction } from "../UserContext/userActions";
 import "./css/login.css";
 
 const LoginUser = () => {
+  // State to manage form data
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -14,11 +15,13 @@ const LoginUser = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const [loginUser] = useLoginUserMutation();
+  const [loginUser] = useLoginUserMutation(); // Mutation hook for logging in a user
 
+  // State to manage success and error messages
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
+  // Handle form input changes
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -26,12 +29,14 @@ const LoginUser = () => {
     });
   };
 
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSuccessMessage("");
     setErrorMessage("");
 
     try {
+      // Log the user in
       const loginResponse = await loginUser({
         username: formData.username,
         password: formData.password,
@@ -45,9 +50,8 @@ const LoginUser = () => {
         username: loginResponse.username,
       };
 
-      dispatch(loginUserAction(userData));
-      // Save the token or user data to local storage or state
-      setSuccessMessage("User created and logged in successfully!");
+      dispatch(loginUserAction(userData)); // Update Redux state
+      // Save the token and user data to local storage
       localStorage.setItem("token", loginResponse.token);
       localStorage.setItem(
         "user",
@@ -57,10 +61,10 @@ const LoginUser = () => {
         })
       );
 
-      navigate(`/${loginResponse.user_id}`);
+      navigate(`/${loginResponse.user_id}`); // Redirect to the user's profile page
     } catch (err) {
       console.error("Error:", err);
-      setErrorMessage(err.data?.message || "Failed to create or log in user.");
+      setErrorMessage(err.data?.message || "Failed to log in user.");
     }
   };
 
@@ -91,7 +95,7 @@ const LoginUser = () => {
           <button onClick={() => navigate("/signup")}>Create a User</button>
         </div>
 
-        {/* Success and error messages for testing*/}
+        {/* Success and error messages */}
         {successMessage && <p style={{ color: "green" }}>{successMessage}</p>}
         {errorMessage && <p style={{ color: "red" }}>{errorMessage}</p>}
       </form>
