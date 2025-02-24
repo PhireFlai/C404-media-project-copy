@@ -115,7 +115,7 @@ POST /api/login/
 - Send a GET request to `/api/authors/`.
 
 ### Why the API endpoint should or should not be used
-- Use this endpoint to get a comprehensive list of all authors, including their basic information such as username, email, profile picture
+- Use this endpoint to get a comprehensive list of all authors, including their basic information such as username, email, profile picture, followers, and friends.
 
 ### Request
 - **Method**: GET
@@ -132,7 +132,12 @@ POST /api/login/
 - **profile_picture**: `string` (URL) - The URL to the author's profile picture.
   - **Example**: `http://127.0.0.1:8000/media/profile_pictures/1493e30c-b8a6-467b-b78e-cb76529a040f.png`
   - **Purpose**: The profile picture of the author.
-
+- **followers**: `ManyToManyReference` - A list of ids that reference followers of the author.
+  - **Example**: `[d2d7dea6-5708-40a5-b89a-324b89b226d9", d575ab72-2909-445b-8af9-e18173cb5adc]`,
+  - **Purpose**: Contains the followers of the author.
+- **friends**: `ManyToManyReference` - A list of ids that reference friends of the author.
+  - **Example**: `["d2d7dea6-5708-40a5-b89a-324b89b226d9",d575ab72-2909-445b-8af9-e18173cb5adc]`
+  - **Purpose**: Contains the friends of the author.
 
 ### Example
 ```bash
@@ -145,13 +150,15 @@ GET /api/authors/
         "id": "d2d7dea6-5708-40a5-b89a-324b89b226d9",
         "username": "Testuser",
         "profile_picture": null,
-
+        "followers": [],
+        "friends": ["1493e30c-b8a6-467b-b78e-cb76529a040f"]
     },
     {
         "id": "1493e30c-b8a6-467b-b78e-cb76529a040f",
         "username": "admin",
         "profile_picture": "http://127.0.0.1:8000/media/profile_pictures/1493e30c-b8a6-467b-b78e-cb76529a040f.png",
-
+        "followers": ["d2d7dea6-5708-40a5-b89a-324b89b226d9","d575ab72-2909-445b-8af9-e18173cb5adc"],
+        "friends": ["d2d7dea6-5708-40a5-b89a-324b89b226d9"]
     },
     # ... More user objects
 ]
@@ -203,7 +210,12 @@ GET /api/authors/
 - **profile_picture**: `string` (URL) - The URL to the author's profile picture.
   - **Example**: `http://127.0.0.1:8000/media/profile_pictures/1493e30c-b8a6-467b-b78e-cb76529a040f.png`
   - **Purpose**: The profile picture of the author.
-
+- **followers**: `ManyToManyReference` - A list of ids that reference followers of the author.
+  - **Example**: `[d2d7dea6-5708-40a5-b89a-324b89b226d9", d575ab72-2909-445b-8af9-e18173cb5adc]`,
+  - **Purpose**: Contains the followers of the author.
+- **friends**: `ManyToManyReference` - A list of ids that reference friends of the author.
+  - **Example**: `["d2d7dea6-5708-40a5-b89a-324b89b226d9",d575ab72-2909-445b-8af9-e18173cb5adc]`
+  - **Purpose**: Contains the friends of the author.
 
 ### Example 1
 ```bash
@@ -215,6 +227,8 @@ GET /api/authors/123e4567-e89b-12d3-a456-426614174000/
     "id": "d2d7dea6-5708-40a5-b89a-324b89b226d9",
     "username": "Testuser",
     "profile_picture": null,
+    "followers": [],
+    "friends": ["1493e30c-b8a6-467b-b78e-cb76529a040f"]
 },
 ```
 
