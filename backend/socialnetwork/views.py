@@ -17,7 +17,6 @@ from rest_framework.generics import ListAPIView
 from .models import *
 from .serializers import *
 import requests
-from rest_framework.pagination import PageNumberPagination
 
 @swagger_auto_schema(
     method="post",
@@ -251,17 +250,11 @@ class GetComment(generics.ListCreateAPIView):
     def get_queryset(self):
         id = self.kwargs['commentId']
         return Comment.objects.filter(id=id)
-    
-class CustomPagination(PageNumberPagination):
-    page_size = 10
-    page_size_query_param = 'page_size'
-
 
 @permission_classes([AllowAny])
 class GetCommented(generics.ListCreateAPIView):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
-    pagination_class = CustomPagination
 
     def get_queryset(self):
         authorID = self.kwargs['userId']
@@ -295,7 +288,6 @@ class GetCommented(generics.ListCreateAPIView):
 class GetCommentFromCommented(generics.ListCreateAPIView):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
-    pagination_class = CustomPagination
 
     def get_queryset(self):
         authorID = self.kwargs['userId']
