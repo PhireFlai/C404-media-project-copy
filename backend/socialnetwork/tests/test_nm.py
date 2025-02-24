@@ -54,3 +54,41 @@ class RESTfulInterfaceTestCase(APITestCase):
         """Test retrieving posts."""
         response = self.client.get(reverse('post-list'))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+    
+    def test_create_and_retrieve_posts_with_different_visibilities(self):
+        """Test if all the posts including the deleted ones are stored and accesible from the database."""
+        # Create posts with different visibilities
+        deleted_post = Post.objects.create(
+            title="Deleted Post",
+            content="This post is marked as deleted",
+            author=self.user,
+            visibility=Post.DELETED
+        )
+        public_post = Post.objects.create(
+            title="Public Post",
+            content="This is a public post",
+            author=self.user,
+            visibility=Post.PUBLIC
+        )
+        unlisted_post = Post.objects.create(
+            title="Unlisted Post",
+            content="This is an unlisted post",
+            author=self.user,
+            visibility=Post.UNLISTED
+        )
+        friends_only_post = Post.objects.create(
+            title="Friends Only Post",
+            content="This is a friends-only post",
+            author=self.user,
+            visibility=Post.FRIENDS_ONLY
+        )
+
+        # Fetch all posts directly from the database
+        posts = Post.objects.filter(author=self.user)
+        post_ids = [str(post.id) for post in posts]
+
+        # Check that all created posts are in the response
+        self.assertIn(str(deleted_post.id), post_ids)
+        self.assertIn(str(public_post.id), post_ids)
+        self.assertIn(str(unlisted_post.id), post_ids)
+        self.assertIn(str(friends_only_post.id), post_ids)
