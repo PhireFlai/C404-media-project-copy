@@ -3,6 +3,11 @@ body, html {
     margin: 0;
 }
 
+heading {
+    margin: 10px 44%;
+}
+
+
 .login-form {
     max-width: 400px;
     margin: 0 auto;
