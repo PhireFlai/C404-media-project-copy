@@ -14,7 +14,7 @@ export const api = createApi({
   }),
   endpoints: (builder) => ({
     getPosts: builder.query({
-      query: () => `api/public-posts/`,  // Updated endpoint for public posts
+      query: () => `api/public-posts/`, // Updated endpoint for public posts
     }),
     createPost: builder.mutation({
       query: ({ userId, formData }) => ({
@@ -65,7 +65,7 @@ export const api = createApi({
       query: ({ author, commentId }) => ({
         url: `api/authors/${author}/inbox/`,
         method: "POST",
-        body: { "comment_id": commentId },
+        body: { comment_id: commentId },
       }),
     }),
     updateProfilePicture: builder.mutation({
@@ -87,13 +87,14 @@ export const api = createApi({
       }),
     }),
     getComments: builder.query({
-      query: ({ userId, postId }) => `api/authors/${userId}/posts/${postId}/comments/`,
+      query: ({ userId, postId }) =>
+        `api/authors/${userId}/posts/${postId}/comments/`,
     }),
     getUserProfile: builder.query({
       query: (userId) => `api/authors/${userId}/`, // Fetch profile by userId
     }),
     getUserPosts: builder.query({
-      query: (userId) => `api/authors/${userId}/posts/`,  // Updated endpoint
+      query: (userId) => `api/authors/${userId}/posts/`, // Updated endpoint
     }),
   }),
 });
@@ -113,5 +114,5 @@ export const {
   useUpdateProfilePictureMutation,
   useUpdateUsernameMutation,
   usePostCommentMutation,
-  useGetUserPostsQuery
+  useGetUserPostsQuery,
 } = api;
