@@ -3,3 +3,14 @@
 venv
 
 __pycache__
+requirements.txt
+.env
+.sqlite3
+
+*/db.sqlite3
+backend/db.sqlite3
+frontend/src/axiosInstance.js
+
+backend/socialnetwork/media/post_images/test_image.png
+# Images Folder
+backend/socialnetwork/media
