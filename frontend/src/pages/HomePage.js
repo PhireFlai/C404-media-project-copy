@@ -1,21 +1,36 @@
 import React from "react";
-import { useGetTestQuery } from "../Api";
+import { useGetPostsQuery } from "../Api";
+import PostItem from "../components/PostItem";
+import { useNavigate } from "react-router-dom";
+import "./css/home.css";
+
 const HomePage = () => {
-  const { data, error, isLoading } = useGetTestQuery();
+  const { data: posts, refetch } = useGetPostsQuery(); // Fetch posts using the custom hook and destructure the data and refetch function
+  const navigate = useNavigate(); // Initialize the navigate function for navigation
 
-  // Handle loading state
-  if (isLoading) return <p>Loading...</p>;
-
-  // Handle error state
-  if (error) {
-    return <p>Error: {error.data?.message || "Something went wrong"}</p>;
-  }
+  // Handle the click event for creating a new post
+  const handleCreatePostClick = () => {
+    navigate("/create"); // Navigate to the create post page
+  };
 
   return (
-    <div>
-      <h1>Home Page</h1>
-      <h2>Test connection with backend, data from API:</h2>
-      <pre>{JSON.stringify(data, null, 2)}</pre>
+    <div className="recent-posts-container">
+      <h1 className="recent-posts-title">Recent Posts</h1>
+
+      <p className="create-post-link">
+        <button className="create-posts-button" onClick={handleCreatePostClick}>
+          Create a Post
+        </button>
+      </p>
+
+      {/* Render the list of posts if there are any, otherwise display a message */}
+      {posts && posts.length > 0 ? (
+        posts.map((post) => (
+          <PostItem key={post.id} post={post} refetchPosts={refetch} />
+        ))
+      ) : (
+        <p className="no-posts-message">No posts yet.</p>
+      )}
     </div>
   );
 };

@@ -1,0 +1,114 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f9;
+    /* Light background */
+    margin: 0;
+    padding: 0;
+}
+
+.profile-container {
+    max-width: 500px;
+    margin: 50px auto;
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+/* Profile Header */
+.profile-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.profile-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 3px solid #003366;
+    object-fit: cover;
+    margin-bottom: 10px;
+}
+
+.profile-title {
+    color: #003366;
+    font-size: 22px;
+    margin: 5px 0;
+}
+
+/* Profile Stats */
+.profile-stats {
+    display: flex;
+    justify-content: space-around;
+    font-size: 16px;
+    color: #666;
+    padding: 10px 0;
+    border-bottom: 1px solid #ddd;
+}
+
+/* Edit Profile Section */
+.edit-profile-section {
+    margin-top: 15px;
+}
+
+.edit-button,
+.save-button,
+.cancel-button {
+    background-color: #003366;
+    color: white;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    margin: 5px;
+    transition: background 0.3s ease;
+}
+
+.edit-button:hover,
+.save-button:hover {
+    background-color: #0055aa;
+}
+
+.cancel-button {
+    background-color: #ff4444;
+}
+
+.cancel-button:hover {
+    background-color: #cc0000;
+}
+
+/* Username Edit Input */
+.username-edit-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.username-edit-input {
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 60%;
+}
+
+/* User Posts Section */
+.user-posts-title {
+    color: #003366;
+    font-size: 20px;
+    margin-top: 20px;
+    padding-bottom: 5px;
+    border-bottom: 2px solid #ddd;
+}
+
+.loading-message,
+.error-message {
+    color: red;
+    font-size: 14px;
+    margin-top: 10px;
+}
