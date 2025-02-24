@@ -16,6 +16,8 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.generics import ListAPIView
 from .models import *
 from .serializers import *
+import requests
+from rest_framework.pagination import PageNumberPagination
 
 @swagger_auto_schema(
     method="post",
@@ -59,7 +61,6 @@ from .serializers import *
         ),
     },
 )
-import requests
 
 # Creates a new user
 @api_view(['POST'])
@@ -250,11 +251,16 @@ class GetComment(generics.ListCreateAPIView):
     def get_queryset(self):
         id = self.kwargs['commentId']
         return Comment.objects.filter(id=id)
+    
+class CustomPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
 
 @permission_classes([AllowAny])
 class GetCommented(generics.ListCreateAPIView):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
+    pagination_class = CustomPagination
 
     def get_queryset(self):
         authorID = self.kwargs['userId']
@@ -275,9 +281,11 @@ class GetCommented(generics.ListCreateAPIView):
         if serializer.is_valid():
             serializer.save()
             comment = Comment.objects.get(id=serializer.data["id"])
-            self.forward_to_inbox(comment, post_author)
+            response = self.forward_to_inbox(comment, post_author)
+            return response
 
     def forward_to_inbox(self, comment, author):
         comment_data = CommentSerializer(comment).data
         
         response = requests.post(f'http://localhost:8000/api/authors/{author}/inbox/', data=comment_data)
+        return response

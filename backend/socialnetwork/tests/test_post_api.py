@@ -208,6 +208,12 @@ class PostAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['content'], data['content'])
 
+    def test_plain_text(self):
+        data = {"title": "Markdown", "content": "Plain Text", "author": self.user.id}
+        response = self.client.post(f'/api/authors/{self.user.id}/posts/', data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['content'], data['content'])
+
     def test_get_user_profile(self):
         """Test retrieving the user profile."""
         response = self.client.get(f'/api/authors/{self.user.id}/')
@@ -260,6 +266,13 @@ class PostAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]['content'], comment_data['content'])
+
+    def test_consistent_identity(self):
+        self.client.login(username='otheruser', password='password')
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.other_token.key)
+        self.client.login(username='otheruser', password='password')
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.other_token.key)
+        self.assertNotEqual(self.user.id, self.other_user.id)
 
     # These don't pass, probably because the token isn't being setup/torn properly
     # def test_other_user_cannot_edit_post(self):

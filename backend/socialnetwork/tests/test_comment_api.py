@@ -38,3 +38,19 @@ class CommentAPITestCase(APITestCase):
         data = {"content": "New comment", "author": self.user.id, "post": self.post.id}
         response = self.client.post(f'/api/authors/{self.user.id}/inbox/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+    
+    def test_get_comment_on_post(self):
+        response = self.client.get(f'/api/authors/{self.user.id}/posts/{self.post.id}/comment/{self.comment.id}/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['content'], self.comment['content'])
+
+    def test_get_commented(self):
+        response = self.client.get(f'/api/authors/{self.user.id}/commented/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertGreaterEqual(len(response.data), 1)
+
+    def test_post_commented(self):
+        data = {"content": "New comment", "author": self.user.id, "post": self.post.id}
+        response = self.client.post(f'/api/authors/{self.user.id}/commented')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['content'], data['content'])
