@@ -47,6 +47,10 @@ body {
     color: #666;
 }
 
+img {
+    max-width: 20%;
+}
+
 .post-content {
     margin-top: 10px;
 }
