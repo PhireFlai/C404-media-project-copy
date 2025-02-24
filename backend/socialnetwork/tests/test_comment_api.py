@@ -32,6 +32,7 @@ class CommentAPITestCase(APITestCase):
         response = self.client.get(f'/api/authors/{self.user.id}/posts/{self.post.id}/comments/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertGreaterEqual(len(response.data), 1)
+<<<<<<< HEAD
         # Need to expand to check that the data is correct
 
     def test_create_comment(self):
@@ -39,3 +40,6 @@ class CommentAPITestCase(APITestCase):
         response = self.client.post(f'/api/authors/{self.user.id}/inbox/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['content'], data['content'])
+=======
+        # Need to expand to check that the data is correct
+>>>>>>> 5e2d42d5b45297fb45ae94cfa8eb75e405bfa87a
