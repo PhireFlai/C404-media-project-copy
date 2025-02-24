@@ -289,3 +289,13 @@ class GetCommented(generics.ListCreateAPIView):
         
         response = requests.post(f'http://localhost:8000/api/authors/{author}/inbox/', data=comment_data)
         return response
+
+@permission_classes[(AllowAny)]
+class GetCommentFromCommented(generics.ListCreateAPIView):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+
+    def get_queryset(self):
+        authorID = self.kwargs['userId']
+        commentID = self.kwargs['commentId']
+        return Comment.objects.filter(id=commentID, author=authorID)

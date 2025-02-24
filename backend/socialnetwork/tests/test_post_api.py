@@ -268,11 +268,12 @@ class PostAPITestCase(APITestCase):
         self.assertEqual(response.data[0]['content'], comment_data['content'])
 
     def test_consistent_identity(self):
-        self.client.login(username='otheruser', password='password')
+        login_response = self.client.login(username='user', password='password')
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.other_token.key)
-        self.client.login(username='otheruser', password='password')
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.other_token.key)
-        self.assertNotEqual(self.user.id, self.other_user.id)
+        response = self.client.get(f'/api/authors/{self.user.id}/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['id'], str(self.user.id))
+        
 
     # These don't pass, probably because the token isn't being setup/torn properly
     # def test_other_user_cannot_edit_post(self):

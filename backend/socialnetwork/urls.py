@@ -42,6 +42,7 @@ urlpatterns = [
     path("api/authors/<uuid:userId>/posts/<uuid:pk>/comments/", CommentsList.as_view(), name="comment-list"),  # Endpoint to list and create comments for a specific post
     path("api/authors/<uuid:userId>/posts/<uuid:pk>/comments/<uuid:commentId>/", GetComment.as_view(), name="get-comment"),
     path("api/authors/<uuid:userId>/commented/", GetCommented.as_view(), name='commented'),
+    path("api/authors/<uuid:userId>/commented/<uuid:commentId>/", GetCommentFromCommented.as_view(), name='get-commented-comment'),
     path("api/public-posts/", PublicPostsView.as_view(), name="public-posts"),  # Endpoint to list public posts
 ]
 
