@@ -6,7 +6,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework import status, generics  
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated, AllowAny, IsAdminUser
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -14,6 +14,7 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.generics import ListAPIView
 from .models import *
 from .serializers import *
+import requests
 
 # Creates a new user
 @api_view(['POST'])
@@ -39,7 +40,7 @@ def createUser(request):
 
 # Logs in a user
 @api_view(['POST'])
-@permission_classes([AllowAny]) 
+@permission_classes([AllowAny])
 def loginUser(request):
     username = request.data.get('username')
     password = request.data.get('password')
@@ -54,6 +55,7 @@ def loginUser(request):
     else:
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
     
+@permission_classes([IsAdminUser])
 class UsersList(generics.ListCreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -170,11 +172,9 @@ def CreateComment(request, userId, pk):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def PostComment(request, author):
-    author_instance = User.objects.get(id=author)
-    comment = Comment.objects.get(id=request.data.get('comment_id'))
-    return Response({"message": "Comment posted to author inbox", "commentId": comment.id}, status=status.HTTP_200_OK)
+    return Response(status=status.HTTP_200_OK)
 
 class CommentsList(generics.ListCreateAPIView):
     queryset = Comment.objects.all()
@@ -183,3 +183,44 @@ class CommentsList(generics.ListCreateAPIView):
     def get_queryset(self):
         post_id = self.kwargs['pk']
         return Comment.objects.filter(post_id=post_id)
+
+
+@permission_classes([IsAdminUser])
+class GetComment(generics.ListCreateAPIView):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+
+    def get_queryset(self):
+        id = self.kwargs['commentId']
+        return Comment.objects.filter(id=id)
+
+@permission_classes([AllowAny])
+class GetCommented(generics.ListCreateAPIView):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+
+    def get_queryset(self):
+        authorID = self.kwargs['userId']
+        return Comment.objects.filter(author=authorID)
+    
+    def perform_create(self, serializer):
+        authorID = self.kwargs['userId']
+        postID = self.request.data.get('post')
+        content = self.request.data.get('content')
+        try:
+            post = Post.objects.get(id=postID)
+        except Post.DoesNotExist:
+            return Response({"error": "Post not found"}, status=status.HTTP_404_NOT_FOUND)
+        post_author = post.author.id
+        comment_data={'author': authorID, 'content': content, 'post': postID}
+        serializer = CommentSerializer(data=comment_data)
+    
+        if serializer.is_valid():
+            serializer.save()
+            comment = Comment.objects.get(id=serializer.data["id"])
+            self.forward_to_inbox(comment, post_author)
+
+    def forward_to_inbox(self, comment, author):
+        comment_data = CommentSerializer(comment).data
+        
+        response = requests.post(f'http://localhost:8000/api/authors/{author}/inbox/', data=comment_data)

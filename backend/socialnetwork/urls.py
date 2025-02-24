@@ -22,6 +22,8 @@ urlpatterns = [
     path("api/authors/<uuid:author>/inbox/", PostComment, name='post-comment'),
     path("api/authors/<uuid:userId>/posts/<uuid:pk>/comment/", CreateComment, name='comment'),
     path("api/authors/<uuid:userId>/posts/<uuid:pk>/comments/", CommentsList.as_view(), name="comment-list"),
+    path("api/authors/<uuid:userId>/posts/<uuid:pk>/comments/<uuid:commentId>/", GetComment.as_view(), name="get-comment"),
+    path("api/authors/<uuid:userId>/commented/", GetCommented.as_view(), name='commented'),
     path("api/public-posts/", PublicPostsView.as_view(), name="public-posts"),  # New path for public posts
 ]
 

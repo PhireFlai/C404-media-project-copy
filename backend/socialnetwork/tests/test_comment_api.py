@@ -34,4 +34,8 @@ class CommentAPITestCase(APITestCase):
         self.assertGreaterEqual(len(response.data), 1)
         # Need to expand to check that the data is correct
 
-    
+    def test_create_comment(self):
+        data = {"content": "New comment", "author": self.user.id, "post": self.post.id}
+        response = self.client.get(f'/api/authors/{self.user.id}/inbox/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['content'], data['content'])

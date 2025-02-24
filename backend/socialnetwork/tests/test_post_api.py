@@ -62,6 +62,12 @@ class PostAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         # Need to double check that the post is just updated in database with flag
 
+    def test_commonmark(self):
+        data = {"title": "Markdown", "content": "**This should be bold**", "author": self.user.id}
+        response = self.client.put(f'/api/posts/{self.post.id}/', data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['content'], data['content'])
+
     # These don't pass, probably because the token isn't being setup/torn properly
     # def test_other_user_cannot_edit_post(self):
     #     """Test that a different user cannot edit another user’s post."""
