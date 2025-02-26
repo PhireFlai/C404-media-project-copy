@@ -242,7 +242,7 @@ class CommentsList(generics.ListCreateAPIView):
         return Comment.objects.filter(post_id=post_id)
 
 
-@permission_classes([IsAdminUser])
+@permission_classes([AllowAny])
 class GetComment(generics.ListCreateAPIView):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
