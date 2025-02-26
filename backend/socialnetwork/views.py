@@ -251,7 +251,6 @@ class GetComment(generics.ListCreateAPIView):
         id = self.kwargs['commentId']
         return Comment.objects.filter(id=id)
 
-
 @permission_classes([AllowAny])
 class GetCommented(generics.ListCreateAPIView):
     queryset = Comment.objects.all()
