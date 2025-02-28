@@ -4,7 +4,6 @@ import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
 import CommentSection from "./CommentSection";
-import { useSelector } from "react-redux";
 import "../pages/css/home.css";
 
 const PostItem = ({ post, refetchPosts }) => {
@@ -15,7 +14,7 @@ const PostItem = ({ post, refetchPosts }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(post.title);
   const [editContent, setEditContent] = useState(post.content);
-  const user = useSelector((state) => state.user.user); // Get the current user from the Redux store
+  const user = JSON.parse(localStorage.getItem('user')); // Get the current user from local storage
 
   console.log(post);
 
@@ -98,14 +97,14 @@ const PostItem = ({ post, refetchPosts }) => {
           <h3 className="sub-title">{post.title}</h3>
           <p className="text-muted">Visibility: {post.visibility}</p>
           <p>Author: {post.author.username}</p>
-          <p>
+          <div>
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               rehypePlugins={[rehypeRaw]}
             >
               {post.content}
             </ReactMarkdown>
-          </p>
+          </div>
           <div className="post-image">
             {post.image && <img src={`${post.image}`} alt="Post" />}
           </div>

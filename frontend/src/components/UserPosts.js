@@ -1,10 +1,9 @@
 import React from 'react';
 import { useGetUserPostsQuery } from '../Api';
-import { useSelector } from 'react-redux';
 import PostItem from './PostItem';
 
 const UserPosts = () => {
-  const user = useSelector((state) => state.user.user); // Get the user from the Redux store
+  const user = JSON.parse(localStorage.getItem('user')); // Get the current user from local storage
   const { data: posts, refetch } = useGetUserPostsQuery(user.id); // Fetch user-specific posts
 
   return (

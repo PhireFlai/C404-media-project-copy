@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useCreatePostMutation, useGetPostsQuery } from "../Api";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
 import "./css/post.css";
 
 const CreatePostPage = () => {
@@ -12,7 +11,7 @@ const CreatePostPage = () => {
   const [createPost] = useCreatePostMutation();
   const { refetch } = useGetPostsQuery();
   const navigate = useNavigate();
-  const user = useSelector((state) => state.user.user); // Get the user from the Redux store
+  const user = JSON.parse(localStorage.getItem('user')); // Get the current user from local storage
 
   const handleImageChange = (e) => {
     setImage(e.target.files[0]); // Store the selected file

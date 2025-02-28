@@ -1,19 +1,37 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useSelector, useDispatch } from "react-redux";
-import { logoutUser } from "../UserContext/userActions.js";
 import Dropdown from "./Dropdown.js";
 import "./css/navbar.css";
 
 const Navbar = () => {
-  const user = useSelector((state) => state.user.user); // Redux gets user state
-  const dispatch = useDispatch();
+  const [user, setUser] = useState(JSON.parse(localStorage.getItem("user"))); // State to manage the current user
+  // eslint-disable-next-line
+  const [forceRender, setForceRender] = useState(false); // Dummy state for forcing re-renders
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setUser(JSON.parse(localStorage.getItem("user")));
+      setForceRender(prev => !prev); // Toggle state to force re-render
+    };
+
+    window.addEventListener("navbarTrigger", handleStorageChange);
+
+    return () => {
+      window.removeEventListener("navbarTrigger", handleStorageChange);
+    };
+  }, []);
+
   const handleLogout = () => {
-    dispatch(logoutUser());
+    localStorage.removeItem("user"); // Remove the user from local storage
+    localStorage.removeItem("token"); // Remove the token from local storage
+    setUser(null); // Update the state to reflect the user is logged out
     navigate("/login");
   };
+
+  if (!user) {
+    return null; // Don't render the Navbar if the user is not present
+  }
 
   return (
     <nav>
