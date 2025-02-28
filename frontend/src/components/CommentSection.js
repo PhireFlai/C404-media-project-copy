@@ -13,26 +13,19 @@ const CommentSection = ({ postId, author }) => {
     { userId: user.id, postId },
     { skip: !postId }
   ); // Fetch comments using the custom hook
-  const [createComment] = useCreateCommentMutation(); // Mutation hook for creating a comment
   const [postComment] = usePostCommentMutation(); // Mutation hook for posting a comment to the author's inbox
 
   // Handle comment submission
   const handleCommentSubmit = async () => {
     try {
       // Create the comment
-      const createResponse = await createComment({
-        userId: user.id,
-        postId,
-        commentData: { content: comment },
+      const response = await postComment({
+        type: "Comment",
+        receiver: user.id,
+        pk: postId,
+        content: comment,
       }).unwrap();
-      console.log("Comment created:", createResponse);
-
-      // Post the comment to the author's inbox
-      const postResponse = await postComment({
-        author,
-        commentId: createResponse.id,
-      }).unwrap();
-      console.log("Comment posted to inbox:", postResponse);
+      console.log("Comment created:", response);
 
       refetchComments(); // Refetch comments after submission
     } catch (err) {
