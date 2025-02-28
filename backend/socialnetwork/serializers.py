@@ -43,6 +43,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 # Serializer for the Comment model
 class CommentSerializer(serializers.ModelSerializer):
+    author = UserSerializer(read_only=True)
     class Meta:
         model = Comment
         fields = ["id", "author", "content", "post", "created_at"]
@@ -75,3 +76,25 @@ class PostSerializer(serializers.ModelSerializer):
     def get_formatted_content(self, obj):
         # Convert the content to formatted markdown
         return markdown.markdown(obj.content)
+
+class FollowRequestSerializer(serializers.ModelSerializer):
+    actor = UserSerializer(read_only=True)
+    object = UserSerializer(read_only=True)
+    class Meta:
+        model = FollowRequest
+        fields = ['summary', 'actor', 'object']
+
+    def validate(self, data):
+        summary = data.get('summary')
+
+        if summary is None:
+            raise serializers.ValidationError("Invalid follow request")
+        return data
+    
+    def create(self, validated_data):
+        summary = validated_data.get('summary')
+        actor = validated_data.get('actor')
+        object = validated_data.get('object')
+
+        follow_request = FollowRequest.objects.create(summary=summary, actor=actor, object=object)
+        return follow_request

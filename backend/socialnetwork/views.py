@@ -219,17 +219,17 @@ def CreateComment(request, userId, pk):
     post = get_object_or_404(Post, id=pk)
     author = request.user
     content = request.data.get('content')
-    data={'author': author.id, 'content': content, 'post': post.id}
+    data={'content': content, 'post': post.id}
     serializer = CommentSerializer(data=data)
     
     if serializer.is_valid():
-        serializer.save()
+        serializer.save(author=author)
         comment = Comment.objects.get(id=serializer.data['id'])
         response = requests.post(f'http://localhost:8000/api/authors/{userId}/inbox/', data=CommentSerializer(comment).data)
-        return Response(status=response.status_code)
+        return Response(serializer.data, status=response.status_code)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# Posts a comment to an author's inbox
+# Post to an author's inbox
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def PostToInbox(request, receiver):
@@ -265,6 +265,7 @@ class GetCommented(generics.ListCreateAPIView):
     
     def perform_create(self, serializer):
         authorID = self.kwargs['userId']
+        author = User.objects.get(id=authorID)
         postID = self.request.data.get('post')
         content = self.request.data.get('content')
         try:
@@ -272,11 +273,11 @@ class GetCommented(generics.ListCreateAPIView):
         except Post.DoesNotExist:
             return Response({"error": "Post not found"}, status=status.HTTP_404_NOT_FOUND)
         post_author = post.author.id
-        comment_data={'author': authorID, 'content': content, 'post': postID}
+        comment_data={'content': content, 'post': postID}
         serializer = CommentSerializer(data=comment_data)
     
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(author=author)
             comment = Comment.objects.get(id=serializer.data["id"])
             response = self.forward_to_inbox(comment, post_author)
             return response
@@ -296,3 +297,30 @@ class GetCommentFromCommented(generics.ListCreateAPIView):
         authorID = self.kwargs['userId']
         commentID = self.kwargs['commentId']
         return Comment.objects.filter(id=commentID, author=authorID)
+    
+@permission_classes([AllowAny])
+class FollowRequestListView(generics.ListCreateAPIView):
+    queryset = FollowRequest.objects.all()
+    serializer_class = FollowRequestSerializer
+
+    def get_queryset(self):
+        objectId = self.kwargs['objectId']
+        return FollowRequest.objects.filter(actor=objectId)
+    
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def CreateFollowRequest(request, actorId, objectId):
+    actor = User.objects.get(id=actorId)
+    object = User.objects.get(id=objectId)
+    if FollowRequest.objects.get(actor=actorId, object=objectId) is not None:
+        return Response({"message": "Follow request has already been sent"}, status=status.HTTP_400_BAD_REQUEST)
+    summary = f'{actor.username} wants to follow {object.username}'
+    data = {"summary": summary}
+    serializer = FollowRequestSerializer(data=data)
+    if serializer.is_valid():
+        serializer.save(actor=actor, object=object)
+        request = FollowRequest.objects.get(actor=actor, object=object)
+        request_data = FollowRequestSerializer(request).data
+        response = requests.post(f'http://localhost:8000/api/authors/{object.id}/inbox/', data=request_data)
+        return Response(serializer.data, status=response.status_code)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -40,10 +40,12 @@ urlpatterns = [
     path("api/authors/<uuid:receiver>/inbox/", PostToInbox, name='post-to-inbox'),  # Endpoint to post to author's inbox
     path("api/authors/<uuid:userId>/posts/<uuid:pk>/comment/", CreateComment, name='comment'),  # Endpoint to create a comment on a post
     path("api/authors/<uuid:userId>/posts/<uuid:pk>/comments/", CommentsList.as_view(), name="comment-list"),  # Endpoint to list and create comments for a specific post
-    path("api/authors/<uuid:userId>/posts/<uuid:pk>/comments/<uuid:commentId>/", GetComment.as_view(), name="get-comment"),
-    path("api/authors/<uuid:userId>/commented/", GetCommented.as_view(), name='commented'),
-    path("api/authors/<uuid:userId>/commented/<uuid:commentId>/", GetCommentFromCommented.as_view(), name='get-commented-comment'),
+    path("api/authors/<uuid:userId>/posts/<uuid:pk>/comments/<uuid:commentId>/", GetComment.as_view(), name="get-comment"),  # Endpoint to get a specific comment on a specific post
+    path("api/authors/<uuid:userId>/commented/", GetCommented.as_view(), name='commented'),  # Endpoint to get all comments made by a specific author
+    path("api/authors/<uuid:userId>/commented/<uuid:commentId>/", GetCommentFromCommented.as_view(), name='get-commented-comment'),  # Endpoint to get a specific comment made by a specific author
     path("api/public-posts/", PublicPostsView.as_view(), name="public-posts"),  # Endpoint to list public posts
+    path("api/authors/<uuid:objectId>/follow-requests/", FollowRequestListView.as_view(), name='follow-request-list'),
+    path("api/authors/<uuid:actorId>/follow/authors/<uuid:objectId>/", CreateFollowRequest, name='create-follow-request'),
 ]
 
 # Serve media files during development

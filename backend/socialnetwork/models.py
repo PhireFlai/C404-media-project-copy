@@ -77,3 +77,8 @@ class Comment(models.Model):
     content = models.TextField()
     post = models.ForeignKey(Post, on_delete=models.CASCADE)
     created_at = models.DateTimeField(default=timezone.now, editable=False)
+
+class FollowRequest(models.Model):
+    summary = models.TextField()
+    actor = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_follow_request")
+    object = models.ForeignKey(User, on_delete=models.CASCADE, related_name="received_follow_request")
