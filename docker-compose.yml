@@ -11,10 +11,9 @@ services:
 
     backend:
         build: ./backend
-        command: python manage.py runserver 0.0.0.0:8000
         volumes:
         - ./socialnetwork/media:/app/socialnetwork/media  # Store images persistently
-        - ./backend:/app  # Ensures backend code is available inside container
+        - staticfiles:/app/staticfiles  # Mount staticfiles directory
         ports:
         - "8000:8000"
         depends_on:
@@ -24,14 +23,14 @@ services:
 
     frontend:
         build: ./frontend
-        command: npm start
         ports:
-        - "3000:3000"
-        volumes:
-        - ./frontend:/app
+        - "80:80"
         depends_on:
         - backend
+        volumes:
+        - staticfiles:/staticfiles  # Ensure frontend can access static files        
 
 volumes:
     db_data:
     media:  # Persistent storage for images
+    staticfiles:
