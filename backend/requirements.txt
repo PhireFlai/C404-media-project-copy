@@ -11,3 +11,4 @@ typing_extensions==4.12.2
 tzdata==2025.1
 drf_yasg==1.21.8
 requests==2.32.3
+gunicorn==23.0.0
