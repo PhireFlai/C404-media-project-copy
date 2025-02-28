@@ -2,10 +2,10 @@ import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom"; // Import Router, Route, and Routes from react-router-dom for routing
 import HomePage from "./pages/HomePage"; // Import HomePage component
 import CreatePostPage from "./pages/CreatePostPage"; // Import CreatePostPage component
-import SignUp from "./pages/signup"; // Import SignUp component
-import Login from "./pages/login"; // Import Login component
+import SignUp from "./pages/Signup"; // Import SignUp component
+import Login from "./pages/Login"; // Import Login component
 import Profile from "./pages/Profile"; // Import Profile component
-import Navbar from "./components/navbar"; // Import Navbar component
+import Navbar from "./components/Navbar"; // Import Navbar component
 import PrivateRoute from "./components/PrivateRoute"; // Import PrivateRoute component for protected routes
 import { useSelector } from "react-redux"; // Import useSelector hook from react-redux to access the Redux store
 

@@ -5,6 +5,9 @@ import {
   usePostCommentMutation,
 } from "../Api";
 import { useSelector } from "react-redux";
+import "./css/button.css";
+import "./css/input.css";
+import "./css/text.css";
 
 const CommentSection = ({ postId, author }) => {
   const [comment, setComment] = useState(""); // State to manage the comment input
@@ -36,19 +39,19 @@ const CommentSection = ({ postId, author }) => {
 
   return (
     <div className="comment-section">
-      <h4>Comments</h4>
+      <p className="sub-title text-bold">Comments</p>
       {/* Render the list of comments if there are any, otherwise display a message */}
       {comments?.length > 0 ? (
         comments.map((comment) => (
           <div className="comment-item" key={comment.id}>
             <p>{comment.content}</p>
-            <p>
+            <p className="text-muted">
               <small>{comment.created_at}</small>
             </p>
           </div>
         ))
       ) : (
-        <p>No comments yet.</p>
+        <p className="text-muted">No comments yet.</p>
       )}
       <div className="comment-form">
         <input
@@ -57,7 +60,9 @@ const CommentSection = ({ postId, author }) => {
           onChange={(e) => setComment(e.target.value)}
           placeholder="Leave a comment..."
         />
-        <button onClick={handleCommentSubmit}>Submit</button>
+        <button className="button-primary" onClick={handleCommentSubmit}>
+          Submit
+        </button>
       </div>
     </div>
   );

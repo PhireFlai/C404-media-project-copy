@@ -84,7 +84,11 @@ TEMPLATES = [
 WSGI_APPLICATION = 'socialnetwork.wsgi.application'
 
 # Allow React App to connect to the backend
-CORS_ALLOWED_ORIGINS = [ "http://localhost:3000" ]
+CORS_ALLOWED_ORIGINS = [ 
+    "http://localhost:3000",
+    "http://localhost:80",
+    "http://localhost",
+]
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
@@ -138,7 +142,9 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = "/staticfiles/"
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
