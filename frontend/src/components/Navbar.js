@@ -1,17 +1,14 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useSelector, useDispatch } from "react-redux";
-import { logoutUser } from "../UserContext/userActions.js";
 import Dropdown from "./dropdown.js";
 import "./css/navbar.css";
 
 const Navbar = () => {
-  const user = useSelector((state) => state.user.user); // Redux gets user state
-  const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    dispatch(logoutUser());
+    localStorage.removeItem("user"); // Remove user from localStorage
+    localStorage.removeItem("token"); // Also remove the token
     navigate("/login");
   };
 
