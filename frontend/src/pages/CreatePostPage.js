@@ -36,7 +36,7 @@ const CreatePostPage = () => {
 
   return (
     <div className="post-container">
-      <h1 className="create-post-title">Create a Post</h1>
+      <h1 className="title">Create a Post</h1>
       <form
         className="create-post-form"
         onSubmit={handleSubmit}
@@ -77,7 +77,7 @@ const CreatePostPage = () => {
           onChange={handleImageChange}
         />
         <br />
-        <button className="submit-post-button" type="submit">
+        <button className="button-primary" type="submit">
           Post
         </button>
       </form>

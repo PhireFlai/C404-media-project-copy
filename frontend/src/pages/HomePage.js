@@ -15,13 +15,11 @@ const HomePage = () => {
 
   return (
     <div className="recent-posts-container">
-      <h1 className="recent-posts-title">Recent Posts</h1>
+      <h1 className="title">Recent Posts</h1>
 
-      <p className="create-post-link">
-        <button className="create-posts-button" onClick={handleCreatePostClick}>
-          Create a Post
-        </button>
-      </p>
+      <button className="button-primary" onClick={handleCreatePostClick}>
+        Create a Post
+      </button>
 
       {/* Render the list of posts if there are any, otherwise display a message */}
       {posts && posts.length > 0 ? (
@@ -29,7 +27,7 @@ const HomePage = () => {
           <PostItem key={post.id} post={post} refetchPosts={refetch} />
         ))
       ) : (
-        <p className="no-posts-message">No posts yet.</p>
+        <p className="text-muted">No posts yet.</p>
       )}
     </div>
   );

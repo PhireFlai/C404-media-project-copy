@@ -86,53 +86,49 @@ const PostItem = ({ post, refetchPosts }) => {
             placeholder="Edit content"
           />
           <br />
-          <button className="save-button" onClick={handleSaveClick}>
+          <button className="button-success" onClick={handleSaveClick}>
             Save
           </button>
-          <button className="delete-button" onClick={handleCancelClick}>
+          <button className="button-danger" onClick={handleCancelClick}>
             Cancel
           </button>
         </div>
       ) : (
         <>
-          <h3 className="post-title">{post.title}</h3>
-          <p className="post-visibility">Visibility: {post.visibility}</p>
-          <p className="post-author">
-            Author: {post.author.username}
-          </p>
-          <div className="post-content">
+          <h3 className="sub-title">{post.title}</h3>
+          <p className="text-muted">Visibility: {post.visibility}</p>
+          <p>Author: {post.author.username}</p>
+          <p>
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               rehypePlugins={[rehypeRaw]}
             >
               {post.content}
             </ReactMarkdown>
-          </div>
+          </p>
           <div className="post-image">
-            {post.image && (
-              <img
-                src={`${post.image}`}
-                alt="Post"
-              />
-            )}
+            {post.image && <img src={`${post.image}`} alt="Post" />}
           </div>
         </>
       )}
       <div className="post-actions">
         {user && user.id === post.author.id && !isEditing && (
           <>
-            <button onClick={handleEditClick} className="edit-post-button">
+            <button onClick={handleEditClick} className="button-secondary">
               Edit
             </button>
             <button
               onClick={() => handleDelete(post.id)}
-              className="delete-button"
+              className="button-danger"
             >
               Delete
             </button>
           </>
         )}
-        <button onClick={() => handleCommentClick(post.id)}>
+        <button
+          className="button-secondary"
+          onClick={() => handleCommentClick(post.id)}
+        >
           {currentPostId === post.id ? "Close Comments" : "View Comments"}
         </button>
       </div>

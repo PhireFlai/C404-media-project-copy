@@ -1,10 +1,7 @@
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f9;
-    /* Light background */
-    margin: 0;
-    padding: 0;
-}
+@import url('../../components/css/button.css');
+@import url('../../components/css/links.css'); 
+@import url('../../components/css/text.css');
+@import url('../../components/css/input.css');
 
 .profile-container {
     max-width: 500px;
@@ -33,11 +30,6 @@ body {
     margin-bottom: 10px;
 }
 
-.profile-title {
-    color: #003366;
-    font-size: 22px;
-    margin: 5px 0;
-}
 
 /* Profile Stats */
 .profile-stats {
@@ -54,32 +46,6 @@ body {
     margin-top: 15px;
 }
 
-.edit-button,
-.save-button,
-.cancel-button {
-    background-color: #003366;
-    color: white;
-    padding: 8px 12px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    margin: 5px;
-    transition: background 0.3s ease;
-}
-
-.edit-button:hover,
-.save-button:hover {
-    background-color: #0055aa;
-}
-
-.cancel-button {
-    background-color: #ff4444;
-}
-
-.cancel-button:hover {
-    background-color: #cc0000;
-}
 
 /* Username Edit Input */
 .username-edit-container {
@@ -89,14 +55,6 @@ body {
     margin-top: 10px;
 }
 
-.username-edit-input {
-    padding: 8px;
-    font-size: 14px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    width: 60%;
-}
-
 /* User Posts Section */
 .user-posts-title {
     color: #003366;
@@ -104,11 +62,4 @@ body {
     margin-top: 20px;
     padding-bottom: 5px;
     border-bottom: 2px solid #ddd;
-}
-
-.loading-message,
-.error-message {
-    color: red;
-    font-size: 14px;
-    margin-top: 10px;
 }
