@@ -211,24 +211,29 @@ def updateUserProfile(request, userId):
         return Response({'message': 'Profile picture updated successfully'}, status=status.HTTP_200_OK)
     else:
         return Response({'error': 'No profile picture provided'}, status=status.HTTP_400_BAD_REQUEST)
+    
+# Creates a comment on a post
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def CreateComment(request, userId, pk):
+    post = get_object_or_404(Post, id=pk)
+    author = request.user
+    content = request.data.get('content')
+    data={'author': author.id, 'content': content, 'post': post.id}
+    serializer = CommentSerializer(data=data)
+    
+    if serializer.is_valid():
+        serializer.save()
+        comment = Comment.objects.get(id=serializer.data['id'])
+        response = requests.post(f'http://localhost:8000/api/authors/{userId}/inbox/', data=CommentSerializer(comment).data)
+        return Response(status=response.status_code)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # Posts a comment to an author's inbox
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def PostToInbox(request, receiver):
-    if request.data.get("type") == "Comment":
-        pk = request.data.get('pk')
-        post = get_object_or_404(Post, id=pk)
-        author = request.user
-        content = request.data.get('content')
-        data={'author': author.id, 'content': content, 'post': post.id}
-        serializer = CommentSerializer(data=data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        print(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    return Response(status=status.HTTP_400_BAD_REQUEST)
+    return Response({"message": "Request received"}, status=status.HTTP_200_OK)
 
 # Lists and creates comments for a specific post
 class CommentsList(generics.ListCreateAPIView):

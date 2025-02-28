@@ -38,6 +38,7 @@ urlpatterns = [
     path('api/authors/<uuid:userId>/update-picture/', updateUserProfile, name='update-user-profile'),  # Endpoint to update a user's profile picture
     path("api/authors/<uuid:userId>/posts/<uuid:pk>/", PostDetailView.as_view(), name="post-detail"),  # Endpoint to retrieve, update, and delete a specific post
     path("api/authors/<uuid:receiver>/inbox/", PostToInbox, name='post-to-inbox'),  # Endpoint to post to author's inbox
+    path("api/authors/<uuid:userId>/posts/<uuid:pk>/comment/", CreateComment, name='comment'),  # Endpoint to create a comment on a post
     path("api/authors/<uuid:userId>/posts/<uuid:pk>/comments/", CommentsList.as_view(), name="comment-list"),  # Endpoint to list and create comments for a specific post
     path("api/authors/<uuid:userId>/posts/<uuid:pk>/comments/<uuid:commentId>/", GetComment.as_view(), name="get-comment"),
     path("api/authors/<uuid:userId>/commented/", GetCommented.as_view(), name='commented'),

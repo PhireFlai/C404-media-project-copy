@@ -54,11 +54,11 @@ export const api = createApi({
         body: credentials,
       }),
     }),
-    postComment: builder.mutation({
-      query: ({ type, receiver, pk, content }) => ({
-        url: `api/authors/${receiver}/inbox/`, // Endpoint for posting a comment to the author's inbox
+    createComment: builder.mutation({
+      query: ({ userId, postId, commentData }) => ({
+        url: `api/authors/${userId}/posts/${postId}/comment/`, // Endpoint for creating a comment
         method: "POST",
-        body: { type: type, content: content, pk: pk },
+        body: commentData,
       }),
     }),
     updateProfilePicture: builder.mutation({
@@ -106,6 +106,5 @@ export const {
   useGetUserProfileQuery,
   useUpdateProfilePictureMutation,
   useUpdateUsernameMutation,
-  usePostCommentMutation,
   useGetUserPostsQuery,
 } = api;
