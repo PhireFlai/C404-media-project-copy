@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
 import { useLoginUserMutation } from "../Api";
-import { loginUser as loginUserAction } from "../UserContext/userActions";
 import "./css/login.css";
 
 const LoginUser = () => {
@@ -13,7 +11,6 @@ const LoginUser = () => {
   });
 
   const navigate = useNavigate();
-  const dispatch = useDispatch();
 
   const [loginUser] = useLoginUserMutation(); // Mutation hook for logging in a user
 
@@ -41,7 +38,6 @@ const LoginUser = () => {
         username: formData.username,
         password: formData.password,
       }).unwrap();
-      console.log("User logged in:", loginResponse);
 
       setSuccessMessage("User logged in successfully!");
 
@@ -50,16 +46,12 @@ const LoginUser = () => {
         username: loginResponse.username,
       };
 
-      dispatch(loginUserAction(userData)); // Update Redux state
       // Save the token and user data to local storage
       localStorage.setItem("token", loginResponse.token);
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          id: loginResponse.user_id,
-          username: loginResponse.username,
-        })
-      );
+      localStorage.setItem("user", JSON.stringify(userData));
+
+      // Manually trigger a navbar update
+      window.dispatchEvent(new Event("navbarTrigger"));
 
       navigate(`/${loginResponse.user_id}`); // Redirect to the user's profile page
     } catch (err) {

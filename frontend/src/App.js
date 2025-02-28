@@ -7,10 +7,9 @@ import Login from "./pages/Login"; // Import Login component
 import Profile from "./pages/Profile"; // Import Profile component
 import Navbar from "./components/Navbar"; // Import Navbar component
 import PrivateRoute from "./components/PrivateRoute"; // Import PrivateRoute component for protected routes
-import { useSelector } from "react-redux"; // Import useSelector hook from react-redux to access the Redux store
 
 const App = () => {
-  const user = useSelector((state) => state.user.user); // Get the current user from the Redux store
+  const user = JSON.parse(localStorage.getItem('user')); // Get the current user from local storage
 
   return (
     <div>

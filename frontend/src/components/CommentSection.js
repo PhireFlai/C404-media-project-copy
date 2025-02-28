@@ -3,11 +3,13 @@ import {
   useGetCommentsQuery,
   useCreateCommentMutation,
 } from "../Api";
-import { useSelector } from "react-redux";
+import "./css/button.css";
+import "./css/input.css";
+import "./css/text.css";
 
 const CommentSection = ({ postId, author }) => {
   const [comment, setComment] = useState(""); // State to manage the comment input
-  const user = useSelector((state) => state.user.user); // Get the current user from the Redux store
+  const user = JSON.parse(localStorage.getItem('user')); // Get the current user from local storage
   const { data: comments, refetch: refetchComments } = useGetCommentsQuery(
     { userId: user.id, postId },
     { skip: !postId }

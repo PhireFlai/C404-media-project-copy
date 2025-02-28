@@ -7,8 +7,6 @@ import {
 } from "../Api";
 import ProfilePicUpload from "../components/ProfilePicUpload";
 import UserPosts from "../components/UserPosts";
-import { useSelector, useDispatch } from "react-redux";
-import { loginUser as loginUserAction } from "../UserContext/userActions";
 import "./css/profile.css";
 
 const Profile = () => {
@@ -20,11 +18,10 @@ const Profile = () => {
     error: postsError,
     refetch: refetchPosts,
   } = useGetUserPostsQuery(userId);
-  const curUser = useSelector((state) => state.user.user);
+  const curUser = JSON.parse(localStorage.getItem("user")); // Get the current user from local storage
   const [isEditing, setIsEditing] = useState(false); // State for editing mode
   const [newUsername, setNewUsername] = useState(""); // State for new username
   const [updateUsername] = useUpdateUsernameMutation(); // Mutation for updating username
-  const dispatch = useDispatch();
 
   useEffect(() => {
     refetchPosts(); // Refetch posts every time the component is rendered
@@ -40,8 +37,9 @@ const Profile = () => {
       // Call the updateUsername mutation
       await updateUsername({ userId, newUsername }).unwrap();
       setIsEditing(false); // Disable editing mode
-      const updatedUser = { ...curUser, username: newUsername };
-      dispatch(loginUserAction(updatedUser));
+      const updatedUser = { id: curUser.id, username: newUsername };
+
+      localStorage.setItem('user', JSON.stringify(updatedUser));
 
       window.location.reload(); // Refresh the page to reflect the changes
     } catch (err) {
