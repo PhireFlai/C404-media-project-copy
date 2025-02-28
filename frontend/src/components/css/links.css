@@ -1,0 +1,27 @@
+a {
+    text-decoration: none;
+    color: inherit;
+    transition: color 0.3s ease;
+}
+
+a:hover {
+    color: #0056b3;
+}
+
+/* Specific link styles */
+nav ul li a,
+.dropdown-menu li a,
+.dropdown-menu li button {
+    color: white;
+    text-decoration: none;
+    padding: 5px;
+    border: 1px solid transparent;
+    border-radius: 5px;
+}
+
+nav ul li a:hover,
+.dropdown-menu li a:hover,
+.dropdown-menu li button:hover {
+    background-color: #f0f0f0;
+    border: none;
+}

@@ -68,7 +68,7 @@ const CreateUser = () => {
 
   return (
     <>
-      <h1 className="heading">Sign Up</h1>
+      <h1 className="title">Sign Up</h1>
       <form onSubmit={handleSubmit} className="signup-form">
         <div>
           <label>Username:</label>
@@ -89,15 +89,21 @@ const CreateUser = () => {
           />
         </div>
         <div className="button-row">
-          <button type="submit">Create User</button>
-          <button type="button" onClick={() => navigate("/login")}>
+          <button className="button-primary" type="submit">
+            Create User
+          </button>
+          <button
+            className="button-secondary"
+            type="button"
+            onClick={() => navigate("/login")}
+          >
             Back to Login
           </button>
         </div>
 
         {/* Success and error messages */}
-        {successMessage && <p style={{ color: "green" }}>{successMessage}</p>}
-        {errorMessage && <p style={{ color: "red" }}>{errorMessage}</p>}
+        {successMessage && <p className="success-message">{successMessage}</p>}
+        {errorMessage && <p className="error-message">{errorMessage}</p>}
       </form>
     </>
   );

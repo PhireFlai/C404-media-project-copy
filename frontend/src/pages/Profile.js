@@ -87,7 +87,7 @@ const Profile = () => {
           <ProfilePicUpload userId={curUser.id} />
 
           {!isEditing ? (
-            <button className="edit-button" onClick={handleEditClick}>
+            <button className="button-secondary" onClick={handleEditClick}>
               Edit Username
             </button>
           ) : (
@@ -99,11 +99,11 @@ const Profile = () => {
                 placeholder="Enter new username"
                 className="username-edit-input"
               />
-              <button className="save-button" onClick={handleSaveClick}>
+              <button className="button-success" onClick={handleSaveClick}>
                 Save
               </button>
               <button
-                className="cancel-button"
+                className="button-danger"
                 onClick={() => setIsEditing(false)}
               >
                 Cancel

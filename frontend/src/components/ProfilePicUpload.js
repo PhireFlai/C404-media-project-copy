@@ -27,7 +27,7 @@ const ProfilePictureUpload = ({ userId }) => {
   return (
     <form onSubmit={handleSubmit}>
       <input type="file" accept="image/*" onChange={handleFileChange} />
-      <button className="edit-button" type="submit" disabled={isLoading}>
+      <button className="button-secondary" type="submit" disabled={isLoading}>
         {isLoading ? "Uploading..." : "Upload Profile Picture"}
       </button>
       {error && (
