@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from socialnetwork.models import User,Post
+from socialnetwork.models import *
 
 # Custom UserAdmin class
 class CustomUserAdmin(UserAdmin):
@@ -23,3 +23,5 @@ class CustomUserAdmin(UserAdmin):
 admin.site.register(User, CustomUserAdmin)
 # admin.site.register(User)
 admin.site.register(Post)
+admin.site.register(Comment)
+admin.site.register(FollowRequest)
