@@ -397,3 +397,12 @@ class FollowersList(generics.ListCreateAPIView):
         userId = self.kwargs['userId']
         user = get_object_or_404(User, id=userId)
         return user.followers.all()
+    
+@permission_classes([AllowAny])
+class FollowingList(generics.ListCreateAPIView):
+    serializer_class = UserSerializer
+
+    def get_queryset(self):
+        userId = self.kwargs['userId']
+        user = get_object_or_404(User, id=userId)
+        return user.following.all()
