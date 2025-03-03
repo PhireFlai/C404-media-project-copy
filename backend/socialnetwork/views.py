@@ -324,3 +324,76 @@ def CreateFollowRequest(request, actorId, objectId):
         response = requests.post(f'http://localhost:8000/api/authors/{object.id}/inbox/', data=request_data)
         return Response(serializer.data, status=response.status_code)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def AcceptFollowRequest(request, objectId, requestId):
+    try:
+        follow_request = FollowRequest.objects.get(id=requestId)
+    except FollowRequest.DoesNotExist:
+        return Response({'error': 'Follow request not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if objectId != request.user.id:
+        return Response({'error': 'You are not authorized to accept this request'}, 
+                       status=status.HTTP_403_FORBIDDEN)
+
+    action = request.query_params.get('action', '').lower()
+    
+    if action not in ['accept', 'reject']:
+        return Response({'error': 'Invalid action. Please use "accept" or "reject"'},
+                       status=status.HTTP_400_BAD_REQUEST)
+
+    if action == 'accept':
+        # Add the follower, if they are mututally following, add each other as friends
+        follow_request.object.followers.add(follow_request.actor)
+        if(follow_request.actor.followers.filter(id=follow_request.object.id).exists() == True):
+            follow_request.actor.friends.add(follow_request.object)
+            follow_request.object.friends.add(follow_request.actor)
+        message = 'Follow request accepted successfully'
+    else:
+        # Reject the request
+        message = 'Follow request rejected successfully'
+
+    # Delete the follow request
+    follow_request.delete()
+    
+    return Response({
+        'message': message,
+    }, status=status.HTTP_200_OK)
+    
+    
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def Unfollow(request, followedId, followerId):
+    try:
+        followed = User.objects.get(id=followedId)
+        follower = User.objects.get(id=followerId)
+    except User.DoesNotExist:
+        return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if follower != request.user.id:
+        return Response({'error': 'You are not authorized to unfollow this user'}, 
+                       status=status.HTTP_403_FORBIDDEN)
+
+    
+    # Unfollow the user
+    followed.followers.remove(follower)
+    
+    # Remove each other as friends
+    followed.friends.remove(follower)
+    follower.friends.remove(followed)
+    return Response({'message': 'Unfollowed successfully'}, status=status.HTTP_200_OK)
+    
+    
+    
+@permission_classes([AllowAny])
+class FollowersList(generics.ListCreateAPIView):
+    serializer_class = UserSerializer
+
+    def get_queryset(self):
+        userId = self.kwargs['userId']
+        user = get_object_or_404(User, id=userId)
+        return user.followers.all()
