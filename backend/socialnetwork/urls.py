@@ -46,6 +46,7 @@ urlpatterns = [
     path("api/public-posts/", PublicPostsView.as_view(), name="public-posts"),  # Endpoint to list public posts
     path("api/authors/<uuid:objectId>/follow-requests/", FollowRequestListView.as_view(), name='follow-request-list'),
     path("api/authors/<uuid:actorId>/follow/authors/<uuid:objectId>/", CreateFollowRequest, name='create-follow-request'),
+    path("api/authors/<uuid:receiver>/feed/", user_feed, name="user-feed"),
 ]
 
 # Serve media files during development

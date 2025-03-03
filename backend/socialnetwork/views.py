@@ -17,6 +17,7 @@ from rest_framework.generics import ListAPIView
 from .models import *
 from .serializers import *
 import requests
+from django.db.models import Q
 
 @swagger_auto_schema(
     method="post",
@@ -305,7 +306,7 @@ class FollowRequestListView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         objectId = self.kwargs['objectId']
-        return FollowRequest.objects.filter(actor=objectId)
+        return FollowRequest.objects.filter(object=objectId)
     
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -324,3 +325,25 @@ def CreateFollowRequest(request, actorId, objectId):
         response = requests.post(f'http://localhost:8000/api/authors/{object.id}/inbox/', data=request_data)
         return Response(serializer.data, status=response.status_code)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def user_feed(request, receiver):
+    # Ensure receiver exists
+    try:
+        receiver_user = User.objects.get(id=receiver)
+    except User.DoesNotExist:
+        return Response({"error": "User not found"}, status=404)
+
+    friends = Friendship.objects.filter(user=receiver_user).values_list("friend", flat=True)
+
+    # Fetch only relevant posts
+    posts = Post.objects.filter(
+        Q(visibility=Post.PUBLIC) |
+        Q(visibility=Post.FRIENDS_ONLY, author__in=friends) |
+        Q(visibility=Post.UNLISTED, author__in=friends)
+    ).exclude(visibility=Post.DELETED).order_by("-created_at")
+
+    serializer = PostSerializer(posts, many=True)
+    return Response(serializer.data)

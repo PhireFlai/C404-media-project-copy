@@ -45,20 +45,19 @@ class User(AbstractUser):
 
         super().save(*args, **kwargs)  # Save the instance
 
-        
 class Post(models.Model):
     PUBLIC = 'public'
     FRIENDS_ONLY = 'friends-only'
     UNLISTED = 'unlisted'
     DELETED = 'deleted'
-    
+
     VISIBILITY_CHOICES = [
         (PUBLIC, 'Public'),
         (FRIENDS_ONLY, 'Friends Only'),
         (UNLISTED, 'Unlisted'),
         (DELETED, 'Deleted')
     ]
-    
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     author = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     title = models.CharField(max_length=255)
@@ -82,3 +81,18 @@ class FollowRequest(models.Model):
     summary = models.TextField()
     actor = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_follow_request")
     object = models.ForeignKey(User, on_delete=models.CASCADE, related_name="received_follow_request")
+
+# Friendship model for the friends-only Stream
+class Friendship(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="friendships")
+    friend = models.ForeignKey(User, on_delete=models.CASCADE, related_name="friends_of")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "friend")
+
+    def save(self, *args, **kwargs):
+        """Ensure bidirectional friendship"""
+        super().save(*args, **kwargs)
+        if not Friendship.objects.filter(user=self.friend, friend=self.user).exists():
+            Friendship.objects.create(user=self.friend, friend=self.user)
