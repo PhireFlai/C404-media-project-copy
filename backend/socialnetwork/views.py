@@ -382,12 +382,36 @@ def Unfollow(request, followedId, followerId):
     # Unfollow the user
     followed.followers.remove(follower)
     
-    # Remove each other as friends
-    followed.friends.remove(follower)
-    follower.friends.remove(followed)
+    if follower in followed.friends.all():
+        # Remove each other as friends
+        followed.friends.remove(follower)
+        follower.friends.remove(followed)
     return Response({'message': 'Unfollowed successfully'}, status=status.HTTP_200_OK)
     
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def RemoveFollower(request, followerId, followedId):
+    try:
+        followed = User.objects.get(id=followedId)
+        follower = User.objects.get(id=followerId)
+    except User.DoesNotExist:
+        return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if followed != request.user.id:
+        return Response({'error': 'You are not authorized to remove this follower'}, 
+                       status=status.HTTP_403_FORBIDDEN)
+
+    # Remove the follower
+    followed.followers.remove(follower)
     
+    if followed in follower.friends.all():
+        # Remove each other as friends
+        followed.friends.remove(follower)
+        follower.friends.remove(followed)
+    
+    return Response({'message': 'Follower removed successfully'}, status=status.HTTP_200_OK)    
     
 @permission_classes([AllowAny])
 class FollowersList(generics.ListCreateAPIView):

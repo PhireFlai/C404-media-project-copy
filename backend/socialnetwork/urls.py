@@ -50,6 +50,7 @@ urlpatterns = [
     path("api/authors/<uuid:actorId>/follow/authors/<uuid:objectId>/", CreateFollowRequest, name='create-follow-request'),
     path("api/authors/<uuid:objectId>/accept-follow-request/<uuid:requestId>", AcceptFollowRequest, name='accept-follow-request'),
     path("api/authors/<uuid:followerId>/unfollow/<uuid:followedId>/", Unfollow, name='unfollow'),
+    path("api/authors/<uuid:followedId>/remove-follower/<uuid:followerId>/", RemoveFollower, name='remove-follower'),
 ]
 
 # Serve media files during development
