@@ -9,23 +9,20 @@ import Navbar from "./components/Navbar"; // Import Navbar component
 import PrivateRoute from "./components/PrivateRoute"; // Import PrivateRoute component for protected routes
 
 const App = () => {
-  const user = JSON.parse(localStorage.getItem('user')); // Get the current user from local storage
+  // const user = JSON.parse(localStorage.getItem('user')); // Get the current user from local storage
 
   return (
     <div>
       <Router>
-        {user && <Navbar />} {/* Render the Navbar if the user is logged in */}
+        { <Navbar />} 
         <div className="container">
           <Routes>
             <Route path="/signup" element={<SignUp />} />{" "}
             {/* Route for the signup page */}
             <Route path="/login" element={<Login />} />{" "}
             {/* Route for the login page */}
-            <Route
-              path="/"
-              element={<PrivateRoute element={HomePage} />}
-            />{" "}
-            {/* Protected route for the home page */}
+            <Route path="/" element={<HomePage />} />{" "}
+            {/*Route for the home page */}
             <Route
               path="/create"
               element={<PrivateRoute element={CreatePostPage} />}

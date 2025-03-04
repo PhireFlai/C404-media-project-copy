@@ -89,6 +89,58 @@ export const api = createApi({
     getUserPosts: builder.query({
       query: (userId) => `api/authors/${userId}/posts/`, // Endpoint for fetching posts by userId
     }),
+    // Get followers list
+    getFollowers: builder.query({
+      query: (userId) => `api/authors/${userId}/followers/`,
+    }),
+    getFollowing: builder.query({
+      query: (userId) => `api/authors/${userId}/following/`,
+    }),
+    createFollowRequest: builder.mutation({
+      query: ({ actorId, objectId }) => ({
+        url: `api/authors/${actorId}/follow/authors/${objectId}/`,
+        method: 'POST',
+      }),
+    }),
+    acceptFollowRequest: builder.mutation({
+      query: ({ objectId, requestId }) => ({
+        url: `api/authors/${objectId}/accept-follow-request/${requestId}/`,
+        method: 'POST',
+      }),
+    }),
+    unfollowUser: builder.mutation({
+      query: ({ followerId, followedId }) => ({
+        url: `api/authors/${followerId}/unfollow/${followedId}/`,
+        method: 'DELETE',
+      }),
+    }),
+    removeFollower: builder.mutation({
+      query: ({ followedId, followerId }) => ({
+        url: `api/authors/${followedId}/remove-follower/${followerId}/`,
+        method: 'DELETE',
+      }),
+    }),
+    getFollowRequests: builder.query({
+      query: (objectId) => `api/authors/${objectId}/follow-requests/`,
+    }),
+    postToInbox: builder.mutation({
+      query: ({ receiver, data }) => ({
+        url: `api/authors/${receiver}/inbox/`,
+        method: 'POST',
+        body: data,
+      }),
+    }),
+    getPostComment: builder.query({
+      query: ({ userId, postId, commentId }) =>
+        `api/authors/${userId}/posts/${postId}/comments/${commentId}/`,
+    }),
+    getAuthorComments: builder.query({
+      query: (userId) => `api/authors/${userId}/commented/`,
+    }),
+    getAuthorComment: builder.query({
+      query: ({ userId, commentId }) =>
+        `api/authors/${userId}/commented/${commentId}/`,
+    }),
   }),
 });
 
@@ -107,4 +159,15 @@ export const {
   useUpdateProfilePictureMutation,
   useUpdateUsernameMutation,
   useGetUserPostsQuery,
+  useGetFollowersQuery,
+  useGetFollowingQuery,
+  useCreateFollowRequestMutation,
+  useAcceptFollowRequestMutation,
+  useUnfollowUserMutation,
+  useRemoveFollowerMutation,
+  useGetPostCommentQuery,
+  useGetAuthorCommentsQuery,
+  useGetAuthorCommentQuery,
+  usePostToInboxMutation,
+  useGetFollowRequestsQuery,
 } = api;

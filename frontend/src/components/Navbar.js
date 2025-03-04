@@ -29,9 +29,7 @@ const Navbar = () => {
     navigate("/login");
   };
 
-  if (!user) {
-    return null; // Don't render the Navbar if the user is not present
-  }
+
 
   return (
     <nav>
@@ -39,16 +37,22 @@ const Navbar = () => {
         <li>
           <Link to="/">Home</Link>
         </li>
-        <li>
-          <Dropdown label={`${user.username}`}>
-            <li>
-              <Link to={`/${user.id}`}>Profile</Link>
-            </li>
-            <li>
-              <button onClick={handleLogout}>Logout</button>
-            </li>
-          </Dropdown>
-        </li>
+        {user ? (
+          <li>
+            <Dropdown label={`${user.username}`}>
+              <li>
+                <Link to={`/${user.id}`}>Profile</Link>
+              </li>
+              <li>
+                <button onClick={handleLogout}>Logout</button>
+              </li>
+            </Dropdown>
+          </li>
+        ) : (
+          <li>
+            <Link to={`/login`}>Login</Link>
+          </li>
+        )}
       </ul>
     </nav>
   );
