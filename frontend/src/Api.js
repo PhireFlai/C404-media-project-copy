@@ -111,13 +111,13 @@ export const api = createApi({
     unfollowUser: builder.mutation({
       query: ({ followerId, followedId }) => ({
         url: `api/authors/${followerId}/unfollow/${followedId}/`,
-        method: 'DELETE',
+        method: 'POST',
       }),
     }),
     removeFollower: builder.mutation({
       query: ({ followedId, followerId }) => ({
         url: `api/authors/${followedId}/remove-follower/${followerId}/`,
-        method: 'DELETE',
+        method: 'POST',
       }),
     }),
     getFollowRequests: builder.query({

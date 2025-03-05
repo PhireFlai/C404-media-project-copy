@@ -1,14 +1,27 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import { useGetFollowersQuery } from '../Api';
+import { useGetFollowersQuery, useRemoveFollowerMutation } from '../Api';
 import { Link } from 'react-router-dom';
 const FollowersList = () => {
+    const currentUser = JSON.parse(localStorage.getItem('user'));
     const { userId } = useParams();
-    const { data: followers, isLoading, isError, error } = useGetFollowersQuery(userId);
+    const { data: followers, isLoading, isError, error, refetch } = useGetFollowersQuery(userId);
+    const [removeFollower] = useRemoveFollowerMutation();
 
     if (isLoading) return <div className="loader">Loading followers...</div>;
     if (isError) return <div>Error loading followers: {error.message}</div>;
 
+    const handleRemoveFollower = async (followerId) => {
+        try {
+            await removeFollower({
+                followedId: currentUser.id,
+                followerId: followerId
+            }).unwrap();
+            refetch(); // Refresh the list after successful removal
+        } catch (err) {
+            console.error('Failed to remove follower:', err);
+        }
+    };
 
     return (
         <div className="followers-container">
@@ -31,6 +44,14 @@ const FollowersList = () => {
                                     {follower.username}
                                 </Link>
                             </div>
+                            {currentUser.id === userId &&
+                                <button
+                                    onClick={() => handleRemoveFollower(follower.id)}
+                                    className="remove-button"
+                                >
+                                    Remove
+                                </button>
+                            }
                         </li>
                     ))}
                 </ul>

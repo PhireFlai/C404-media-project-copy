@@ -378,7 +378,7 @@ def Unfollow(request, followedId, followerId):
     except User.DoesNotExist:
         return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
-    if follower != request.user.id:
+    if follower.id != request.user.id:
         return Response({'error': 'You are not authorized to unfollow this user'}, 
                        status=status.HTTP_403_FORBIDDEN)
 
@@ -403,7 +403,7 @@ def RemoveFollower(request, followerId, followedId):
     except User.DoesNotExist:
         return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
-    if followed != request.user.id:
+    if followed.id != request.user.id:
         return Response({'error': 'You are not authorized to remove this follower'}, 
                        status=status.HTTP_403_FORBIDDEN)
 
