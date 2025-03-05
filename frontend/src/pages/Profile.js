@@ -120,11 +120,6 @@ const Profile = () => {
         </div>
       )}
 
-      {curUser && curUser.id !== userId &&
-        <></>
-        // <button onClick={handleSendFollow()}>Follow</button>
-
-      }
 
       {/* User's Posts Section */}
 

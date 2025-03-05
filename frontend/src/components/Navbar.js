@@ -1,18 +1,17 @@
+// Navbar.js
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import Dropdown from "./Dropdown.js";
+import Dropdown from "./Dropdown";
+import FollowRequests from "./FollowRequests"; // Import your separate FollowRequests component
 import "./css/navbar.css";
 
 const Navbar = () => {
-  const [user, setUser] = useState(JSON.parse(localStorage.getItem("user"))); // State to manage the current user
-  // eslint-disable-next-line
-  const [forceRender, setForceRender] = useState(false); // Dummy state for forcing re-renders
+  const [user, setUser] = useState(JSON.parse(localStorage.getItem("user")));
   const navigate = useNavigate();
 
   useEffect(() => {
     const handleStorageChange = () => {
       setUser(JSON.parse(localStorage.getItem("user")));
-      setForceRender(prev => !prev); // Toggle state to force re-render
     };
 
     window.addEventListener("navbarTrigger", handleStorageChange);
@@ -23,13 +22,11 @@ const Navbar = () => {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("user"); // Remove the user from local storage
-    localStorage.removeItem("token"); // Remove the token from local storage
-    setUser(null); // Update the state to reflect the user is logged out
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    setUser(null);
     navigate("/login");
   };
-
-
 
   return (
     <nav>
@@ -37,6 +34,12 @@ const Navbar = () => {
         <li>
           <Link to="/">Home</Link>
         </li>
+        {user &&
+          <li>
+            <Dropdown label={`Follow Requests`}>
+              <FollowRequests userId={user.id} />
+            </Dropdown>
+          </li>}
         {user ? (
           <li>
             <Dropdown label={`${user.username}`}>
@@ -49,9 +52,7 @@ const Navbar = () => {
             </Dropdown>
           </li>
         ) : (
-          <li>
-            <Link to={`/login`}>Login</Link>
-          </li>
+          <button onClick={() => navigate("/login")}>Login</button>
         )}
       </ul>
     </nav>
