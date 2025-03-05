@@ -2,9 +2,8 @@ import React from 'react';
 import { useGetUserPostsQuery } from '../Api';
 import PostItem from './PostItem';
 
-const UserPosts = () => {
-  const user = JSON.parse(localStorage.getItem('user')); // Get the current user from local storage
-  const { data: posts, refetch } = useGetUserPostsQuery(user.id); // Fetch user-specific posts
+const UserPosts = ({userId}) => {
+  const { data: posts, refetch } = useGetUserPostsQuery(userId); // Fetch user-specific posts
 
   return (
     <div className="user-posts">

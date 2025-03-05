@@ -7,6 +7,8 @@ import Login from "./pages/Login"; // Import Login component
 import Profile from "./pages/Profile"; // Import Profile component
 import Navbar from "./components/Navbar"; // Import Navbar component
 import PrivateRoute from "./components/PrivateRoute"; // Import PrivateRoute component for protected routes
+import FollowersList from "./pages/FollowerList";
+import FollowingList from "./pages/FollowingList";
 
 const App = () => {
   // const user = JSON.parse(localStorage.getItem('user')); // Get the current user from local storage
@@ -14,7 +16,7 @@ const App = () => {
   return (
     <div>
       <Router>
-        { <Navbar />} 
+        {<Navbar />}
         <div className="container">
           <Routes>
             <Route path="/signup" element={<SignUp />} />{" "}
@@ -28,11 +30,12 @@ const App = () => {
               element={<PrivateRoute element={CreatePostPage} />}
             />{" "}
             {/* Protected route for the create post page */}
+            <Route path="/:userId/followers" element={<FollowersList />} />{" "}
+            <Route path="/:userId/following" element={<FollowingList />} />{" "}
             <Route
               path="/:userId"
-              element={<PrivateRoute element={Profile} />}
+              element={<Profile />}
             />{" "}
-            {/* Protected route for the profile page */}
           </Routes>
         </div>
       </Router>

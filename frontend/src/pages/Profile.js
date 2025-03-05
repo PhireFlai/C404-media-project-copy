@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import {
   useGetUserProfileQuery,
   useUpdateUsernameMutation,
@@ -72,10 +72,10 @@ const Profile = () => {
       {/* Profile Stats */}
       <div className="profile-stats">
         <p>
-          <strong>Followers:</strong> {user.followers.length}
+          <Link to={`/${userId}/followers`}><strong>Followers:</strong> </Link>{user.followers.length}
         </p>
         <p>
-          <strong>Friends:</strong> {user.friends.length}
+        <Link to={`/${userId}/following`}><strong>Following:</strong> </Link> {user.following.length}
         </p>
       </div>
 
@@ -127,7 +127,7 @@ const Profile = () => {
       ) : (
         <>
           <h2 className="user-posts-title">{user.username}'s Posts</h2>
-          <UserPosts posts={posts} />
+          <UserPosts userId={userId} />
         </>
       )}
     </div>

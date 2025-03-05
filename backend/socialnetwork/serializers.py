@@ -8,7 +8,7 @@ import markdown
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User        
-        fields = ['id', 'username', 'password', 'email', 'profile_picture', 'followers', 'friends']
+        fields = ['id', 'username', 'password', 'email', 'profile_picture', 'followers', 'following', 'friends']
         extra_kwargs = {
             'password': {'write_only': True},  # Ensure password is write-only
             'followers': {'required': False},  # Make followers optional
