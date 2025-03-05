@@ -318,6 +318,8 @@ def CreateFollowRequest(request, actorId, objectId):
     object = User.objects.get(id=objectId)
     if FollowRequest.objects.filter(actor=actorId, object=objectId).exists():
         return Response({"message": "Follow request has already been sent"}, status=status.HTTP_400_BAD_REQUEST)
+    elif actor.followers.filter(id=objectId).exists():
+        return Response({"message": "You are already following this user"}, status=status.HTTP_400_BAD_REQUEST)
     summary = f'{actor.username} wants to follow {object.username}'
     data = {"summary": summary}
     serializer = FollowRequestSerializer(data=data)
