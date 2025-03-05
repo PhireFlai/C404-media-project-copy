@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   useGetUserProfileQuery,
   useUpdateUsernameMutation,
-  useGetUserPostsQuery,
 } from "../Api";
 import ProfilePicUpload from "../components/ProfilePicUpload";
 import UserPosts from "../components/UserPosts";
@@ -12,20 +11,12 @@ import "./css/profile.css";
 const Profile = () => {
   const { userId } = useParams();
   const { data: user, isLoading, error } = useGetUserProfileQuery(userId);
-  const {
-    data: posts,
-    isLoading: postsLoading,
-    error: postsError,
-    refetch: refetchPosts,
-  } = useGetUserPostsQuery(userId);
   const curUser = JSON.parse(localStorage.getItem("user")); // Get the current user from local storage
   const [isEditing, setIsEditing] = useState(false); // State for editing mode
   const [newUsername, setNewUsername] = useState(""); // State for new username
   const [updateUsername] = useUpdateUsernameMutation(); // Mutation for updating username
 
-  useEffect(() => {
-    refetchPosts(); // Refetch posts every time the component is rendered
-  }, [refetchPosts]);
+
 
   const handleEditClick = () => {
     setIsEditing(true);
@@ -75,7 +66,7 @@ const Profile = () => {
           <Link to={`/${userId}/followers`}><strong>Followers:</strong> </Link>{user.followers.length}
         </p>
         <p>
-        <Link to={`/${userId}/following`}><strong>Following:</strong> </Link> {user.following.length}
+          <Link to={`/${userId}/following`}><strong>Following:</strong> </Link> {user.following.length}
         </p>
       </div>
 
@@ -112,24 +103,10 @@ const Profile = () => {
       )}
 
       {/* User's Posts Section */}
-      {postsLoading ? (
-        <div className="loading-message">Loading posts...</div>
-      ) : postsError ? (
-        postsError.status === 401 ? (
-          <></>
-        ) : (
-          <div className="error-message">
-            Error loading posts:{" "}
-            {postsError.data?.error || "Failed to fetch posts"} (Status code:{" "}
-            {postsError.status})
-          </div>
-        )
-      ) : (
-        <>
-          <h2 className="user-posts-title">{user.username}'s Posts</h2>
-          <UserPosts userId={userId} />
-        </>
-      )}
+
+      <h2 className="user-posts-title">{user.username}'s Posts</h2>
+      <UserPosts userId={userId} />
+
     </div>
   );
 };
