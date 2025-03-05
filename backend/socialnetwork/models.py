@@ -30,6 +30,8 @@ class User(AbstractUser):
     groups = models.ManyToManyField("auth.Group", related_name="socialnetwork_users", blank=True)
     user_permissions = models.ManyToManyField("auth.Permission", related_name="socialnetwork_users_permissions", blank=True)
     
+    is_approved = models.BooleanField(default=False)
+    
     def __str__(self):
         return self.username  # Display the username in the admin panel
 
@@ -82,3 +84,10 @@ class FollowRequest(models.Model):
     summary = models.TextField()
     actor = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_follow_request")
     object = models.ForeignKey(User, on_delete=models.CASCADE, related_name="received_follow_request")
+
+
+class EnvironmentSetting(models.Model):
+    require_admin_approval_for_signup = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Require admin approval for signup: {self.require_admin_approval_for_signup}"

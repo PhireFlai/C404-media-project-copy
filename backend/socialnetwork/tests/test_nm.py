@@ -90,3 +90,35 @@ class RESTfulInterfaceTestCase(APITestCase):
         self.assertIn(str(public_post.id), post_ids)
         self.assertIn(str(unlisted_post.id), post_ids)
         self.assertIn(str(friends_only_post.id), post_ids)
+
+
+class AdminApprovalTestCase(APITestCase):
+    """Test cases for admin approval functionality. NM3"""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.admin_user = User.objects.create_superuser(username='admin', password='adminpassword')
+        cls.user = User.objects.create_user(username='testuser', password='password', is_approved=False)
+        cls.token = Token.objects.create(user=cls.user)
+        cls.env_setting = EnvironmentSetting.objects.create(require_admin_approval_for_signup=True)
+
+    def test_user_cannot_login_if_not_approved(self):
+        """Test that a user cannot log in if they are not approved."""
+        response = self.client.post(reverse('user-login'), {'username': 'testuser', 'password': 'password'})
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data['error'], 'User is not approved by admin')
+
+    def test_user_can_login_if_approved(self):
+        """Test that a user can log in if they are approved."""
+        self.user.is_approved = True
+        self.user.save()
+        response = self.client.post(reverse('user-login'), {'username': 'testuser', 'password': 'password'})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('token', response.data)
+
+    def test_create_user_with_admin_approval_required(self):
+        """Test that a new user is created with is_approved=False when admin approval is required."""
+        response = self.client.post(reverse('createUser'), {'username': 'newuser', 'password': 'newpassword'})
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        new_user = User.objects.get(username='newuser')
+        self.assertFalse(new_user.is_approved)

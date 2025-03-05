@@ -73,14 +73,22 @@ def createUser(request):
 
     if User.objects.filter(username=username).exists():
         return Response({'error': 'Username already taken'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Fetch the environment setting to check if admin approval is required
+    setting = EnvironmentSetting.objects.first()
+    if setting and setting.require_admin_approval_for_signup:
+        is_approved = False  # Require admin approval
+    else:
+        is_approved = True  # Automatically approve
 
-    user = User.objects.create_user(username=username, password=password)
+    user = User.objects.create_user(username=username, password=password, is_approved=is_approved)
     token = Token.objects.create(user=user)
 
     return Response({
         'token': token.key,
         'user_id': user.id,
-        'username': user.username
+        'username': user.username,
+        'is_approved': user.is_approved
     }, status=status.HTTP_201_CREATED)
 
 # Logs in a user
@@ -91,6 +99,9 @@ def loginUser(request):
     password = request.data.get('password')
     user = authenticate(username=username, password=password)
     if user is not None:
+        if not user.is_approved:
+            return Response({'error': 'User is not approved by admin'}, status=status.HTTP_403_FORBIDDEN)
+        
         token, created = Token.objects.get_or_create(user=user)
         return Response({
             'token': token.key,

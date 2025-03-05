@@ -58,7 +58,7 @@ class PostAPITestCase(APITestCase):
         )
 
         # Debugging: Print response data
-        print("Response Data:", response.data)
+        # print("Response Data:", response.data)
 
         # Assertions
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
