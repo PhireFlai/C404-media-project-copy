@@ -44,13 +44,13 @@ urlpatterns = [
     path("api/authors/<uuid:userId>/commented/", GetCommented.as_view(), name='commented'),  # Endpoint to get all comments made by a specific author
     path("api/authors/<uuid:userId>/commented/<uuid:commentId>/", GetCommentFromCommented.as_view(), name='get-commented-comment'),  # Endpoint to get a specific comment made by a specific author
     path("api/public-posts/", PublicPostsView.as_view(), name="public-posts"),  # Endpoint to list public posts
-    path("api/authors/<uuid:userId>/followers/", FollowersList.as_view(), name="user-followers"),
-    path("api/authors/<uuid:userId>/following/", FollowingList.as_view(), name="user-follows"),
+    path("api/authors/<uuid:userId>/followers/", FollowersList.as_view(), name="user-followers"), # Endpoint to list followers of a specific user
+    path("api/authors/<uuid:userId>/following/", FollowingList.as_view(), name="user-follows"), # Endpoint to list users that a specific user follows
     path("api/authors/<uuid:objectId>/follow-requests/", FollowRequestListView.as_view(), name='follow-request-list'),
     path("api/authors/<uuid:actorId>/follow/authors/<uuid:objectId>/", CreateFollowRequest, name='create-follow-request'),
-    path("api/authors/<uuid:objectId>/accept-follow-request/<uuid:requestId>", AcceptFollowRequest, name='accept-follow-request'),
-    path("api/authors/<uuid:followerId>/unfollow/<uuid:followedId>/", Unfollow, name='unfollow'),
-    path("api/authors/<uuid:followedId>/remove-follower/<uuid:followerId>/", RemoveFollower, name='remove-follower'),
+    path("api/authors/<uuid:objectId>/accept-follow-request/authors/<uuid:requestId>", AcceptFollowRequest, name='accept-follow-request'),
+    path("api/authors/<uuid:followerId>/unfollow/authors/<uuid:followedId>/", Unfollow, name='unfollow'),
+    path("api/authors/<uuid:followedId>/remove-follower/authors/<uuid:followerId>/", RemoveFollower, name='remove-follower'),
 ]
 
 # Serve media files during development

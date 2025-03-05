@@ -104,19 +104,19 @@ export const api = createApi({
     }),
     acceptFollowRequest: builder.mutation({
       query: ({ objectId, requestId }) => ({
-        url: `api/authors/${objectId}/accept-follow-request/${requestId}/`,
+        url: `api/authors/${objectId}/accept-follow-request/authors/${requestId}/`,
         method: 'POST',
       }),
     }),
     unfollowUser: builder.mutation({
       query: ({ followerId, followedId }) => ({
-        url: `api/authors/${followerId}/unfollow/${followedId}/`,
+        url: `api/authors/${followerId}/unfollow/authors/${followedId}/`,
         method: 'POST',
       }),
     }),
     removeFollower: builder.mutation({
       query: ({ followedId, followerId }) => ({
-        url: `api/authors/${followedId}/remove-follower/${followerId}/`,
+        url: `api/authors/${followedId}/remove-follower/authors/${followerId}/`,
         method: 'POST',
       }),
     }),
