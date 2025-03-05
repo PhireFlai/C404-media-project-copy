@@ -44,6 +44,7 @@ urlpatterns = [
     path("api/authors/<uuid:userId>/commented/", GetCommented.as_view(), name='commented'),  # Endpoint to get all comments made by a specific author
     path("api/authors/<uuid:userId>/commented/<uuid:commentId>/", GetCommentFromCommented.as_view(), name='get-commented-comment'),  # Endpoint to get a specific comment made by a specific author
     path("api/public-posts/", PublicPostsView.as_view(), name="public-posts"),  # Endpoint to list public posts
+    path("api/authors/<uuid:userId>/friends-posts/", FriendsPostsView.as_view(), name="friends-posts"),
     path("api/authors/<uuid:userId>/followers/", FollowersList.as_view(), name="user-followers"), # Endpoint to list followers of a specific user
     path("api/authors/<uuid:userId>/following/", FollowingList.as_view(), name="user-follows"), # Endpoint to list users that a specific user follows
     path("api/authors/<uuid:objectId>/follow-requests/", FollowRequestListView.as_view(), name='follow-request-list'),

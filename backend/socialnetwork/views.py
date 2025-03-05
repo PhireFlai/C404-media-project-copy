@@ -114,7 +114,22 @@ class PublicPostsView(ListAPIView):
 
     def get_queryset(self):
         return Post.objects.filter(visibility=Post.PUBLIC)
+    
+# Get all friends posts
+class FriendsPostsView(ListAPIView):
+    serializer_class = PostSerializer
+    permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        # Get the userID from the URL parameter
+        user_id = self.kwargs['userId']
+        user = get_object_or_404(User, id=user_id)
+        # Filter posts authored by the user's friends and exclude DELETED posts
+        return Post.objects.filter(
+            author__in=user.friends.all()
+        ).exclude(
+            visibility=Post.DELETED
+        )
 
 # Gets all posts for a given user
 class PostListCreateView(generics.ListCreateAPIView):

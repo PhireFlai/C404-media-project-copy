@@ -16,6 +16,10 @@ export const api = createApi({
     getPosts: builder.query({
       query: () => `api/public-posts/`, // Endpoint for fetching public posts
     }),
+    getFriendsPosts: builder.query({
+      query: (userId) => `api/authors/${userId}/friends-posts/`, // Endpoint for fetching friends posts
+    }),    
+
     createPost: builder.mutation({
       query: ({ userId, formData }) => ({
         url: `api/authors/${userId}/posts/`, // Endpoint for creating a post
@@ -147,6 +151,7 @@ export const api = createApi({
 // Export hooks for each endpoint
 export const {
   useGetPostsQuery,
+  useGetFriendsPostsQuery,
   useCreatePostMutation,
   useDeletePostMutation,
   useGetTestQuery,

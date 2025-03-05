@@ -9,6 +9,7 @@ import Navbar from "./components/Navbar"; // Import Navbar component
 import PrivateRoute from "./components/PrivateRoute"; // Import PrivateRoute component for protected routes
 import FollowersList from "./pages/FollowerList";
 import FollowingList from "./pages/FollowingList";
+import FriendsOnlyPosts from "./pages/FriendsOnlyPosts";
 
 const App = () => {
   // const user = JSON.parse(localStorage.getItem('user')); // Get the current user from local storage
@@ -28,6 +29,10 @@ const App = () => {
             <Route
               path="/create"
               element={<PrivateRoute element={CreatePostPage} />}
+            />{" "}
+            <Route
+              path="/friends-only"
+              element={<PrivateRoute element={FriendsOnlyPosts} />}
             />{" "}
             {/* Protected route for the create post page */}
             <Route path="/:userId/followers" element={<FollowersList />} />{" "}

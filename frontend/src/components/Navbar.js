@@ -35,11 +35,17 @@ const Navbar = () => {
           <Link to="/">Home</Link>
         </li>
         {user &&
-          <li>
-            <Dropdown label={`Follow Requests`}>
-              <FollowRequests userId={user.id} />
-            </Dropdown>
-          </li>}
+          <>
+            <li>
+              <Link to="/friends-only">Friends Only</Link>
+            </li>
+            <li>
+              <Dropdown label={`Follow Requests`}>
+                <FollowRequests userId={user.id} />
+              </Dropdown>
+            </li>
+          </>
+        }
         {user ? (
           <li>
             <Dropdown label={`${user.username}`}>
