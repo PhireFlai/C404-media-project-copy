@@ -4,6 +4,7 @@ import {
   useCreateFollowRequestMutation,
   useGetUserProfileQuery,
   useUpdateUsernameMutation,
+  useCreateFollowRequestMutation
 } from "../Api";
 import ProfilePicUpload from "../components/ProfilePicUpload";
 import UserPosts from "../components/UserPosts";
@@ -119,6 +120,12 @@ const Profile = () => {
           )}
         </div>
       )}
+
+      {curUser && curUser.id !== userId &&
+        <></>
+        // <button onClick={handleSendFollow()}>Follow</button>
+
+      }
 
       {/* User's Posts Section */}
 
