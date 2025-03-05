@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
+  useCreateFollowRequestMutation,
   useGetUserProfileQuery,
   useUpdateUsernameMutation,
 } from "../Api";
@@ -15,6 +16,7 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false); // State for editing mode
   const [newUsername, setNewUsername] = useState(""); // State for new username
   const [updateUsername] = useUpdateUsernameMutation(); // Mutation for updating username
+  const [createFollowRequest] = useCreateFollowRequestMutation();
 
 
 
@@ -38,6 +40,17 @@ const Profile = () => {
     }
   };
 
+  const handleFollowClick = async () => {
+    try {
+      await createFollowRequest({
+        actorId: curUser.id,
+        objectId: user.id,
+      }).unwrap();
+    } catch (err) {
+      console.error("Failed to create follow request:", err);
+    }
+  }
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -58,6 +71,11 @@ const Profile = () => {
           />
         )}
         <h1 className="profile-title">{user.username}</h1>
+        <div>
+          {curUser && curUser.id !== userId && (
+            <button className="button-primary" onClick={handleFollowClick}>Follow</button>
+          )}
+        </div>
       </div>
 
       {/* Profile Stats */}

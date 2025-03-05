@@ -309,14 +309,14 @@ class FollowRequestListView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         objectId = self.kwargs['objectId']
-        return FollowRequest.objects.filter(actor=objectId)
+        return FollowRequest.objects.filter(object=objectId)
     
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def CreateFollowRequest(request, actorId, objectId):
     actor = User.objects.get(id=actorId)
     object = User.objects.get(id=objectId)
-    if FollowRequest.objects.get(actor=actorId, object=objectId) is not None:
+    if FollowRequest.objects.filter(actor=actorId, object=objectId).exists():
         return Response({"message": "Follow request has already been sent"}, status=status.HTTP_400_BAD_REQUEST)
     summary = f'{actor.username} wants to follow {object.username}'
     data = {"summary": summary}
@@ -333,9 +333,9 @@ def CreateFollowRequest(request, actorId, objectId):
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
-def AcceptFollowRequest(request, objectId, requestId):
+def AcceptFollowRequest(request, actorId, objectId):
     try:
-        follow_request = FollowRequest.objects.get(id=requestId)
+        follow_request = FollowRequest.objects.get(actor=actorId, object=objectId)
     except FollowRequest.DoesNotExist:
         return Response({'error': 'Follow request not found'}, status=status.HTTP_404_NOT_FOUND)
 

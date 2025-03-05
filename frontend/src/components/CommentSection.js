@@ -6,6 +6,7 @@ import {
 import "./css/button.css";
 import "./css/input.css";
 import "./css/text.css";
+import { Link } from "react-router-dom";
 
 const CommentSection = ({ postId, author }) => {
   const [comment, setComment] = useState(""); // State to manage the comment input
@@ -41,6 +42,9 @@ const CommentSection = ({ postId, author }) => {
       {comments?.length > 0 ? (
         comments.map((comment) => (
           <div className="comment-item" key={comment.id}>
+            <p>
+              <Link to={`/${comment.author?.id}/`}><strong>{comment.author?.username || ""}</strong></Link>
+            </p>
             <p>{comment.content}</p>
             <p>
               <small>{comment.created_at}</small>

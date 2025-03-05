@@ -103,8 +103,8 @@ export const api = createApi({
       }),
     }),
     acceptFollowRequest: builder.mutation({
-      query: ({ objectId, requestId }) => ({
-        url: `api/authors/${objectId}/accept-follow-request/${requestId}/`,
+      query: ({ objectId, actorId, action }) => ({
+        url: `api/authors/${objectId}/accept-follow-request/authors/${actorId}/?action=${action}`,
         method: 'POST',
       }),
     }),

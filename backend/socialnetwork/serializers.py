@@ -85,10 +85,6 @@ class FollowRequestSerializer(serializers.ModelSerializer):
         fields = ['summary', 'actor', 'object']
 
     def validate(self, data):
-        summary = data.get('summary')
-
-        if summary is None:
-            raise serializers.ValidationError("Invalid follow request")
         return data
     
     def create(self, validated_data):

@@ -2,6 +2,7 @@ import React from 'react';
 import { useParams } from 'react-router-dom';
 import { useGetFollowersQuery, useRemoveFollowerMutation } from '../Api';
 import { Link } from 'react-router-dom';
+import FollowRequests from "../components/FollowRequests";
 const FollowersList = () => {
     const currentUser = JSON.parse(localStorage.getItem('user'));
     const { userId } = useParams();
@@ -56,6 +57,8 @@ const FollowersList = () => {
                     ))}
                 </ul>
             )}
+
+            <FollowRequests/>
         </div>
     );
 };
