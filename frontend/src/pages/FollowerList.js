@@ -58,7 +58,7 @@ const FollowersList = () => {
                 </ul>
             )}
 
-            <FollowRequests/>
+            <FollowRequests userId={userId}/>
         </div>
     );
 };
