@@ -5,7 +5,7 @@ import {
 } from "../Api";
 import { Link } from "react-router-dom";
 
-const FollowRequests = ({ userId }) => {
+const FollowRequests = ({ userId, onFollowChange }) => {
     const { data: requests, isLoading, isError, error, refetch } = useGetFollowRequestsQuery(userId);
     const [acceptFollowRequest] = useAcceptFollowRequestMutation();
 
@@ -20,6 +20,8 @@ const FollowRequests = ({ userId }) => {
                 action: action,
             }).unwrap();
             refetch();
+            // Call the parent's function to update
+            if (onFollowChange) onFollowChange();
         } catch (err) {
             console.error("Failed to accept or reject request:", err);
         }

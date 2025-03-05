@@ -18,7 +18,7 @@ const FollowersList = () => {
                 followedId: currentUser.id,
                 followerId: followerId
             }).unwrap();
-            refetch(); // Refresh the list after successful removal
+            refetch();
         } catch (err) {
             console.error('Failed to remove follower:', err);
         }
@@ -57,8 +57,9 @@ const FollowersList = () => {
                     ))}
                 </ul>
             )}
-
-            <FollowRequests userId={userId}/>
+            {currentUser.id === userId && (
+                <FollowRequests userId={userId} onFollowChange={refetch} />
+            )}
         </div>
     );
 };

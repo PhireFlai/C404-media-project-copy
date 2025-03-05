@@ -317,8 +317,8 @@ def CreateFollowRequest(request, actorId, objectId):
     actor = User.objects.get(id=actorId)
     object = User.objects.get(id=objectId)
     if FollowRequest.objects.filter(actor=actorId, object=objectId).exists():
-        return Response({"message": "Follow request has already been sent"}, status=status.HTTP_400_BAD_REQUEST)
-    elif actor.followers.filter(id=objectId).exists():
+        return Response({"message": "Follow request has already been sent"}, status=status.HTTP_400_BAD_REQUEST)    
+    elif actor.following.filter(id=objectId).exists():
         return Response({"message": "You are already following this user"}, status=status.HTTP_400_BAD_REQUEST)
     summary = f'{actor.username} wants to follow {object.username}'
     data = {"summary": summary}
@@ -335,7 +335,7 @@ def CreateFollowRequest(request, actorId, objectId):
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
-def AcceptFollowRequest(request, actorId, objectId):
+def AcceptFollowRequest(request, objectId, actorId ):
     try:
         follow_request = FollowRequest.objects.get(actor=actorId, object=objectId)
     except FollowRequest.DoesNotExist:
