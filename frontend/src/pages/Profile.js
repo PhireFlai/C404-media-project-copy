@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import {
   useGetUserProfileQuery,
   useUpdateUsernameMutation,
+  useCreateFollowRequestMutation
 } from "../Api";
 import ProfilePicUpload from "../components/ProfilePicUpload";
 import UserPosts from "../components/UserPosts";
@@ -15,7 +16,7 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false); // State for editing mode
   const [newUsername, setNewUsername] = useState(""); // State for new username
   const [updateUsername] = useUpdateUsernameMutation(); // Mutation for updating username
-
+  const [sendFollowRequest] = useCreateFollowRequestMutation();
 
 
   const handleEditClick = () => {
@@ -37,6 +38,14 @@ const Profile = () => {
       console.error("Failed to update username:", err);
     }
   };
+
+  const handleSendFollow = async () => {
+    try {
+      await sendFollowRequest(curUser.id, userId).unwrap();
+    } catch (err) {
+      console.error("Failed to send follow request:", err)
+    }
+  }
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -101,6 +110,12 @@ const Profile = () => {
           )}
         </div>
       )}
+
+      {curUser && curUser.id !== userId &&
+        <></>
+        // <button onClick={handleSendFollow()}>Follow</button>
+
+      }
 
       {/* User's Posts Section */}
 
