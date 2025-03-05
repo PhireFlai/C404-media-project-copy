@@ -48,7 +48,7 @@ urlpatterns = [
     path("api/authors/<uuid:userId>/following/", FollowingList.as_view(), name="user-follows"), # Endpoint to list users that a specific user follows
     path("api/authors/<uuid:objectId>/follow-requests/", FollowRequestListView.as_view(), name='follow-request-list'),
     path("api/authors/<uuid:actorId>/follow/authors/<uuid:objectId>/", CreateFollowRequest, name='create-follow-request'),
-    path("api/authors/<uuid:objectId>/accept-follow-request/authors/authors/<uuid:actorId>/", AcceptFollowRequest, name='accept-follow-request'),
+    path("api/authors/<uuid:objectId>/accept-follow-request/authors/<uuid:actorId>/", AcceptFollowRequest, name='accept-follow-request'),
     path("api/authors/<uuid:followerId>/unfollow/authors/<uuid:followedId>/", Unfollow, name='unfollow'),
     path("api/authors/<uuid:followedId>/remove-follower/authors/<uuid:followerId>/", RemoveFollower, name='remove-follower'),
 ]

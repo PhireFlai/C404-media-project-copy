@@ -4,7 +4,6 @@ import {
   useCreateFollowRequestMutation,
   useGetUserProfileQuery,
   useUpdateUsernameMutation,
-  useCreateFollowRequestMutation
 } from "../Api";
 import ProfilePicUpload from "../components/ProfilePicUpload";
 import UserPosts from "../components/UserPosts";
