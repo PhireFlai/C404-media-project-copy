@@ -1,5 +1,9 @@
 import React, { useState } from "react";
-import { useDeletePostMutation, useEditPostMutation } from "../Api";
+import {
+  useDeletePostMutation,
+  useEditPostMutation,
+  useAddLikeMutation,
+} from "../Api";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
@@ -9,12 +13,14 @@ import "../pages/css/home.css";
 const PostItem = ({ post, refetchPosts }) => {
   const [deletePost] = useDeletePostMutation();
   const [editPost] = useEditPostMutation();
+  const [addLike] = useAddLikeMutation();
   const [showCommentBox, setShowCommentBox] = useState(false);
   const [currentPostId, setCurrentPostId] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(post.title);
   const [editContent, setEditContent] = useState(post.content);
-  const user = JSON.parse(localStorage.getItem('user')); // Get the current user from local storage
+  const [isLiked, setIsLiked] = useState(false);
+  const user = JSON.parse(localStorage.getItem("user")); // Get the current user from local storage
 
   console.log(post);
 
@@ -63,6 +69,22 @@ const PostItem = ({ post, refetchPosts }) => {
     setIsEditing(false);
     setEditTitle(post.title);
     setEditContent(post.content);
+  };
+
+  // Handle like toggle
+  const handleLikeToggle = async () => {
+    try {
+      if (isLiked) {
+        // await removeLike({ userId: user.id, postId: post.id }).unwrap();
+        console.log("unlike");
+      } else {
+        await addLike({ userId: user.id, postId: post.id }).unwrap();
+      }
+      setIsLiked(!isLiked);
+      refetchPosts(); // Refetch posts after liking/unliking
+    } catch (err) {
+      console.error("Error toggling like:", err);
+    }
   };
 
   return (
@@ -130,6 +152,14 @@ const PostItem = ({ post, refetchPosts }) => {
         >
           {currentPostId === post.id ? "Close Comments" : "View Comments"}
         </button>
+        <label>
+          <input
+            type="checkbox"
+            checked={isLiked}
+            onChange={handleLikeToggle}
+          />
+          Like
+        </label>
       </div>
 
       {showCommentBox && currentPostId === post.id && (

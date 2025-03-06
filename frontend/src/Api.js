@@ -18,7 +18,7 @@ export const api = createApi({
     }),
     getFriendsPosts: builder.query({
       query: (userId) => `api/authors/${userId}/friends-posts/`, // Endpoint for fetching friends posts
-    }),    
+    }),
 
     createPost: builder.mutation({
       query: ({ userId, formData }) => ({
@@ -65,6 +65,12 @@ export const api = createApi({
         body: commentData,
       }),
     }),
+    addLike: builder.mutation({
+      query: ({ userId, postId }) => ({
+        url: `api/authors/${userId}/posts/${postId}/like/`,
+        method: "POST",
+      }),
+    }),
     updateProfilePicture: builder.mutation({
       query: ({ userId, profilePicture }) => {
         const formData = new FormData();
@@ -103,25 +109,25 @@ export const api = createApi({
     createFollowRequest: builder.mutation({
       query: ({ actorId, objectId }) => ({
         url: `api/authors/${actorId}/follow/authors/${objectId}/`,
-        method: 'POST',
+        method: "POST",
       }),
     }),
     acceptFollowRequest: builder.mutation({
       query: ({ objectId, actorId, action }) => ({
         url: `api/authors/${objectId}/accept-follow-request/authors/${actorId}/?action=${action}`,
-        method: 'POST',
+        method: "POST",
       }),
     }),
     unfollowUser: builder.mutation({
       query: ({ followerId, followedId }) => ({
         url: `api/authors/${followerId}/unfollow/authors/${followedId}/`,
-        method: 'POST',
+        method: "POST",
       }),
     }),
     removeFollower: builder.mutation({
       query: ({ followedId, followerId }) => ({
         url: `api/authors/${followedId}/remove-follower/authors/${followerId}/`,
-        method: 'POST',
+        method: "POST",
       }),
     }),
     getFollowRequests: builder.query({
@@ -130,7 +136,7 @@ export const api = createApi({
     postToInbox: builder.mutation({
       query: ({ receiver, data }) => ({
         url: `api/authors/${receiver}/inbox/`,
-        method: 'POST',
+        method: "POST",
         body: data,
       }),
     }),
@@ -159,6 +165,7 @@ export const {
   useLoginUserMutation,
   useEditPostMutation,
   useCreateCommentMutation,
+  useAddLikeMutation,
   useGetCommentsQuery,
   useGetUserProfileQuery,
   useUpdateProfilePictureMutation,

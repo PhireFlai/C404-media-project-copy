@@ -68,8 +68,12 @@ class Post(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-def __str__(self):
-    return self.title  # Display the title in the admin panel
+    @property
+    def like_count(self):
+        return self.likes.count()
+
+    def __str__(self):
+        return self.title  # Display the title in the admin panel
 
 class Comment(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -77,6 +81,19 @@ class Comment(models.Model):
     content = models.TextField()
     post = models.ForeignKey(Post, on_delete=models.CASCADE)
     created_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    def __str__(self):
+        return f'{self.author.username} comments {self.content}'
+
+
+class Like(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    def __str__(self):
+        return f'{self.user.username} likes {self.post.title}'
 
 class FollowRequest(models.Model):
     summary = models.TextField()

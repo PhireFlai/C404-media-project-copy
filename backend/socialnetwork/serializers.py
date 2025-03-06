@@ -94,3 +94,19 @@ class FollowRequestSerializer(serializers.ModelSerializer):
 
         follow_request = FollowRequest.objects.create(summary=summary, actor=actor, object=object)
         return follow_request
+
+class LikeSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    class Meta:
+        model = Like
+        fields = ['id', 'user', 'post', 'created_at']
+    
+    def validate(self, data):
+        return data
+    
+    def create(self, validated_data):
+        user = validated_data.get('user')
+        post = validated_data.get('post')
+
+        like = Like.objects.create(user=user, post=post)
+        return like 
