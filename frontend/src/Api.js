@@ -41,7 +41,7 @@ export const api = createApi({
         // Append text fields
         formData.append("title", updatedPost.title);
         formData.append("content", updatedPost.content);
-
+        formData.append("visibility", updatedPost.visibility);
         // Append image if it exists
         if (updatedPost.image) {
           formData.append("image", updatedPost.image);

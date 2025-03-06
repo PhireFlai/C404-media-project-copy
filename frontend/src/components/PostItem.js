@@ -16,6 +16,7 @@ const PostItem = ({ post, refetchPosts }) => {
   const [editContent, setEditContent] = useState(post.content);
   const user = JSON.parse(localStorage.getItem("user")); // Get the current user from local storage
   const [editImage, setEditImage] = useState(null);
+  const [editVisibility, setEditVisibility] = useState(post.visibility);
 
   console.log(post);
 
@@ -50,7 +51,8 @@ const PostItem = ({ post, refetchPosts }) => {
         updatedPost: {
           title: editTitle,
           content: editContent,
-          image: editImage, // Include the selected image
+          image: editImage,
+          visibility: editVisibility,
         },
       }).unwrap();
       refetchPosts(); // Refetch posts after editing
@@ -87,7 +89,20 @@ const PostItem = ({ post, refetchPosts }) => {
             placeholder="Edit content"
           />
           <br />
-          {/* Add image upload input here */}
+
+          {/* Visibility Dropdown */}
+          <label>Select a visibility option:</label>
+          <select
+            value={editVisibility}
+            onChange={(e) => setEditVisibility(e.target.value)}
+            className="post-visibility-select"
+          >
+            <option value="public">Public</option>
+            <option value="friends-only">Friends Only</option>
+            <option value="unlisted">Unlisted</option>
+          </select>
+          <br />
+          {/* image upload input */}
           <input
             type="file"
             accept="image/*"
