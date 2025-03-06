@@ -178,8 +178,14 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_update(self, serializer):
         if self.request.user != serializer.instance.author:
-            raise PermissionDenied("You can only edit your own posts.")  
-        serializer.save()
+            raise PermissionDenied("You can only edit your own posts.")
+        # Handle image updates
+        image = self.request.FILES.get('image')  # Get the new image from request
+        if image:
+            serializer.save(image=image)
+        else:
+            serializer.save()
+        
 
 
 # Gets a user's profile or updates it
