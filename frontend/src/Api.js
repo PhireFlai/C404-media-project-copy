@@ -71,6 +71,10 @@ export const api = createApi({
         method: "POST",
       }),
     }),
+    getLikes: builder.query({
+      query: ({ userId, postId }) =>
+        `api/authors/${userId}/posts/${postId}/likes/`, // Endpoint for fetching likes
+    }),
     updateProfilePicture: builder.mutation({
       query: ({ userId, profilePicture }) => {
         const formData = new FormData();
@@ -166,6 +170,7 @@ export const {
   useEditPostMutation,
   useCreateCommentMutation,
   useAddLikeMutation,
+  useGetLikesQuery,
   useGetCommentsQuery,
   useGetUserProfileQuery,
   useUpdateProfilePictureMutation,

@@ -471,3 +471,11 @@ def AddLike(request, userId, pk):
         response = requests.post(f'http://localhost:8000/api/authors/{userId}/inbox/', data=LikeSerializer(like).data)
         return Response(serializer.data, status=response.status_code)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class LikesList(generics.ListCreateAPIView):
+    queryset = Like.objects.all()
+    serializer_class = LikeSerializer
+
+    def get_queryset(self):
+        post_id = self.kwargs['pk']
+        return Like.objects.filter(post_id=post_id)

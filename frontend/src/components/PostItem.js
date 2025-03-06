@@ -1,8 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   useDeletePostMutation,
   useEditPostMutation,
   useAddLikeMutation,
+  // useRemoveLikeMutation,
+  useGetLikesQuery,
 } from "../Api";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
@@ -14,6 +16,12 @@ const PostItem = ({ post, refetchPosts }) => {
   const [deletePost] = useDeletePostMutation();
   const [editPost] = useEditPostMutation();
   const [addLike] = useAddLikeMutation();
+  // const [removeLike] = useRemoveLikeMutation();
+  const {
+    data: likes,
+    error: likesError,
+    isLoading: likesLoading,
+  } = useGetLikesQuery({ userId: post.author.id, postId: post.id });
   const [showCommentBox, setShowCommentBox] = useState(false);
   const [currentPostId, setCurrentPostId] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -22,7 +30,18 @@ const PostItem = ({ post, refetchPosts }) => {
   const [isLiked, setIsLiked] = useState(false);
   const user = JSON.parse(localStorage.getItem("user")); // Get the current user from local storage
 
-  console.log(post);
+  useEffect(() => {
+    if (likesLoading) {
+      console.log("Loading likes...");
+    } else if (likesError) {
+      console.error("Error fetching likes:", likesError);
+    } else if (likes && likes.length > 0) {
+      console.log("Likes:", likes);
+      // Check if the post is already liked by the user
+      console.log("Liked post, " + post.title);
+      setIsLiked(true);
+    }
+  }, [likes, likesError, likesLoading, user.id]);
 
   // Handle post deletion
   const handleDelete = async (postId) => {
