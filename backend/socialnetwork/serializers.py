@@ -46,7 +46,7 @@ class CommentSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
     class Meta:
         model = Comment
-        fields = ["id", "author", "content", "post", "created_at"]
+        fields = ["id", "author", "content", "post", "created_at", "like_count"]
 
     def validate(self, data):
         content = data.get('content')
@@ -109,4 +109,20 @@ class LikeSerializer(serializers.ModelSerializer):
         post = validated_data.get('post')
 
         like = Like.objects.create(user=user, post=post)
+        return like 
+
+class CommentLikeSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    class Meta:
+        model = CommentLike
+        fields = ['id', 'user', 'comment', 'created_at']
+    
+    def validate(self, data):
+        return data
+    
+    def create(self, validated_data):
+        user = validated_data.get('user')
+        comment = validated_data.get('comment')
+
+        like = CommentLike.objects.create(user=user, comment=comment)
         return like 

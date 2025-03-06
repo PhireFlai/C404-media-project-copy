@@ -82,6 +82,10 @@ class Comment(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE)
     created_at = models.DateTimeField(default=timezone.now, editable=False)
 
+    @property
+    def like_count(self):
+        return self.likes.count()
+
     def __str__(self):
         return f'{self.author.username} comments {self.content}'
 
@@ -94,6 +98,15 @@ class Like(models.Model):
 
     def __str__(self):
         return f'{self.user.username} likes {self.post.title}'
+    
+class CommentLike(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    comment = models.ForeignKey(Comment, on_delete=models.CASCADE, related_name='likes')
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    def __str__(self):
+        return f'{self.user.username} likes {self.comment.content}'
 
 class FollowRequest(models.Model):
     summary = models.TextField()

@@ -479,3 +479,27 @@ class LikesList(generics.ListCreateAPIView):
     def get_queryset(self):
         post_id = self.kwargs['pk']
         return Like.objects.filter(post_id=post_id)
+
+# Add a like on a comment
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def AddCommentLike(request, userId, pk, ck):
+    comment = get_object_or_404(Comment, id=ck)
+    user = request.user
+    data = {'comment': comment.id}
+    serializer = CommentLikeSerializer(data=data)
+
+    if serializer.is_valid():
+        serializer.save(user=user)
+        like = CommentLike.objects.get(id=serializer.data['id'])
+        response = requests.post(f'http://localhost:8000/api/authors/{userId}/inbox/', data=CommentLikeSerializer(like).data)
+        return Response(serializer.data, status=response.status_code)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class CommentLikesList(generics.ListCreateAPIView):
+    queryset = CommentLike.objects.all()
+    serializer_class = CommentLikeSerializer
+
+    def get_queryset(self):
+        comment_id = self.kwargs['ck']
+        return CommentLike.objects.filter(comment_id=comment_id)
