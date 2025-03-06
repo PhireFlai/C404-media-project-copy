@@ -124,7 +124,7 @@ class PublicPostsView(ListAPIView):
     permission_classes = [AllowAny]
 
     def get_queryset(self):
-        return Post.objects.filter(visibility=Post.PUBLIC)
+        return Post.objects.filter(visibility=Post.PUBLIC).order_by("-created_at") 
     
 # Get all friends posts
 class FriendsPostsView(ListAPIView):
@@ -140,7 +140,7 @@ class FriendsPostsView(ListAPIView):
             author__in=user.friends.all()
         ).exclude(
             visibility=Post.DELETED
-        )
+        ).order_by("-created_at") 
 
 # Gets all posts for a given user
 class PostListCreateView(generics.ListCreateAPIView):
@@ -152,8 +152,8 @@ class PostListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         user_id = self.kwargs.get('userId')
         if user_id:
-            return Post.objects.filter(author_id=user_id).exclude(visibility=Post.DELETED)
-        return Post.objects.exclude(visibility=Post.DELETED)
+            return Post.objects.filter(author_id=user_id).exclude(visibility=Post.DELETED).order_by("-created_at")
+        return Post.objects.exclude(visibility=Post.DELETED).order_by("-created_at")
     
     def perform_create(self, serializer):
         if not self.request.user.is_authenticated:
