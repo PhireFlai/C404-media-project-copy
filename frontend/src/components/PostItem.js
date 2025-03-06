@@ -31,6 +31,7 @@ const PostItem = ({ post, refetchPosts }) => {
   const user = JSON.parse(localStorage.getItem("user")); // Get the current user from local storage
 
   useEffect(() => {
+    console.log(post.like_count);
     if (likesLoading) {
       console.log("Loading likes...");
     } else if (likesError) {
@@ -177,7 +178,7 @@ const PostItem = ({ post, refetchPosts }) => {
             checked={isLiked}
             onChange={handleLikeToggle}
           />
-          Like
+          Likes: {post.like_count}
         </label>
       </div>
 

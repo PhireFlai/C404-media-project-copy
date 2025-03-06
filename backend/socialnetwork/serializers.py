@@ -71,7 +71,7 @@ class PostSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
     class Meta:
         model = Post
-        fields = ["id", "author", "title", "content", "image", "formatted_content", "created_at", "visibility"]
+        fields = ["id", "author", "title", "content", "image", "formatted_content", "created_at", "visibility", "like_count"]
 
     def get_formatted_content(self, obj):
         # Convert the content to formatted markdown
