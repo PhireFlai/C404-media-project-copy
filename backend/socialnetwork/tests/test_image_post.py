@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.test import APITestCase
 from rest_framework import status
 from rest_framework.authtoken.models import Token
+from django.urls import reverse
 from ..models import Post
 
 User = get_user_model()
@@ -70,3 +71,53 @@ class PostAPITestCase(APITestCase):
 
         file_path = Path(settings.MEDIA_ROOT) / "post_images/test_image.png"
         self.assertTrue(file_path.exists(), f"File {file_path} does not exist")
+    
+    def test_create_post_with_image_in_markdown(self):
+        """Test creating a post with an image and using it in markdown. NM1"""
+        image_path = Path(settings.BASE_DIR) / "socialnetwork/tests/test_images/turbo-alpaca.png"
+
+        if not image_path.exists():
+            self.fail(f"Test image not found at {image_path}. Please ensure the file exists.")
+
+        with open(image_path, "rb") as img:
+            image_file = SimpleUploadedFile(
+                name="test_image.png",
+                content=img.read(),
+                content_type="image/png",
+            )
+
+        data = {
+            "title": "Test Post with Image",
+            "content": "![Test Image](http://testserver/media/post_images/test_image.png)",
+            "visibility": "public",
+            "image": image_file,
+        }
+
+        response = self.client.post(
+            f"/api/authors/{self.user.id}/posts/",
+            data,
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        post = Post.objects.get(title="Test Post with Image")
+        self.assertIn("http://testserver/media/post_images/test_image.png", post.content)
+
+    def test_fetch_post_with_image(self):
+        """Test fetching a post with an image and verifying the markdown content. NM1"""
+        post = Post.objects.create(
+            title="Test Post with Image",
+            content="![Test Image](http://testserver/media/post_images/test_image.png)",
+            author=self.user,
+            visibility="public",
+        )
+
+        # Extract the author and post IDs from the URL
+        author_id = str(self.user.id)
+        post_id = str(post.id)
+
+        url = reverse("post-detail", kwargs={"userId": author_id, "pk": post_id})  # Use extracted IDs
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("http://testserver/media/post_images/test_image.png", response.data["content"])
