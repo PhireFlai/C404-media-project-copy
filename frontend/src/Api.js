@@ -18,7 +18,7 @@ export const api = createApi({
     }),
     getFriendsPosts: builder.query({
       query: (userId) => `api/authors/${userId}/friends-posts/`, // Endpoint for fetching friends posts
-    }),    
+    }),
 
     createPost: builder.mutation({
       query: ({ userId, formData }) => ({
@@ -35,12 +35,26 @@ export const api = createApi({
       }),
     }),
     editPost: builder.mutation({
-      query: ({ userId, postId, updatedPost }) => ({
-        url: `api/authors/${userId}/posts/${postId}/`, // Endpoint for editing a post
-        method: "PUT",
-        body: updatedPost,
-      }),
+      query: ({ userId, postId, updatedPost }) => {
+        const formData = new FormData();
+
+        // Append text fields
+        formData.append("title", updatedPost.title);
+        formData.append("content", updatedPost.content);
+
+        // Append image if it exists
+        if (updatedPost.image) {
+          formData.append("image", updatedPost.image);
+        }
+
+        return {
+          url: `api/authors/${userId}/posts/${postId}/`,
+          method: "PUT",
+          body: formData,
+        };
+      },
     }),
+
     getTest: builder.query({
       query: () => "core/test", // Endpoint for fetching test data
     }),
@@ -103,25 +117,25 @@ export const api = createApi({
     createFollowRequest: builder.mutation({
       query: ({ actorId, objectId }) => ({
         url: `api/authors/${actorId}/follow/authors/${objectId}/`,
-        method: 'POST',
+        method: "POST",
       }),
     }),
     acceptFollowRequest: builder.mutation({
       query: ({ objectId, actorId, action }) => ({
         url: `api/authors/${objectId}/accept-follow-request/authors/${actorId}/?action=${action}`,
-        method: 'POST',
+        method: "POST",
       }),
     }),
     unfollowUser: builder.mutation({
       query: ({ followerId, followedId }) => ({
         url: `api/authors/${followerId}/unfollow/authors/${followedId}/`,
-        method: 'POST',
+        method: "POST",
       }),
     }),
     removeFollower: builder.mutation({
       query: ({ followedId, followerId }) => ({
         url: `api/authors/${followedId}/remove-follower/authors/${followerId}/`,
-        method: 'POST',
+        method: "POST",
       }),
     }),
     getFollowRequests: builder.query({
@@ -130,7 +144,7 @@ export const api = createApi({
     postToInbox: builder.mutation({
       query: ({ receiver, data }) => ({
         url: `api/authors/${receiver}/inbox/`,
-        method: 'POST',
+        method: "POST",
         body: data,
       }),
     }),

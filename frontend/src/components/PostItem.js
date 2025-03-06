@@ -14,7 +14,8 @@ const PostItem = ({ post, refetchPosts }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(post.title);
   const [editContent, setEditContent] = useState(post.content);
-  const user = JSON.parse(localStorage.getItem('user')); // Get the current user from local storage
+  const user = JSON.parse(localStorage.getItem("user")); // Get the current user from local storage
+  const [editImage, setEditImage] = useState(null);
 
   console.log(post);
 
@@ -49,6 +50,7 @@ const PostItem = ({ post, refetchPosts }) => {
         updatedPost: {
           title: editTitle,
           content: editContent,
+          image: editImage, // Include the selected image
         },
       }).unwrap();
       refetchPosts(); // Refetch posts after editing
@@ -83,6 +85,14 @@ const PostItem = ({ post, refetchPosts }) => {
             rows={5}
             className="post-title-textarea"
             placeholder="Edit content"
+          />
+          <br />
+          {/* Add image upload input here */}
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => setEditImage(e.target.files[0])}
+            className="post-image-input"
           />
           <br />
           <button className="button-success" onClick={handleSaveClick}>
