@@ -1,4 +1,3 @@
-// Navbar.js
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Dropdown from "./Dropdown";
@@ -34,7 +33,7 @@ const Navbar = () => {
         <li>
           <Link to="/">Home</Link>
         </li>
-        {user &&
+        {user && (
           <>
             <li>
               <Link to="/friends-only">Friends Only</Link>
@@ -45,7 +44,7 @@ const Navbar = () => {
               </Dropdown>
             </li>
           </>
-        }
+        )}
         {user ? (
           <li>
             <Dropdown label={`${user.username}`}>
@@ -53,7 +52,9 @@ const Navbar = () => {
                 <Link to={`/${user.id}`}>Profile</Link>
               </li>
               <li>
-                <button onClick={handleLogout}>Logout</button>
+                <button className="remove-shadow" onClick={handleLogout}>
+                  Logout
+                </button>
               </li>
             </Dropdown>
           </li>

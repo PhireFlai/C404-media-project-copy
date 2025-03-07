@@ -4,7 +4,6 @@ import {
   useDeletePostMutation,
   useEditPostMutation,
   useAddLikeMutation,
-  // useRemoveLikeMutation,
   useGetLikesQuery,
 } from "../Api";
 import ReactMarkdown from "react-markdown";
@@ -12,12 +11,14 @@ import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
 import CommentSection from "./CommentSection";
 import "../pages/css/home.css";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faHeart as solidHeart } from "@fortawesome/free-solid-svg-icons";
+import { faHeart as regularHeart } from "@fortawesome/free-regular-svg-icons";
 
 const PostItem = ({ post, refetchPosts }) => {
   const [deletePost] = useDeletePostMutation();
   const [editPost] = useEditPostMutation();
   const [addLike] = useAddLikeMutation();
-  // const [removeLike] = useRemoveLikeMutation();
   const {
     data: likes,
     error: likesError,
@@ -97,6 +98,7 @@ const PostItem = ({ post, refetchPosts }) => {
     navigator.clipboard.writeText(postLink);
     alert("Post link copied to clipboard!");
   };
+
   // Handle cancel button click
   const handleCancelClick = () => {
     setIsEditing(false);
@@ -107,14 +109,11 @@ const PostItem = ({ post, refetchPosts }) => {
   // Handle like toggle
   const handleLikeToggle = async () => {
     try {
-      if (isLiked) {
-        // await removeLike({ userId: user.id, postId: post.id }).unwrap();
-        console.log("unlike");
-      } else {
+      if (!isLiked) {
         await addLike({ userId: user.id, postId: post.id }).unwrap();
+        setIsLiked(true);
+        refetchPosts(); // Refetch posts after liking
       }
-      setIsLiked(!isLiked);
-      refetchPosts(); // Refetch posts after liking/unliking
     } catch (err) {
       console.error("Error toggling like:", err);
     }
@@ -131,7 +130,7 @@ const PostItem = ({ post, refetchPosts }) => {
             className="post-title-input"
             placeholder="Edit title"
           />
-          <br />
+
           <textarea
             value={editContent}
             onChange={(e) => setEditContent(e.target.value)}
@@ -139,7 +138,6 @@ const PostItem = ({ post, refetchPosts }) => {
             className="post-title-textarea"
             placeholder="Edit content"
           />
-          <br />
 
           {/* Visibility Dropdown */}
           <label>Select a visibility option:</label>
@@ -152,7 +150,7 @@ const PostItem = ({ post, refetchPosts }) => {
             <option value="friends-only">Friends Only</option>
             <option value="unlisted">Unlisted</option>
           </select>
-          <br />
+
           {/* image upload input */}
           <input
             type="file"
@@ -160,7 +158,7 @@ const PostItem = ({ post, refetchPosts }) => {
             onChange={(e) => setEditImage(e.target.files[0])}
             className="post-image-input"
           />
-          <br />
+
           <button className="button-success" onClick={handleSaveClick}>
             Save
           </button>
@@ -173,7 +171,9 @@ const PostItem = ({ post, refetchPosts }) => {
           <h3 className="sub-title">{post.title}</h3>
           <p className="text-muted">Visibility: {post.visibility}</p>
 
-          <Link to={`/${post.author.id}`}><p>Author: {post.author.username}</p></Link>
+          <Link to={`/${post.author.id}`}>
+            <p>Author: {post.author.username}</p>
+          </Link>
           <div>
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
@@ -203,7 +203,7 @@ const PostItem = ({ post, refetchPosts }) => {
         )}
         {/* Copy Link Button */}
         <button onClick={handleCopyLink} className="button-secondary">
-          Copy Link 🔗
+          Copy Link
         </button>
         <button
           className="button-secondary"
@@ -211,14 +211,12 @@ const PostItem = ({ post, refetchPosts }) => {
         >
           {currentPostId === post.id ? "Close Comments" : "View Comments"}
         </button>
-        <label>
-          <input
-            type="checkbox"
-            checked={isLiked}
-            onChange={handleLikeToggle}
-          />
-          Likes: {post.like_count}
-        </label>
+        <div className="like-container">
+          <button className="like-button" onClick={handleLikeToggle}>
+            <FontAwesomeIcon icon={isLiked ? solidHeart : regularHeart} />
+          </button>
+          <div className="like-count">Likes: {post.like_count}</div>
+        </div>
       </div>
 
       {showCommentBox && currentPostId === post.id && (
