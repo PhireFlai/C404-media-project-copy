@@ -75,14 +75,22 @@ def createUser(request):
 
     if User.objects.filter(username=username).exists():
         return Response({'error': 'Username already taken'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Fetch the environment setting to check if admin approval is required
+    setting = EnvironmentSetting.objects.first()
+    if setting and setting.require_admin_approval_for_signup:
+        is_approved = False  # Require admin approval
+    else:
+        is_approved = True  # Automatically approve
 
-    user = User.objects.create_user(username=username, password=password)
+    user = User.objects.create_user(username=username, password=password, is_approved=is_approved)
     token = Token.objects.create(user=user)
 
     return Response({
         'token': token.key,
         'user_id': user.id,
-        'username': user.username
+        'username': user.username,
+        'is_approved': user.is_approved
     }, status=status.HTTP_201_CREATED)
 
 # Logs in a user
@@ -93,6 +101,9 @@ def loginUser(request):
     password = request.data.get('password')
     user = authenticate(username=username, password=password)
     if user is not None:
+        if not user.is_approved:
+            return Response({'error': 'User is not approved by admin'}, status=status.HTTP_403_FORBIDDEN)
+        
         token, created = Token.objects.get_or_create(user=user)
         return Response({
             'token': token.key,
@@ -115,7 +126,7 @@ class PublicPostsView(ListAPIView):
     permission_classes = [AllowAny]
 
     def get_queryset(self):
-        return Post.objects.filter(visibility=Post.PUBLIC)
+        return Post.objects.filter(visibility=Post.PUBLIC).order_by("-created_at") 
     
 # Get all friends posts
 class FriendsPostsView(ListAPIView):
@@ -131,7 +142,7 @@ class FriendsPostsView(ListAPIView):
             author__in=user.friends.all()
         ).exclude(
             visibility=Post.DELETED
-        )
+        ).order_by("-created_at") 
 
 # Gets all posts for a given user
 class PostListCreateView(generics.ListCreateAPIView):
@@ -143,8 +154,8 @@ class PostListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         user_id = self.kwargs.get('userId')
         if user_id:
-            return Post.objects.filter(author_id=user_id).exclude(visibility=Post.DELETED)
-        return Post.objects.exclude(visibility=Post.DELETED)
+            return Post.objects.filter(author_id=user_id).exclude(visibility=Post.DELETED).order_by("-created_at")
+        return Post.objects.exclude(visibility=Post.DELETED).order_by("-created_at")
     
     def perform_create(self, serializer):
         if not self.request.user.is_authenticated:
@@ -169,8 +180,14 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_update(self, serializer):
         if self.request.user != serializer.instance.author:
-            raise PermissionDenied("You can only edit your own posts.")  
-        serializer.save()
+            raise PermissionDenied("You can only edit your own posts.")
+        # Handle image updates
+        image = self.request.FILES.get('image')  # Get the new image from request
+        if image:
+            serializer.save(image=image)
+        else:
+            serializer.save()
+        
 
 
 # Gets a user's profile or updates it

@@ -27,8 +27,10 @@ const PostItem = ({ post, refetchPosts }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(post.title);
   const [editContent, setEditContent] = useState(post.content);
-  const [isLiked, setIsLiked] = useState(false);
   const user = JSON.parse(localStorage.getItem("user")); // Get the current user from local storage
+  const [editImage, setEditImage] = useState(null);
+  const [editVisibility, setEditVisibility] = useState(post.visibility);
+  const [isLiked, setIsLiked] = useState(false);
 
   useEffect(() => {
     console.log(post.like_count);
@@ -76,6 +78,8 @@ const PostItem = ({ post, refetchPosts }) => {
         updatedPost: {
           title: editTitle,
           content: editContent,
+          image: editImage,
+          visibility: editVisibility,
         },
       }).unwrap();
       refetchPosts(); // Refetch posts after editing
@@ -126,6 +130,27 @@ const PostItem = ({ post, refetchPosts }) => {
             rows={5}
             className="post-title-textarea"
             placeholder="Edit content"
+          />
+          <br />
+
+          {/* Visibility Dropdown */}
+          <label>Select a visibility option:</label>
+          <select
+            value={editVisibility}
+            onChange={(e) => setEditVisibility(e.target.value)}
+            className="post-visibility-select"
+          >
+            <option value="public">Public</option>
+            <option value="friends-only">Friends Only</option>
+            <option value="unlisted">Unlisted</option>
+          </select>
+          <br />
+          {/* image upload input */}
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => setEditImage(e.target.files[0])}
+            className="post-image-input"
           />
           <br />
           <button className="button-success" onClick={handleSaveClick}>

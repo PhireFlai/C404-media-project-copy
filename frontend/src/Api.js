@@ -35,12 +35,26 @@ export const api = createApi({
       }),
     }),
     editPost: builder.mutation({
-      query: ({ userId, postId, updatedPost }) => ({
-        url: `api/authors/${userId}/posts/${postId}/`, // Endpoint for editing a post
-        method: "PUT",
-        body: updatedPost,
-      }),
+      query: ({ userId, postId, updatedPost }) => {
+        const formData = new FormData();
+
+        // Append text fields
+        formData.append("title", updatedPost.title);
+        formData.append("content", updatedPost.content);
+        formData.append("visibility", updatedPost.visibility);
+        // Append image if it exists
+        if (updatedPost.image) {
+          formData.append("image", updatedPost.image);
+        }
+
+        return {
+          url: `api/authors/${userId}/posts/${postId}/`,
+          method: "PUT",
+          body: formData,
+        };
+      },
     }),
+
     getTest: builder.query({
       query: () => "core/test", // Endpoint for fetching test data
     }),
