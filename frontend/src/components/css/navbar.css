@@ -49,3 +49,7 @@ nav .logo a {
 nav .logo a:hover {
     color: #E07A5F; /* terra cotta */
 }
+
+.remove-shadow {
+    box-shadow: none;
+}

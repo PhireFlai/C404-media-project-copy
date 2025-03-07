@@ -35,7 +35,11 @@ const Profile = () => {
 
   useEffect(() => {
     if (followRequests) {
-      setHasRequested(followRequests.some((r) => r.actor.id === curUser.id && r.object.id === userId));
+      setHasRequested(
+        followRequests.some(
+          (r) => r.actor.id === curUser.id && r.object.id === userId
+        )
+      );
     }
   }, [followRequests]);
 
@@ -51,7 +55,7 @@ const Profile = () => {
       setIsEditing(false); // Disable editing mode
       const updatedUser = { id: curUser.id, username: newUsername };
 
-      localStorage.setItem('user', JSON.stringify(updatedUser));
+      localStorage.setItem("user", JSON.stringify(updatedUser));
 
       window.location.reload(); // Refresh the page to reflect the changes
     } catch (err) {
@@ -66,16 +70,15 @@ const Profile = () => {
         actorId: curUser.id,
         objectId: user.id,
       }).unwrap();
-
     } catch (err) {
       console.error("Failed to create follow request:", err);
       setHasRequested(false);
     }
-  }
+  };
 
   const handleUnfollowClick = async () => {
     setIsFollowing(false);
-    try{
+    try {
       await unfollowUser({
         followerId: curUser.id,
         followedId: user.id,
@@ -84,7 +87,7 @@ const Profile = () => {
       console.error("Failed to unfollow user:", err);
       setIsFollowing(true);
     }
-  }
+  };
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -107,29 +110,39 @@ const Profile = () => {
         )}
         <h1 className="profile-title">{user.username}</h1>
         <div>
-        {curUser && curUser.id !== userId && (
-          <>
-            {isFollowing ? (
-              <button className="button-danger" onClick={handleUnfollowClick}>Unfollow</button>
-            ) : hasRequested ? (
-              <button className="button-disabled" disabled>Request Sent</button>
-            ) : (
-              <button className="button-primary" onClick={handleFollowClick}>
-                Follow
-              </button>
-            )}
-          </>
-        )}
+          {curUser && curUser.id !== userId && (
+            <>
+              {isFollowing ? (
+                <button className="button-danger" onClick={handleUnfollowClick}>
+                  Unfollow
+                </button>
+              ) : hasRequested ? (
+                <button className="button-disabled" disabled>
+                  Request Sent
+                </button>
+              ) : (
+                <button className="button-primary" onClick={handleFollowClick}>
+                  Follow
+                </button>
+              )}
+            </>
+          )}
         </div>
       </div>
 
       {/* Profile Stats */}
       <div className="profile-stats">
         <p>
-          <Link to={`/${userId}/followers`}><strong>Followers:</strong> </Link>{user.followers.length}
+          <Link to={`/${userId}/followers`}>
+            <strong>Followers:</strong>{" "}
+          </Link>
+          {user.followers.length}
         </p>
         <p>
-          <Link to={`/${userId}/following`}><strong>Following:</strong> </Link> {user.following.length}
+          <Link to={`/${userId}/following`}>
+            <strong>Following:</strong>{" "}
+          </Link>{" "}
+          {user.following.length}
         </p>
       </div>
 
@@ -139,7 +152,10 @@ const Profile = () => {
           <ProfilePicUpload userId={curUser.id} />
 
           {!isEditing ? (
-            <button className="button-secondary" onClick={handleEditClick}>
+            <button
+              className="button-secondary spacing"
+              onClick={handleEditClick}
+            >
               Edit Username
             </button>
           ) : (
@@ -165,12 +181,10 @@ const Profile = () => {
         </div>
       )}
 
-
       {/* User's Posts Section */}
 
       <h2 className="user-posts-title">{user.username}'s Posts</h2>
       <UserPosts userId={userId} />
-
     </div>
   );
 };

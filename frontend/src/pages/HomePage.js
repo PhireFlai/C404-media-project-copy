@@ -17,7 +17,10 @@ const HomePage = () => {
     <div className="recent-posts-container">
       <h1 className="title">Recent Posts</h1>
 
-      <button className="button-primary" onClick={handleCreatePostClick}>
+      <button
+        className="button-primary create-post"
+        onClick={handleCreatePostClick}
+      >
         Create a Post
       </button>
 
