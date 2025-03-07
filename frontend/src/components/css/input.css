@@ -4,17 +4,20 @@ textarea {
     width: 100%;
     padding: 10px;
     border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 14px;
+    border-radius: 5px;
+    font-size: 16px;
     margin-bottom: 10px;
     box-sizing: border-box;
+    font-family: 'Arial', sans-serif;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 /* Input focus styles */
 input:focus,
 textarea:focus {
-    border-color: #007bff;
+    border-color: #3D405B; /* deep slate blue */
     outline: none;
+    box-shadow: 0 0 5px rgba(61, 64, 91, 0.5); /* deep slate blue */
 }
 
 /* Disabled input styles */
@@ -27,11 +30,13 @@ textarea:disabled {
 /* Error input styles */
 input.error,
 textarea.error {
-    border-color: red;
+    border-color: #E07A5F; /* terra cotta */
+    box-shadow: 0 0 5px rgba(224, 122, 95, 0.5); /* terra cotta */
 }
 
 /* Success input styles */
 input.success,
 textarea.success {
-    border-color: green;
+    border-color: #81B29A; /* muted sage green */
+    box-shadow: 0 0 5px rgba(129, 178, 154, 0.5); /* muted sage green */
 }
