@@ -3,43 +3,92 @@
     cursor: pointer;
     display: flex;
     align-items: center;
+    font-family: 'Arial', sans-serif;
+    color: #f5f5f7;
+}
+
+.dropdown span {
+    display: flex;
+    align-items: center;
+}
+
+.dropdown .arrow {
+    margin-left: 8px;
+    /* Add some space between the text and the icon */
 }
 
 .dropdown-menu {
     position: absolute;
-    top: 130%;
+    top: 100%;
     left: 0;
-    background-color: white;
-    color: black;
+    background-color: #ffffff;
+    /* white */
+    color: #3D405B;
+    /* deep slate blue */
     border: 1px solid #ddd;
     list-style-type: none;
     padding: 10px;
-    margin: 0;
-    min-width: 150px;
+    /* Increase padding for a bigger dropdown window */
+    margin: 5px 0 0 0;
+    min-width: 200px;
+    /* Increase min-width for a bigger dropdown window */
     z-index: 1000;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
 }
-  
+
 .dropdown-menu li {
     padding: 5px;
 }
-  
+
 .dropdown-menu li a,
 .dropdown-menu li button {
-    color: black;
+    color: #3D405B;
+    /* deep slate blue */
     text-decoration: none;
     background: none;
     border: none;
     cursor: pointer;
     width: 100%;
     text-align: left;
-    font-family: 'Times New Roman', Times, serif;
-    font-size: 16px;
-    padding: 2px;
+    font-family: 'Arial', sans-serif;
+    font-size: 14px;
+    padding: 5px;
     border-radius: 5px;
+    transition: background 0.3s ease;
 }
-  
+
 .dropdown-menu li a:hover,
 .dropdown-menu li button:hover {
-    background-color: #f0f0f0;
+    background-color: #81B29A;
+    /* muted sage green */
+    color: white;
+    border: none;
+}
+
+.dropdown-menu li {
+    padding: 5px;
+}
+
+.dropdown-menu li a,
+.dropdown-menu li button {
+    color: #3D405B; /* deep slate blue */
+    text-decoration: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    font-family: 'Arial', sans-serif;
+    font-size: 14px;
+    padding: 5px;
+    border-radius: 5px;
+    transition: background 0.3s ease;
+}
+
+.dropdown-menu li a:hover,
+.dropdown-menu li button:hover {
+    background-color: #81B29A; /* muted sage green */
+    color: white;
     border: none;
 }

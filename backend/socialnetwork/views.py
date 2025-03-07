@@ -17,6 +17,8 @@ from rest_framework.generics import ListAPIView
 from .models import *
 from .serializers import *
 import requests
+import logging
+from rest_framework.exceptions import ValidationError
 from django.db.models import Q
 
 @swagger_auto_schema(
@@ -74,14 +76,22 @@ def createUser(request):
 
     if User.objects.filter(username=username).exists():
         return Response({'error': 'Username already taken'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Fetch the environment setting to check if admin approval is required
+    setting = EnvironmentSetting.objects.first()
+    if setting and setting.require_admin_approval_for_signup:
+        is_approved = False  # Require admin approval
+    else:
+        is_approved = True  # Automatically approve
 
-    user = User.objects.create_user(username=username, password=password)
+    user = User.objects.create_user(username=username, password=password, is_approved=is_approved)
     token = Token.objects.create(user=user)
 
     return Response({
         'token': token.key,
         'user_id': user.id,
-        'username': user.username
+        'username': user.username,
+        'is_approved': user.is_approved
     }, status=status.HTTP_201_CREATED)
 
 # Logs in a user
@@ -92,6 +102,9 @@ def loginUser(request):
     password = request.data.get('password')
     user = authenticate(username=username, password=password)
     if user is not None:
+        if not user.is_approved:
+            return Response({'error': 'User is not approved by admin'}, status=status.HTTP_403_FORBIDDEN)
+        
         token, created = Token.objects.get_or_create(user=user)
         return Response({
             'token': token.key,
@@ -114,8 +127,23 @@ class PublicPostsView(ListAPIView):
     permission_classes = [AllowAny]
 
     def get_queryset(self):
-        return Post.objects.filter(visibility=Post.PUBLIC)
+        return Post.objects.filter(visibility=Post.PUBLIC).order_by("-created_at") 
+    
+# Get all friends posts
+class FriendsPostsView(ListAPIView):
+    serializer_class = PostSerializer
+    permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        # Get the userID from the URL parameter
+        user_id = self.kwargs['userId']
+        user = get_object_or_404(User, id=user_id)
+        # Filter posts authored by the user's friends and exclude DELETED posts
+        return Post.objects.filter(
+            author__in=user.friends.all()
+        ).exclude(
+            visibility=Post.DELETED
+        ).order_by("-created_at") 
 
 # Gets all posts for a given user
 class PostListCreateView(generics.ListCreateAPIView):
@@ -127,8 +155,8 @@ class PostListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         user_id = self.kwargs.get('userId')
         if user_id:
-            return Post.objects.filter(author_id=user_id).exclude(visibility=Post.DELETED)
-        return Post.objects.exclude(visibility=Post.DELETED)
+            return Post.objects.filter(author_id=user_id).exclude(visibility=Post.DELETED).order_by("-created_at")
+        return Post.objects.exclude(visibility=Post.DELETED).order_by("-created_at")
     
     def perform_create(self, serializer):
         if not self.request.user.is_authenticated:
@@ -139,7 +167,11 @@ class PostListCreateView(generics.ListCreateAPIView):
 class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
-    permission_classes = [IsAuthenticated]  # authentication
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [AllowAny()]
+        return [IsAuthenticated()]
 
     def perform_destroy(self, instance):
         if self.request.user != instance.author:
@@ -149,8 +181,14 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_update(self, serializer):
         if self.request.user != serializer.instance.author:
-            raise PermissionDenied("You can only edit your own posts.")  
-        serializer.save()
+            raise PermissionDenied("You can only edit your own posts.")
+        # Handle image updates
+        image = self.request.FILES.get('image')  # Get the new image from request
+        if image:
+            serializer.save(image=image)
+        else:
+            serializer.save()
+        
 
 
 # Gets a user's profile or updates it
@@ -229,6 +267,7 @@ def CreateComment(request, userId, pk):
         response = requests.post(f'http://localhost:8000/api/authors/{userId}/inbox/', data=CommentSerializer(comment).data)
         return Response(serializer.data, status=response.status_code)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 # Post to an author's inbox
 @api_view(['POST'])
@@ -313,8 +352,10 @@ class FollowRequestListView(generics.ListCreateAPIView):
 def CreateFollowRequest(request, actorId, objectId):
     actor = User.objects.get(id=actorId)
     object = User.objects.get(id=objectId)
-    if FollowRequest.objects.get(actor=actorId, object=objectId) is not None:
-        return Response({"message": "Follow request has already been sent"}, status=status.HTTP_400_BAD_REQUEST)
+    if FollowRequest.objects.filter(actor=actorId, object=objectId).exists():
+        return Response({"message": "Follow request has already been sent"}, status=status.HTTP_400_BAD_REQUEST)    
+    elif actor.following.filter(id=objectId).exists():
+        return Response({"message": "You are already following this user"}, status=status.HTTP_400_BAD_REQUEST)
     summary = f'{actor.username} wants to follow {object.username}'
     data = {"summary": summary}
     serializer = FollowRequestSerializer(data=data)
@@ -330,9 +371,9 @@ def CreateFollowRequest(request, actorId, objectId):
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
-def AcceptFollowRequest(request, objectId, requestId):
+def AcceptFollowRequest(request, objectId, actorId ):
     try:
-        follow_request = FollowRequest.objects.get(id=requestId)
+        follow_request = FollowRequest.objects.get(actor=actorId, object=objectId)
     except FollowRequest.DoesNotExist:
         return Response({'error': 'Follow request not found'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -375,7 +416,7 @@ def Unfollow(request, followedId, followerId):
     except User.DoesNotExist:
         return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
-    if follower != request.user.id:
+    if follower.id != request.user.id:
         return Response({'error': 'You are not authorized to unfollow this user'}, 
                        status=status.HTTP_403_FORBIDDEN)
 
@@ -383,12 +424,36 @@ def Unfollow(request, followedId, followerId):
     # Unfollow the user
     followed.followers.remove(follower)
     
-    # Remove each other as friends
-    followed.friends.remove(follower)
-    follower.friends.remove(followed)
+    if follower in followed.friends.all():
+        # Remove each other as friends
+        followed.friends.remove(follower)
+        follower.friends.remove(followed)
     return Response({'message': 'Unfollowed successfully'}, status=status.HTTP_200_OK)
     
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def RemoveFollower(request, followerId, followedId):
+    try:
+        followed = User.objects.get(id=followedId)
+        follower = User.objects.get(id=followerId)
+    except User.DoesNotExist:
+        return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if followed.id != request.user.id:
+        return Response({'error': 'You are not authorized to remove this follower'}, 
+                       status=status.HTTP_403_FORBIDDEN)
+
+    # Remove the follower
+    followed.followers.remove(follower)
     
+    if followed in follower.friends.all():
+        # Remove each other as friends
+        followed.friends.remove(follower)
+        follower.friends.remove(followed)
+    
+    return Response({'message': 'Follower removed successfully'}, status=status.HTTP_200_OK)    
     
 @permission_classes([AllowAny])
 class FollowersList(generics.ListCreateAPIView):

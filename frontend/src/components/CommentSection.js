@@ -1,15 +1,13 @@
 import React, { useState } from "react";
-import {
-  useGetCommentsQuery,
-  useCreateCommentMutation,
-} from "../Api";
+import { useGetCommentsQuery, useCreateCommentMutation } from "../Api";
 import "./css/button.css";
 import "./css/input.css";
 import "./css/text.css";
+import CommentItem from "./CommentItem";
 
 const CommentSection = ({ postId, author }) => {
   const [comment, setComment] = useState(""); // State to manage the comment input
-  const user = JSON.parse(localStorage.getItem('user')); // Get the current user from local storage
+  const user = JSON.parse(localStorage.getItem("user")); // Get the current user from local storage
   const { data: comments, refetch: refetchComments } = useGetCommentsQuery(
     { userId: user.id, postId },
     { skip: !postId }
@@ -40,12 +38,12 @@ const CommentSection = ({ postId, author }) => {
       {/* Render the list of comments if there are any, otherwise display a message */}
       {comments?.length > 0 ? (
         comments.map((comment) => (
-          <div className="comment-item" key={comment.id}>
-            <p>{comment.content}</p>
-            <p>
-              <small>{comment.created_at}</small>
-            </p>
-          </div>
+          <CommentItem
+            comment={comment}
+            postId={postId}
+            userId={user.id}
+            refetchComments={refetchComments}
+          />
         ))
       ) : (
         <p>No comments yet.</p>

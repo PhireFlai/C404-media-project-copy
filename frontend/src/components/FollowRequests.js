@@ -1,0 +1,68 @@
+import React from "react";
+import {
+    useGetFollowRequestsQuery,
+    useAcceptFollowRequestMutation
+} from "../Api";
+import { Link } from "react-router-dom";
+
+const FollowRequests = ({ userId, onFollowChange }) => {
+    const { data: requests, isLoading, isError, error } = useGetFollowRequestsQuery(userId, { skip: !userId });
+    const [acceptFollowRequest] = useAcceptFollowRequestMutation();
+
+    if (isLoading) return <div className="loader">Loading requests...</div>;
+    if (isError) return <div>Error loading requests: {error.message}</div>;
+
+    const handleApproveOrReject = async (objectId, actorId, action) => {
+        if (!userId) return;
+        try {
+            await acceptFollowRequest({
+                objectId: objectId,
+                actorId: actorId,
+                action: action,
+            }).unwrap();
+            // Call the parent's function to update
+            if (onFollowChange) onFollowChange();
+        } catch (err) {
+            console.error("Failed to accept or reject request:", err);
+        }
+    };
+
+    return (
+        <div className="request-container">
+            <h2>Impending Requests</h2>
+            {requests?.length === 0 ? (
+                <p>No follow requests yet</p>
+            ) : (
+                <ul className="follower-request-list">
+                    {requests.map((request) => (
+                        <li key={request.actor.id}>
+                            <div className="requester-info">
+                                <Link to={`/${request.actor.id}`} className="requester-name">
+                                    {request.actor.username}
+                                </Link>
+                                <button
+                                    onClick={() =>
+                                        handleApproveOrReject(request.object.id, request.actor.id, "accept")
+                                    }
+                                    className="approve-btn"
+                                >
+                                    ✅
+                                </button>
+                                <button
+                                    onClick={() =>
+                                        handleApproveOrReject(request.object.id, request.actor.id, "reject")
+                                    }
+                                    className="reject-btn"
+                                >
+                                    ❌
+                                </button>
+                            </div>
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </div>
+    );
+};
+
+export default FollowRequests;

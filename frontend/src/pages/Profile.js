@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import {
+  useCreateFollowRequestMutation,
   useGetUserProfileQuery,
   useUpdateUsernameMutation,
-  useGetUserPostsQuery,
+  useGetFollowingQuery,
+  useGetFollowRequestsQuery,
+  useUnfollowUserMutation,
 } from "../Api";
 import ProfilePicUpload from "../components/ProfilePicUpload";
 import UserPosts from "../components/UserPosts";
@@ -12,20 +15,33 @@ import "./css/profile.css";
 const Profile = () => {
   const { userId } = useParams();
   const { data: user, isLoading, error } = useGetUserProfileQuery(userId);
-  const {
-    data: posts,
-    isLoading: postsLoading,
-    error: postsError,
-    refetch: refetchPosts,
-  } = useGetUserPostsQuery(userId);
   const curUser = JSON.parse(localStorage.getItem("user")); // Get the current user from local storage
   const [isEditing, setIsEditing] = useState(false); // State for editing mode
   const [newUsername, setNewUsername] = useState(""); // State for new username
   const [updateUsername] = useUpdateUsernameMutation(); // Mutation for updating username
+  const [createFollowRequest] = useCreateFollowRequestMutation();
+  const [unfollowUser] = useUnfollowUserMutation();
+  const { data: followingList } = useGetFollowingQuery(curUser.id);
+  const { data: followRequests } = useGetFollowRequestsQuery(userId);
+
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [hasRequested, setHasRequested] = useState(false);
 
   useEffect(() => {
-    refetchPosts(); // Refetch posts every time the component is rendered
-  }, [refetchPosts]);
+    if (followingList) {
+      setIsFollowing(followingList.some((f) => f.id === userId));
+    }
+  }, [followingList]);
+
+  useEffect(() => {
+    if (followRequests) {
+      setHasRequested(
+        followRequests.some(
+          (r) => r.actor.id === curUser.id && r.object.id === userId
+        )
+      );
+    }
+  }, [followRequests]);
 
   const handleEditClick = () => {
     setIsEditing(true);
@@ -39,11 +55,37 @@ const Profile = () => {
       setIsEditing(false); // Disable editing mode
       const updatedUser = { id: curUser.id, username: newUsername };
 
-      localStorage.setItem('user', JSON.stringify(updatedUser));
+      localStorage.setItem("user", JSON.stringify(updatedUser));
 
       window.location.reload(); // Refresh the page to reflect the changes
     } catch (err) {
       console.error("Failed to update username:", err);
+    }
+  };
+
+  const handleFollowClick = async () => {
+    setHasRequested(true);
+    try {
+      await createFollowRequest({
+        actorId: curUser.id,
+        objectId: user.id,
+      }).unwrap();
+    } catch (err) {
+      console.error("Failed to create follow request:", err);
+      setHasRequested(false);
+    }
+  };
+
+  const handleUnfollowClick = async () => {
+    setIsFollowing(false);
+    try {
+      await unfollowUser({
+        followerId: curUser.id,
+        followedId: user.id,
+      }).unwrap();
+    } catch (err) {
+      console.error("Failed to unfollow user:", err);
+      setIsFollowing(true);
     }
   };
 
@@ -67,15 +109,40 @@ const Profile = () => {
           />
         )}
         <h1 className="profile-title">{user.username}</h1>
+        <div>
+          {curUser && curUser.id !== userId && (
+            <>
+              {isFollowing ? (
+                <button className="button-danger" onClick={handleUnfollowClick}>
+                  Unfollow
+                </button>
+              ) : hasRequested ? (
+                <button className="button-disabled" disabled>
+                  Request Sent
+                </button>
+              ) : (
+                <button className="button-primary" onClick={handleFollowClick}>
+                  Follow
+                </button>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       {/* Profile Stats */}
       <div className="profile-stats">
         <p>
-          <strong>Followers:</strong> {user.followers.length}
+          <Link to={`/${userId}/followers`}>
+            <strong>Followers:</strong>{" "}
+          </Link>
+          {user.followers.length}
         </p>
         <p>
-          <strong>Friends:</strong> {user.friends.length}
+          <Link to={`/${userId}/following`}>
+            <strong>Following:</strong>{" "}
+          </Link>{" "}
+          {user.following.length}
         </p>
       </div>
 
@@ -85,7 +152,10 @@ const Profile = () => {
           <ProfilePicUpload userId={curUser.id} />
 
           {!isEditing ? (
-            <button className="button-secondary" onClick={handleEditClick}>
+            <button
+              className="button-secondary spacing"
+              onClick={handleEditClick}
+            >
               Edit Username
             </button>
           ) : (
@@ -112,24 +182,9 @@ const Profile = () => {
       )}
 
       {/* User's Posts Section */}
-      {postsLoading ? (
-        <div className="loading-message">Loading posts...</div>
-      ) : postsError ? (
-        postsError.status === 401 ? (
-          <></>
-        ) : (
-          <div className="error-message">
-            Error loading posts:{" "}
-            {postsError.data?.error || "Failed to fetch posts"} (Status code:{" "}
-            {postsError.status})
-          </div>
-        )
-      ) : (
-        <>
-          <h2 className="user-posts-title">{user.username}'s Posts</h2>
-          <UserPosts posts={posts} />
-        </>
-      )}
+
+      <h2 className="user-posts-title">{user.username}'s Posts</h2>
+      <UserPosts userId={userId} />
     </div>
   );
 };

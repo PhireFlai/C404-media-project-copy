@@ -16,6 +16,10 @@ export const api = createApi({
     getPosts: builder.query({
       query: () => `api/public-posts/`, // Endpoint for fetching public posts
     }),
+    getFriendsPosts: builder.query({
+      query: (userId) => `api/authors/${userId}/friends-posts/`, // Endpoint for fetching friends posts
+    }),
+
     createPost: builder.mutation({
       query: ({ userId, formData }) => ({
         url: `api/authors/${userId}/posts/`, // Endpoint for creating a post
@@ -31,12 +35,26 @@ export const api = createApi({
       }),
     }),
     editPost: builder.mutation({
-      query: ({ userId, postId, updatedPost }) => ({
-        url: `api/authors/${userId}/posts/${postId}/`, // Endpoint for editing a post
-        method: "PUT",
-        body: updatedPost,
-      }),
+      query: ({ userId, postId, updatedPost }) => {
+        const formData = new FormData();
+
+        // Append text fields
+        formData.append("title", updatedPost.title);
+        formData.append("content", updatedPost.content);
+        formData.append("visibility", updatedPost.visibility);
+        // Append image if it exists
+        if (updatedPost.image) {
+          formData.append("image", updatedPost.image);
+        }
+
+        return {
+          url: `api/authors/${userId}/posts/${postId}/`,
+          method: "PUT",
+          body: formData,
+        };
+      },
     }),
+
     getTest: builder.query({
       query: () => "core/test", // Endpoint for fetching test data
     }),
@@ -60,6 +78,26 @@ export const api = createApi({
         method: "POST",
         body: commentData,
       }),
+    }),
+    addLike: builder.mutation({
+      query: ({ userId, postId }) => ({
+        url: `api/authors/${userId}/posts/${postId}/like/`,
+        method: "POST",
+      }),
+    }),
+    getLikes: builder.query({
+      query: ({ userId, postId }) =>
+        `api/authors/${userId}/posts/${postId}/likes/`, // Endpoint for fetching likes
+    }),
+    addCommentLike: builder.mutation({
+      query: ({ userId, postId, commentId }) => ({
+        url: `api/authors/${userId}/posts/${postId}/comments/${commentId}/like/`, // Endpoint for liking a comment
+        method: "POST",
+      }),
+    }),
+    getCommentLikes: builder.query({
+      query: ({ userId, postId, commentId }) =>
+        `api/authors/${userId}/posts/${postId}/comments/${commentId}/likes/`, // Endpoint for fetching likes for comments
     }),
     updateProfilePicture: builder.mutation({
       query: ({ userId, profilePicture }) => {
@@ -89,12 +127,68 @@ export const api = createApi({
     getUserPosts: builder.query({
       query: (userId) => `api/authors/${userId}/posts/`, // Endpoint for fetching posts by userId
     }),
+    // Get followers list
+    getFollowers: builder.query({
+      query: (userId) => `api/authors/${userId}/followers/`,
+    }),
+    getFollowing: builder.query({
+      query: (userId) => `api/authors/${userId}/following/`,
+    }),
+    createFollowRequest: builder.mutation({
+      query: ({ actorId, objectId }) => ({
+        url: `api/authors/${actorId}/follow/authors/${objectId}/`,
+        method: "POST",
+      }),
+    }),
+    acceptFollowRequest: builder.mutation({
+      query: ({ objectId, actorId, action }) => ({
+        url: `api/authors/${objectId}/accept-follow-request/authors/${actorId}/?action=${action}`,
+        method: "POST",
+      }),
+    }),
+    unfollowUser: builder.mutation({
+      query: ({ followerId, followedId }) => ({
+        url: `api/authors/${followerId}/unfollow/authors/${followedId}/`,
+        method: "POST",
+      }),
+    }),
+    removeFollower: builder.mutation({
+      query: ({ followedId, followerId }) => ({
+        url: `api/authors/${followedId}/remove-follower/authors/${followerId}/`,
+        method: "POST",
+      }),
+    }),
+    getFollowRequests: builder.query({
+      query: (objectId) => `api/authors/${objectId}/follow-requests/`,
+    }),
+    postToInbox: builder.mutation({
+      query: ({ receiver, data }) => ({
+        url: `api/authors/${receiver}/inbox/`,
+        method: "POST",
+        body: data,
+      }),
+    }),
+    getPostComment: builder.query({
+      query: ({ userId, postId, commentId }) =>
+        `api/authors/${userId}/posts/${postId}/comments/${commentId}/`,
+    }),
+    getAuthorComments: builder.query({
+      query: (userId) => `api/authors/${userId}/commented/`,
+    }),
+    getAuthorComment: builder.query({
+      query: ({ userId, commentId }) =>
+        `api/authors/${userId}/commented/${commentId}/`,
+    }),
+    getPost: builder.query({
+      query: (postId) => `api/posts/${postId}/`, //endpoint for fetching a single post
+    }),
   }),
 });
 
 // Export hooks for each endpoint
 export const {
   useGetPostsQuery,
+  useGetFriendsPostsQuery,
   useCreatePostMutation,
   useDeletePostMutation,
   useGetTestQuery,
@@ -102,9 +196,25 @@ export const {
   useLoginUserMutation,
   useEditPostMutation,
   useCreateCommentMutation,
+  useAddLikeMutation,
+  useGetLikesQuery,
+  useAddCommentLikeMutation,
+  useGetCommentLikesQuery,
   useGetCommentsQuery,
   useGetUserProfileQuery,
   useUpdateProfilePictureMutation,
   useUpdateUsernameMutation,
   useGetUserPostsQuery,
+  useGetFollowersQuery,
+  useGetFollowingQuery,
+  useCreateFollowRequestMutation,
+  useAcceptFollowRequestMutation,
+  useUnfollowUserMutation,
+  useRemoveFollowerMutation,
+  useGetPostCommentQuery,
+  useGetAuthorCommentsQuery,
+  useGetAuthorCommentQuery,
+  usePostToInboxMutation,
+  useGetFollowRequestsQuery,
+  useGetPostQuery,
 } = api;

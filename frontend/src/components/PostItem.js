@@ -1,22 +1,55 @@
-import React, { useState } from "react";
-import { useDeletePostMutation, useEditPostMutation } from "../Api";
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import {
+  useDeletePostMutation,
+  useEditPostMutation,
+  useAddLikeMutation,
+  useGetLikesQuery,
+} from "../Api";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
 import CommentSection from "./CommentSection";
 import "../pages/css/home.css";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faHeart as solidHeart } from "@fortawesome/free-solid-svg-icons";
+import { faHeart as regularHeart } from "@fortawesome/free-regular-svg-icons";
 
 const PostItem = ({ post, refetchPosts }) => {
   const [deletePost] = useDeletePostMutation();
   const [editPost] = useEditPostMutation();
+  const [addLike] = useAddLikeMutation();
+  const {
+    data: likes,
+    error: likesError,
+    isLoading: likesLoading,
+  } = useGetLikesQuery({ userId: post.author.id, postId: post.id });
   const [showCommentBox, setShowCommentBox] = useState(false);
   const [currentPostId, setCurrentPostId] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(post.title);
   const [editContent, setEditContent] = useState(post.content);
-  const user = JSON.parse(localStorage.getItem('user')); // Get the current user from local storage
+  const user = JSON.parse(localStorage.getItem("user")); // Get the current user from local storage
+  const [editImage, setEditImage] = useState(null);
+  const [editVisibility, setEditVisibility] = useState(post.visibility);
+  const [isLiked, setIsLiked] = useState(false);
 
-  console.log(post);
+  useEffect(() => {
+    if (user === null || user === undefined) {
+      return;
+    }
+    if (likesLoading) {
+      console.log("Loading likes...");
+    } else if (likesError) {
+      console.error("Error fetching likes:", likesError);
+    } else if (likes && likes.length > 0) {
+      likes.forEach((like) => {
+        if (like.user.id === user.id) {
+          setIsLiked(true);
+        }
+      });
+    }
+  }, [likes, likesError, likesLoading, user.id]);
 
   // Handle post deletion
   const handleDelete = async (postId) => {
@@ -49,6 +82,8 @@ const PostItem = ({ post, refetchPosts }) => {
         updatedPost: {
           title: editTitle,
           content: editContent,
+          image: editImage,
+          visibility: editVisibility,
         },
       }).unwrap();
       refetchPosts(); // Refetch posts after editing
@@ -58,11 +93,30 @@ const PostItem = ({ post, refetchPosts }) => {
     }
   };
 
+  const handleCopyLink = () => {
+    const postLink = `${window.location.origin}/posts/${post.id}`;
+    navigator.clipboard.writeText(postLink);
+    alert("Post link copied to clipboard!");
+  };
+
   // Handle cancel button click
   const handleCancelClick = () => {
     setIsEditing(false);
     setEditTitle(post.title);
     setEditContent(post.content);
+  };
+
+  // Handle like toggle
+  const handleLikeToggle = async () => {
+    try {
+      if (!isLiked) {
+        await addLike({ userId: user.id, postId: post.id }).unwrap();
+        setIsLiked(true);
+        refetchPosts(); // Refetch posts after liking
+      }
+    } catch (err) {
+      console.error("Error toggling like:", err);
+    }
   };
 
   return (
@@ -76,7 +130,7 @@ const PostItem = ({ post, refetchPosts }) => {
             className="post-title-input"
             placeholder="Edit title"
           />
-          <br />
+
           <textarea
             value={editContent}
             onChange={(e) => setEditContent(e.target.value)}
@@ -84,7 +138,27 @@ const PostItem = ({ post, refetchPosts }) => {
             className="post-title-textarea"
             placeholder="Edit content"
           />
-          <br />
+
+          {/* Visibility Dropdown */}
+          <label>Select a visibility option:</label>
+          <select
+            value={editVisibility}
+            onChange={(e) => setEditVisibility(e.target.value)}
+            className="post-visibility-select"
+          >
+            <option value="public">Public</option>
+            <option value="friends-only">Friends Only</option>
+            <option value="unlisted">Unlisted</option>
+          </select>
+
+          {/* image upload input */}
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => setEditImage(e.target.files[0])}
+            className="post-image-input"
+          />
+
           <button className="button-success" onClick={handleSaveClick}>
             Save
           </button>
@@ -96,7 +170,10 @@ const PostItem = ({ post, refetchPosts }) => {
         <>
           <h3 className="sub-title">{post.title}</h3>
           <p className="text-muted">Visibility: {post.visibility}</p>
-          <p>Author: {post.author.username}</p>
+
+          <Link to={`/${post.author.id}`}>
+            <p>Author: {post.author.username}</p>
+          </Link>
           <div>
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
@@ -124,12 +201,22 @@ const PostItem = ({ post, refetchPosts }) => {
             </button>
           </>
         )}
+        {/* Copy Link Button */}
+        <button onClick={handleCopyLink} className="button-secondary">
+          Copy Link
+        </button>
         <button
           className="button-secondary"
           onClick={() => handleCommentClick(post.id)}
         >
           {currentPostId === post.id ? "Close Comments" : "View Comments"}
         </button>
+        <div className="like-container">
+          <button className="like-button" onClick={handleLikeToggle}>
+            <FontAwesomeIcon icon={isLiked ? solidHeart : regularHeart} />
+          </button>
+          <div className="like-count">Likes: {post.like_count}</div>
+        </div>
       </div>
 
       {showCommentBox && currentPostId === post.id && (

@@ -1,59 +1,72 @@
 /* Common button styles */
 button {
-    padding: 8px 12px;
+    padding: 10px 15px;
     border: none;
-    border-radius: 4px;
-    font-size: 14px;
+    border-radius: 5px;
+    font-size: 16px;
     cursor: pointer;
-    transition: background 0.3s ease;
+    transition: background 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-/* button:hover {
-    background-color: #0056b3;
-} */
+button:hover {
+    transform: translateY(-2px);
+}
 
 /* Primary button styles - for action buttons like create, save */
 .button-primary {
-    background-color: #007bff;
+    background-color: #3D405B; /* deep slate blue */
     color: white;
 }
 
 .button-primary:hover {
-    background-color: #0056b3;
+    background-color: #2C2F45; /* darker shade of deep slate blue */
 }
 
 /* Secondary button styles - for less critical actions like cancel, back */
 .button-secondary {
-    background-color: #666;
+    background-color: #81B29A; /* muted sage green */
     color: white;
 }
 
 .button-secondary:hover {
-    background-color: #444;
+    background-color: #6A9B83; /* darker shade of muted sage green */
 }
 
-/* Success button styles - for confirmation buttons*/
+/* Success button styles - for confirmation buttons */
 .button-success {
-    background-color: green;
+    background-color: #81B29A; /* muted sage green */
     color: white;
 }
 
 .button-success:hover {
-    background-color: darkgreen;
+    background-color: #6A9B83; /* darker shade of muted sage green */
 }
 
 /* Danger button styles - for delete, remove buttons */
 .button-danger {
-    background-color: red;
+    background-color: #E07A5F; /* terra cotta */
     color: white;
 }
 
 .button-danger:hover {
-    background-color: darkred;
+    background-color: #C0604A; /* darker shade of terra cotta */
 }
 
 /* Disabled button styles */
 button:disabled {
     background-color: #ccc;
     cursor: not-allowed;
+    opacity: 0.65;
+}
+
+/* Additional styles for a modern look */
+button:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(61, 64, 91, 0.25); /* deep slate blue */
+}
+
+button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }

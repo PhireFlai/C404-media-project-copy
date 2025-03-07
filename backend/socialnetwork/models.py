@@ -30,6 +30,11 @@ class User(AbstractUser):
     groups = models.ManyToManyField("auth.Group", related_name="socialnetwork_users", blank=True)
     user_permissions = models.ManyToManyField("auth.Permission", related_name="socialnetwork_users_permissions", blank=True)
     
+    is_approved = models.BooleanField(default=False)
+
+    github = models.URLField(max_length=200, blank=True, null=True)
+    github_etag = models.CharField(max_length=250, blank=True, null=True)
+    
     def __str__(self):
         return self.username  # Display the username in the admin panel
 
@@ -67,8 +72,12 @@ class Post(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-def __str__(self):
-    return self.title  # Display the title in the admin panel
+    @property
+    def like_count(self):
+        return self.likes.count()
+
+    def __str__(self):
+        return self.title  # Display the title in the admin panel
 
 class Comment(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -76,6 +85,32 @@ class Comment(models.Model):
     content = models.TextField()
     post = models.ForeignKey(Post, on_delete=models.CASCADE)
     created_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    @property
+    def like_count(self):
+        return self.likes.count()
+
+    def __str__(self):
+        return f'{self.author.username} comments {self.content}'
+
+
+class Like(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='likes')
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    def __str__(self):
+        return f'{self.user.username} likes {self.post.title}'
+    
+class CommentLike(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    comment = models.ForeignKey(Comment, on_delete=models.CASCADE, related_name='likes')
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    def __str__(self):
+        return f'{self.user.username} likes {self.comment.content}'
 
 class FollowRequest(models.Model):
     summary = models.TextField()
@@ -96,3 +131,9 @@ class Friendship(models.Model):
         super().save(*args, **kwargs)
         if not Friendship.objects.filter(user=self.friend, friend=self.user).exists():
             Friendship.objects.create(user=self.friend, friend=self.user)
+
+class EnvironmentSetting(models.Model):
+    require_admin_approval_for_signup = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Require admin approval for signup: {self.require_admin_approval_for_signup}"
