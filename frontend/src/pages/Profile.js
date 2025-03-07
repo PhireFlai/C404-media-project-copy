@@ -1,9 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   useCreateFollowRequestMutation,
   useGetUserProfileQuery,
   useUpdateUsernameMutation,
+  useGetFollowingQuery,
+  useGetFollowRequestsQuery,
+  useUnfollowUserMutation,
 } from "../Api";
 import ProfilePicUpload from "../components/ProfilePicUpload";
 import UserPosts from "../components/UserPosts";
@@ -17,8 +20,24 @@ const Profile = () => {
   const [newUsername, setNewUsername] = useState(""); // State for new username
   const [updateUsername] = useUpdateUsernameMutation(); // Mutation for updating username
   const [createFollowRequest] = useCreateFollowRequestMutation();
+  const [unfollowUser] = useUnfollowUserMutation();
+  const { data: followingList } = useGetFollowingQuery(curUser.id);
+  const { data: followRequests } = useGetFollowRequestsQuery(userId);
 
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [hasRequested, setHasRequested] = useState(false);
 
+  useEffect(() => {
+    if (followingList) {
+      setIsFollowing(followingList.some((f) => f.id === userId));
+    }
+  }, [followingList]);
+
+  useEffect(() => {
+    if (followRequests) {
+      setHasRequested(followRequests.some((r) => r.actor.id === curUser.id && r.object.id === userId));
+    }
+  }, [followRequests]);
 
   const handleEditClick = () => {
     setIsEditing(true);
@@ -41,13 +60,29 @@ const Profile = () => {
   };
 
   const handleFollowClick = async () => {
+    setHasRequested(true);
     try {
       await createFollowRequest({
         actorId: curUser.id,
         objectId: user.id,
       }).unwrap();
+
     } catch (err) {
       console.error("Failed to create follow request:", err);
+      setHasRequested(false);
+    }
+  }
+
+  const handleUnfollowClick = async () => {
+    setIsFollowing(false);
+    try{
+      await unfollowUser({
+        followerId: curUser.id,
+        followedId: user.id,
+      }).unwrap();
+    } catch (err) {
+      console.error("Failed to unfollow user:", err);
+      setIsFollowing(true);
     }
   }
 
@@ -72,9 +107,19 @@ const Profile = () => {
         )}
         <h1 className="profile-title">{user.username}</h1>
         <div>
-          {curUser && curUser.id !== userId && (
-            <button className="button-primary" onClick={handleFollowClick}>Follow</button>
-          )}
+        {curUser && curUser.id !== userId && (
+          <>
+            {isFollowing ? (
+              <button className="button-danger" onClick={handleUnfollowClick}>Unfollow</button>
+            ) : hasRequested ? (
+              <button className="button-disabled" disabled>Request Sent</button>
+            ) : (
+              <button className="button-primary" onClick={handleFollowClick}>
+                Follow
+              </button>
+            )}
+          </>
+        )}
         </div>
       </div>
 
