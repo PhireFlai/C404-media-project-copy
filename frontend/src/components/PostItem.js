@@ -34,7 +34,9 @@ const PostItem = ({ post, refetchPosts }) => {
   const [isLiked, setIsLiked] = useState(false);
 
   useEffect(() => {
-    console.log(post.like_count);
+    if (user === null || user === undefined) {
+      return;
+    }
     if (likesLoading) {
       console.log("Loading likes...");
     } else if (likesError) {
