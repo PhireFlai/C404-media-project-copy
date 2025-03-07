@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import {
   useDeletePostMutation,
   useEditPostMutation,
@@ -169,7 +170,8 @@ const PostItem = ({ post, refetchPosts }) => {
         <>
           <h3 className="sub-title">{post.title}</h3>
           <p className="text-muted">Visibility: {post.visibility}</p>
-          <p>Author: {post.author.username}</p>
+
+          <Link to={`/${post.author.id}`}><p>Author: {post.author.username}</p></Link>
           <div>
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
