@@ -58,6 +58,9 @@ def create_github_posts(user):
         event_repo = event.get("repo", {}).get("name", "Unknown Repository")
         event_url = event.get("repo", {}).get("url", "")
 
+        # Construct post title
+        title = f"GitHub Activity: {event_type}"
+
         # Construct post content
         content = f"New GitHub activity: {event_type} on {event_repo} at {event_time}. Find at {event_url}"
 
@@ -68,6 +71,7 @@ def create_github_posts(user):
         # Create a new post
         Post.objects.create(
             author=user,
+            title=title,
             content=content,
             visibility=Post.PUBLIC
         )

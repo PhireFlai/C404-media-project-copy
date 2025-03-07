@@ -10,7 +10,7 @@ def approve_users(modeladmin, request, queryset):
 class CustomUserAdmin(UserAdmin):
     list_display = ('username', 'email', 'is_staff', 'profile_picture', 'is_approved')  # Add profile_picture to list view
     search_fields = ('username', 'email')  # Fields to search in the admin panel
-    readonly_fields = ('id',)  # Make the UUID field read-only in the admin panel
+    readonly_fields = ('id', 'github_etag')  # Make the UUID and github Etag field read-only in the admin panel
 
     actions = [approve_users]
 
@@ -24,6 +24,7 @@ class CustomUserAdmin(UserAdmin):
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Approval', {'fields': ('is_approved',)}),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
+        ('GitHub', {'fields': ('github', 'github_etag')}),
         
     )
 
