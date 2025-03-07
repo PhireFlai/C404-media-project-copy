@@ -1,15 +1,9 @@
-import React, { useState, useEffect } from "react";
-import {
-  useGetCommentsQuery,
-  useCreateCommentMutation,
-  useAddCommentLikeMutation,
-  useGetCommentLikesQuery,
-} from "../Api";
+import React, { useState } from "react";
+import { useGetCommentsQuery, useCreateCommentMutation } from "../Api";
 import "./css/button.css";
 import "./css/input.css";
 import "./css/text.css";
 import CommentItem from "./CommentItem";
-import { Link } from "react-router-dom";
 
 const CommentSection = ({ postId, author }) => {
   const [comment, setComment] = useState(""); // State to manage the comment input

@@ -37,10 +37,11 @@ const PostItem = ({ post, refetchPosts }) => {
     } else if (likesError) {
       console.error("Error fetching likes:", likesError);
     } else if (likes && likes.length > 0) {
-      console.log("Likes:", likes);
-      // Check if the post is already liked by the user
-      console.log("Liked post, " + post.title);
-      setIsLiked(true);
+      likes.forEach((like) => {
+        if (like.user.id === user.id) {
+          setIsLiked(true);
+        }
+      });
     }
   }, [likes, likesError, likesLoading, user.id]);
 

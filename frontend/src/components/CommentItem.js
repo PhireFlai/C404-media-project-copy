@@ -44,7 +44,11 @@ const CommentItem = ({ key, comment, postId, userId, refetchComments }) => {
     } else if (likesError) {
       console.error("Error fetching likes:", likesError);
     } else if (likes && likes.length > 0) {
-      setIsLiked(true);
+      likes.forEach((like) => {
+        if (like.user.id === userId) {
+          setIsLiked(true);
+        }
+      });
     }
   }, [likes, likesError, likesLoading, userId]);
 
