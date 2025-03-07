@@ -327,28 +327,6 @@ def CreateFollowRequest(request, actorId, objectId):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-<<<<<<< HEAD
-@api_view(["GET"])
-@permission_classes([IsAuthenticated])
-def user_feed(request, receiver):
-    # Ensure receiver exists
-    try:
-        receiver_user = User.objects.get(id=receiver)
-    except User.DoesNotExist:
-        return Response({"error": "User not found"}, status=404)
-
-    friends = Friendship.objects.filter(user=receiver_user).values_list("friend", flat=True)
-
-    # Fetch only relevant posts
-    posts = Post.objects.filter(
-        Q(visibility=Post.PUBLIC) |
-        Q(visibility=Post.FRIENDS_ONLY, author__in=friends) |
-        Q(visibility=Post.UNLISTED, author__in=friends)
-    ).exclude(visibility=Post.DELETED).order_by("-created_at")
-
-    serializer = PostSerializer(posts, many=True)
-    return Response(serializer.data)
-=======
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
@@ -429,4 +407,3 @@ class FollowingList(generics.ListCreateAPIView):
         userId = self.kwargs['userId']
         user = get_object_or_404(User, id=userId)
         return user.following.all()
->>>>>>> 4493f6eb15a3cedb2e42242903a5b210c7db2616
