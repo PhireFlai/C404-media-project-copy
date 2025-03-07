@@ -6,20 +6,20 @@ import {
 import { Link } from "react-router-dom";
 
 const FollowRequests = ({ userId, onFollowChange }) => {
-    const { data: requests, isLoading, isError, error, refetch } = useGetFollowRequestsQuery(userId);
+    const { data: requests, isLoading, isError, error } = useGetFollowRequestsQuery(userId, { skip: !userId });
     const [acceptFollowRequest] = useAcceptFollowRequestMutation();
 
     if (isLoading) return <div className="loader">Loading requests...</div>;
     if (isError) return <div>Error loading requests: {error.message}</div>;
 
     const handleApproveOrReject = async (objectId, actorId, action) => {
+        if (!userId) return;
         try {
             await acceptFollowRequest({
                 objectId: objectId,
                 actorId: actorId,
                 action: action,
             }).unwrap();
-            refetch();
             // Call the parent's function to update
             if (onFollowChange) onFollowChange();
         } catch (err) {
