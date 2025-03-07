@@ -1,5 +1,11 @@
-import React, { useState } from "react";
-import { useDeletePostMutation, useEditPostMutation } from "../Api";
+import React, { useState, useEffect } from "react";
+import {
+  useDeletePostMutation,
+  useEditPostMutation,
+  useAddLikeMutation,
+  // useRemoveLikeMutation,
+  useGetLikesQuery,
+} from "../Api";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
@@ -9,6 +15,13 @@ import "../pages/css/home.css";
 const PostItem = ({ post, refetchPosts }) => {
   const [deletePost] = useDeletePostMutation();
   const [editPost] = useEditPostMutation();
+  const [addLike] = useAddLikeMutation();
+  // const [removeLike] = useRemoveLikeMutation();
+  const {
+    data: likes,
+    error: likesError,
+    isLoading: likesLoading,
+  } = useGetLikesQuery({ userId: post.author.id, postId: post.id });
   const [showCommentBox, setShowCommentBox] = useState(false);
   const [currentPostId, setCurrentPostId] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -17,8 +30,22 @@ const PostItem = ({ post, refetchPosts }) => {
   const user = JSON.parse(localStorage.getItem("user")); // Get the current user from local storage
   const [editImage, setEditImage] = useState(null);
   const [editVisibility, setEditVisibility] = useState(post.visibility);
+  const [isLiked, setIsLiked] = useState(false);
 
-  console.log(post);
+  useEffect(() => {
+    console.log(post.like_count);
+    if (likesLoading) {
+      console.log("Loading likes...");
+    } else if (likesError) {
+      console.error("Error fetching likes:", likesError);
+    } else if (likes && likes.length > 0) {
+      likes.forEach((like) => {
+        if (like.user.id === user.id) {
+          setIsLiked(true);
+        }
+      });
+    }
+  }, [likes, likesError, likesLoading, user.id]);
 
   // Handle post deletion
   const handleDelete = async (postId) => {
@@ -67,6 +94,22 @@ const PostItem = ({ post, refetchPosts }) => {
     setIsEditing(false);
     setEditTitle(post.title);
     setEditContent(post.content);
+  };
+
+  // Handle like toggle
+  const handleLikeToggle = async () => {
+    try {
+      if (isLiked) {
+        // await removeLike({ userId: user.id, postId: post.id }).unwrap();
+        console.log("unlike");
+      } else {
+        await addLike({ userId: user.id, postId: post.id }).unwrap();
+      }
+      setIsLiked(!isLiked);
+      refetchPosts(); // Refetch posts after liking/unliking
+    } catch (err) {
+      console.error("Error toggling like:", err);
+    }
   };
 
   return (
@@ -155,6 +198,14 @@ const PostItem = ({ post, refetchPosts }) => {
         >
           {currentPostId === post.id ? "Close Comments" : "View Comments"}
         </button>
+        <label>
+          <input
+            type="checkbox"
+            checked={isLiked}
+            onChange={handleLikeToggle}
+          />
+          Likes: {post.like_count}
+        </label>
       </div>
 
       {showCommentBox && currentPostId === post.id && (

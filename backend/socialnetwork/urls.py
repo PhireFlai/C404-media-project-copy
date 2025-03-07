@@ -52,6 +52,10 @@ urlpatterns = [
     path("api/authors/<uuid:objectId>/accept-follow-request/authors/<uuid:actorId>/", AcceptFollowRequest, name='accept-follow-request'),
     path("api/authors/<uuid:followerId>/unfollow/authors/<uuid:followedId>/", Unfollow, name='unfollow'),
     path("api/authors/<uuid:followedId>/remove-follower/authors/<uuid:followerId>/", RemoveFollower, name='remove-follower'),
+    path("api/authors/<uuid:userId>/posts/<uuid:pk>/like/", AddLike, name='add-like'),
+    path("api/authors/<uuid:userId>/posts/<uuid:pk>/likes/", LikesList.as_view(), name="likes-list"),
+    path("api/authors/<uuid:userId>/posts/<uuid:pk>/comments/<uuid:ck>/like/", AddCommentLike, name='add-like'),
+    path("api/authors/<uuid:userId>/posts/<uuid:pk>/comments/<uuid:ck>/likes/", CommentLikesList.as_view(), name="likes-list"),
 ]
 
 # Serve media files during development

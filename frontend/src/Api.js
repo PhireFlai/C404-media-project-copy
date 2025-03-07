@@ -79,6 +79,26 @@ export const api = createApi({
         body: commentData,
       }),
     }),
+    addLike: builder.mutation({
+      query: ({ userId, postId }) => ({
+        url: `api/authors/${userId}/posts/${postId}/like/`,
+        method: "POST",
+      }),
+    }),
+    getLikes: builder.query({
+      query: ({ userId, postId }) =>
+        `api/authors/${userId}/posts/${postId}/likes/`, // Endpoint for fetching likes
+    }),
+    addCommentLike: builder.mutation({
+      query: ({ userId, postId, commentId }) => ({
+        url: `api/authors/${userId}/posts/${postId}/comments/${commentId}/like/`, // Endpoint for liking a comment
+        method: "POST",
+      }),
+    }),
+    getCommentLikes: builder.query({
+      query: ({ userId, postId, commentId }) =>
+        `api/authors/${userId}/posts/${postId}/comments/${commentId}/likes/`, // Endpoint for fetching likes for comments
+    }),
     updateProfilePicture: builder.mutation({
       query: ({ userId, profilePicture }) => {
         const formData = new FormData();
@@ -173,6 +193,10 @@ export const {
   useLoginUserMutation,
   useEditPostMutation,
   useCreateCommentMutation,
+  useAddLikeMutation,
+  useGetLikesQuery,
+  useAddCommentLikeMutation,
+  useGetCommentLikesQuery,
   useGetCommentsQuery,
   useGetUserProfileQuery,
   useUpdateProfilePictureMutation,
