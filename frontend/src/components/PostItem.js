@@ -89,6 +89,11 @@ const PostItem = ({ post, refetchPosts }) => {
     }
   };
 
+  const handleCopyLink = () => {
+    const postLink = `${window.location.origin}/posts/${post.id}`;
+    navigator.clipboard.writeText(postLink);
+    alert("Post link copied to clipboard!");
+  };
   // Handle cancel button click
   const handleCancelClick = () => {
     setIsEditing(false);
@@ -192,6 +197,10 @@ const PostItem = ({ post, refetchPosts }) => {
             </button>
           </>
         )}
+        {/* Copy Link Button */}
+        <button onClick={handleCopyLink} className="button-secondary">
+          Copy Link 🔗
+        </button>
         <button
           className="button-secondary"
           onClick={() => handleCommentClick(post.id)}

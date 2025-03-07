@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('socialnetwork', '0025_followrequest'),
+        ('socialnetwork', '0027_alter_like_post_commentlike'),
     ]
 
     operations = [

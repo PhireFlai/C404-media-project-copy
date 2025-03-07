@@ -10,6 +10,7 @@ import PrivateRoute from "./components/PrivateRoute"; // Import PrivateRoute com
 import FollowersList from "./pages/FollowerList";
 import FollowingList from "./pages/FollowingList";
 import FriendsOnlyPosts from "./pages/FriendsOnlyPosts";
+import PostPage from "./pages/PostPage";
 
 const App = () => {
   // const user = JSON.parse(localStorage.getItem('user')); // Get the current user from local storage
@@ -37,10 +38,8 @@ const App = () => {
             {/* Protected route for the create post page */}
             <Route path="/:userId/followers" element={<FollowersList />} />{" "}
             <Route path="/:userId/following" element={<FollowingList />} />{" "}
-            <Route
-              path="/:userId"
-              element={<Profile />}
-            />{" "}
+            <Route path="/:userId" element={<Profile />} />{" "}
+            <Route path="/posts/:postId" element={<PostPage />} />
           </Routes>
         </div>
       </Router>
