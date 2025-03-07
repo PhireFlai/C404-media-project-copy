@@ -31,6 +31,9 @@ class User(AbstractUser):
     user_permissions = models.ManyToManyField("auth.Permission", related_name="socialnetwork_users_permissions", blank=True)
     
     is_approved = models.BooleanField(default=False)
+
+    github = models.URLField(max_length=200, blank=True, null=True)
+    github_etag = models.CharField(max_length=250, blank=True, null=True)
     
     def __str__(self):
         return self.username  # Display the username in the admin panel

@@ -14,3 +14,5 @@ frontend/src/axiosInstance.js
 # Images Folder
 backend/socialnetwork/media
 socialnetwork/media
+
+backend/*.log

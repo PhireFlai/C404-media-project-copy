@@ -159,3 +159,27 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ]
 }
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',  # Log all messages at DEBUG level and above
+            'class': 'logging.FileHandler',
+            'filename': 'app.log',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],  # Use the file handler for Django logs
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'socialnetwork': {
+            'handlers': ['file'],  # Use the file handler for socialnetwork logs
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}
