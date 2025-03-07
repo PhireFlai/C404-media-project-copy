@@ -56,6 +56,7 @@ urlpatterns = [
     path("api/authors/<uuid:userId>/posts/<uuid:pk>/likes/", LikesList.as_view(), name="likes-list"),
     path("api/authors/<uuid:userId>/posts/<uuid:pk>/comments/<uuid:ck>/like/", AddCommentLike, name='add-like'),
     path("api/authors/<uuid:userId>/posts/<uuid:pk>/comments/<uuid:ck>/likes/", CommentLikesList.as_view(), name="likes-list"),
+    path("api/posts/<uuid:pk>/", PostDetailView.as_view(), name="post-detail"),
 ]
 
 # Serve media files during development

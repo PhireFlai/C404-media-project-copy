@@ -179,6 +179,9 @@ export const api = createApi({
       query: ({ userId, commentId }) =>
         `api/authors/${userId}/commented/${commentId}/`,
     }),
+    getPost: builder.query({
+      query: (postId) => `api/posts/${postId}/`, //endpoint for fetching a single post
+    }),
   }),
 });
 
@@ -213,4 +216,5 @@ export const {
   useGetAuthorCommentQuery,
   usePostToInboxMutation,
   useGetFollowRequestsQuery,
+  useGetPostQuery,
 } = api;
