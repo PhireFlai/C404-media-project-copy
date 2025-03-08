@@ -116,7 +116,7 @@ class FollowRequest(models.Model):
     summary = models.TextField()
     actor = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_follow_request")
     object = models.ForeignKey(User, on_delete=models.CASCADE, related_name="received_follow_request")
-
+# Use User.friends
 # Friendship model for the friends-only Stream
 class Friendship(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="friendships")
