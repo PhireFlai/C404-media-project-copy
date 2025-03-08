@@ -472,3 +472,37 @@ class FollowingList(generics.ListCreateAPIView):
         userId = self.kwargs['userId']
         user = get_object_or_404(User, id=userId)
         return user.following.all()
+
+class UserFeedView(APIView):
+    permission_classes = [IsAuthenticated]  # Only authenticated users can access the feed
+
+    def get(self, request, userId):
+        """
+        Fetches the user feed containing posts that the user should see.
+        """
+
+        # Get the requesting user
+        user = get_object_or_404(User, id=userId)
+
+        # Get friends and followers
+        friends = user.friends.all()
+        followers = user.followers.all()
+
+        # Fetch all posts the user is allowed to see
+        feed_posts = Post.objects.filter(
+            # Include public posts from all authors
+            (Q(visibility=Post.PUBLIC)) |
+
+            # Include friends-only posts, but only from friends
+            (Q(visibility=Post.FRIENDS_ONLY) & Q(author__in=friends)) |
+
+            # Include unlisted posts, but only from friends and followers
+            (Q(visibility=Post.UNLISTED) & Q(author__in=friends.union(followers)))
+        ).exclude(
+            visibility=Post.DELETED  # Exclude deleted posts
+        ).order_by("-updated_at")  # Show latest posts first
+
+        # Serialize the posts
+        serializer = PostSerializer(feed_posts, many=True)
+
+        return Response(serializer.data, status=200)
