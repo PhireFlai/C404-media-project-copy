@@ -18,9 +18,9 @@ class FeedAPITestCase(APITestCase):
 
         # Create posts
         cls.public_post = Post.objects.create(author=cls.other_user, title="Public Post", visibility=Post.PUBLIC)
-        cls.friends_only_post = Post.objects.create(author=cls.friend, title="Friends-Only Post", visibility=Post.FRIENDS_ONLY)
         cls.unlisted_post = Post.objects.create(author=cls.friend, title="Unlisted Post", visibility=Post.UNLISTED)
-        cls.private_post = Post.objects.create(author=cls.other_user, title="Private Post", visibility=Post.FRIENDS_ONLY)
+        cls.friends_only_post = Post.objects.create(author=cls.friend, title="Friends-Only Post", visibility=Post.FRIENDS_ONLY)
+        #cls.private_post = Post.objects.create(author=cls.other_user, title="Private Post", visibility=Post.FRIENDS_ONLY)
 
         # Tokens
         cls.token = Token.objects.create(user=cls.user)
