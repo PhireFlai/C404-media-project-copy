@@ -19,6 +19,7 @@ from .serializers import *
 import requests
 import logging
 from rest_framework.exceptions import ValidationError
+from django.db.models import Q
 
 @swagger_auto_schema(
     method="post",
@@ -164,25 +165,57 @@ class PostListCreateView(generics.ListCreateAPIView):
 
 # Gets, updates, or deletes a specific post
 class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Post.objects.all()
     serializer_class = PostSerializer
 
     def get_permissions(self):
+        """Allow any user to GET but require authentication for updates/deletes."""
         if self.request.method == 'GET':
             return [AllowAny()]
         return [IsAuthenticated()]
 
+    def get_queryset(self):
+        """Filters posts based on visibility and user authentication."""
+        user = self.request.user
+
+        queryset = Post.objects.filter(
+            Q(visibility=Post.PUBLIC) | Q(visibility=Post.UNLISTED)
+        )
+
+        if user.is_authenticated:
+            queryset = queryset | Post.objects.filter(
+                visibility=Post.FRIENDS_ONLY, author__friends=user
+            )
+
+        return queryset
+
+    def get_object(self):
+        """Returns the post or raises 403 Forbidden if access is denied."""
+        post = get_object_or_404(Post, id=self.kwargs["pk"])
+
+        # Allow the author to view their own post
+        if self.request.user == post.author:
+            return post
+
+        # If the post is friends-only but the user is not a friend, deny access
+        if post.visibility == Post.FRIENDS_ONLY and self.request.user not in post.author.friends.all():
+            raise PermissionDenied("You do not have permission to view this post.")
+
+        return post
+
     def perform_destroy(self, instance):
+        """Only the author can delete their post, otherwise raise an error."""
         if self.request.user != instance.author:
             raise PermissionDenied("You can only delete your own posts.")  
         instance.visibility = Post.DELETED
         instance.save()
 
     def perform_update(self, serializer):
+        """Only the author can update their post."""
         if self.request.user != serializer.instance.author:
             raise PermissionDenied("You can only edit your own posts.")
+        
         # Handle image updates
-        image = self.request.FILES.get('image')  # Get the new image from request
+        image = self.request.FILES.get('image')
         if image:
             serializer.save(image=image)
         else:
