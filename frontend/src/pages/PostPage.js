@@ -41,7 +41,7 @@ const PostPage = () => {
   };
 
   if (isLoading) return <p>Loading post...</p>;
-  if (error) return <p>Error loading post.</p>;
+  if (error) return <p>This post is only shared with friends 😔</p>;
   if (!post) return <p>Post not found.</p>;
 
   return (

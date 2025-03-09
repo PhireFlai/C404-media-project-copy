@@ -35,7 +35,8 @@ const PostItem = ({ post, refetchPosts }) => {
   const [isLiked, setIsLiked] = useState(false);
 
   useEffect(() => {
-    if (user === null || user === undefined) {
+    if (!user || !post || !post.author) {
+      // Ensures all required data is available
       return;
     }
     if (likesLoading) {
@@ -49,7 +50,7 @@ const PostItem = ({ post, refetchPosts }) => {
         }
       });
     }
-  }, [likes, likesError, likesLoading, user.id]);
+  }, [likes, likesError, likesLoading, user, post]);
 
   // Handle post deletion
   const handleDelete = async (postId) => {
