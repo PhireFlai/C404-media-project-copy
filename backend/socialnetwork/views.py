@@ -522,14 +522,14 @@ class UserFeedView(ListAPIView):
 
         # Extract only the IDs of friends and followers
         friend_ids = user.friends.values_list('id', flat=True)  # Extract only the 'id' field
-        follower_ids = user.followers.values_list('id', flat=True) # Change follower to following
+        following_ids = user.following.values_list('id', flat=True) # Changed follower to following
 
         return Post.objects.filter(
             Q(author=user) |  # Show ALL posts by the user (excluding deleted)
             Q(visibility=Post.PUBLIC) |
             Q(visibility=Post.FRIENDS_ONLY, author__in=friend_ids) |
             Q(visibility=Post.UNLISTED, author__in=friend_ids) |  # Unlisted for friends
-            Q(visibility=Post.UNLISTED, author__in=follower_ids)  # Unlisted for followers
+            Q(visibility=Post.UNLISTED, author__in=following_ids)  # Unlisted for followers
         ).exclude(
             visibility=Post.DELETED
         ).order_by("-updated_at")  # Show latest posts first
