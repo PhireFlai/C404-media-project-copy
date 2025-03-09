@@ -473,36 +473,31 @@ class FollowingList(generics.ListCreateAPIView):
         user = get_object_or_404(User, id=userId)
         return user.following.all()
 
-class UserFeedView(APIView):
-    permission_classes = [IsAuthenticated]  # Only authenticated users can access the feed
+class UserFeedView(ListAPIView):
+    serializer_class = PostSerializer
+    permission_classes = [IsAuthenticated]
 
-    def get(self, request, userId):
+    def get_queryset(self):
         """
-        Fetches the user feed containing posts that the user should see.
+        Fetches the authenticated user's feed, ensuring the user sees:
+        - Their own posts (excluding deleted ones).
+        - Public posts from any author.
+        - Friends-only posts if the author is a friend.
+        - Unlisted posts if the author is a friend or follower.
         """
+        
+        user = self.request.user
 
-        # Get the requesting user
-        user = get_object_or_404(User, id=userId)
+        # Extract only the IDs of friends and followers
+        friend_ids = user.friends.values_list('id', flat=True)  # Extract only the 'id' field
+        follower_ids = user.followers.values_list('id', flat=True) # Change follower to following
 
-        # Get friends and followers
-        friends = user.friends.all()
-        followers = user.followers.all()
-
-        # Fetch all posts the user is allowed to see
-        feed_posts = Post.objects.filter(
-            # Include public posts from all authors
-            (Q(visibility=Post.PUBLIC)) |
-
-            # Include friends-only posts, but only from friends
-            (Q(visibility=Post.FRIENDS_ONLY) & Q(author__in=friends)) |
-
-            # Include unlisted posts, but only from friends and followers
-            (Q(visibility=Post.UNLISTED) & Q(author__in=friends.union(followers)))
+        return Post.objects.filter(
+            Q(author=user) |  # Show ALL posts by the user (excluding deleted)
+            Q(visibility=Post.PUBLIC) |
+            Q(visibility=Post.FRIENDS_ONLY, author__in=friend_ids) |
+            Q(visibility=Post.UNLISTED, author__in=friend_ids) |  # Unlisted for friends
+            Q(visibility=Post.UNLISTED, author__in=follower_ids)  # Unlisted for followers
         ).exclude(
-            visibility=Post.DELETED  # Exclude deleted posts
+            visibility=Post.DELETED
         ).order_by("-updated_at")  # Show latest posts first
-
-        # Serialize the posts
-        serializer = PostSerializer(feed_posts, many=True)
-
-        return Response(serializer.data, status=200)
