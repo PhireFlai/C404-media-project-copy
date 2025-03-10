@@ -14,14 +14,14 @@ import "./css/profile.css";
 
 const Profile = () => {
   const { userId } = useParams();
-  const { data: user, isLoading, error } = useGetUserProfileQuery(userId);
+  const { data: user, isLoading, error, refetch } = useGetUserProfileQuery(userId);
   const curUser = JSON.parse(localStorage.getItem("user")); // Get the current user from local storage
   const [isEditing, setIsEditing] = useState(false); // State for editing mode
   const [newUsername, setNewUsername] = useState(""); // State for new username
   const [updateUsername] = useUpdateUsernameMutation(); // Mutation for updating username
   const [createFollowRequest] = useCreateFollowRequestMutation();
   const [unfollowUser] = useUnfollowUserMutation();
-  const { data: followingList } = useGetFollowingQuery(curUser.id);
+  const { data: followingList } = useGetFollowingQuery(userId);
   const { data: followRequests } = useGetFollowRequestsQuery(userId);
 
   const [isFollowing, setIsFollowing] = useState(false);
@@ -31,7 +31,7 @@ const Profile = () => {
     if (followingList) {
       setIsFollowing(followingList.some((f) => f.id === userId));
     }
-  }, [followingList]);
+  }, [followingList, userId]);
 
   useEffect(() => {
     if (followRequests) {
@@ -41,7 +41,12 @@ const Profile = () => {
         )
       );
     }
-  }, [followRequests]);
+  }, [followRequests, curUser.id, userId]);
+
+  useEffect(() => {
+    refetch();
+  }, [userId, refetch]);
+
 
   const handleEditClick = () => {
     setIsEditing(true);
