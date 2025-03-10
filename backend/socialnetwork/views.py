@@ -153,10 +153,29 @@ class PostListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]  # Requires authentication
 
     def get_queryset(self):
-        user_id = self.kwargs.get('userId')
-        if user_id:
-            return Post.objects.filter(author_id=user_id).exclude(visibility=Post.DELETED).order_by("-created_at")
-        return Post.objects.exclude(visibility=Post.DELETED).order_by("-created_at")
+        user_id = self.kwargs.get('userId')  # Extract userId from the URL
+        viewer = self.request.user  # The user who is viewing the profile
+
+        if not user_id:
+            return Post.objects.exclude(visibility=Post.DELETED).order_by("-created_at")
+
+        author = get_object_or_404(User, id=user_id)  # Fetch the profile owner
+
+        # Check if the viewer is following the author
+        is_follower = viewer in author.followers.all()
+
+        # Fetch posts based on visibility
+        if viewer == author:
+            # If the viewer is the profile owner, show all posts except deleted ones
+            return Post.objects.filter(author=author).exclude(visibility=Post.DELETED).order_by("-created_at")
+        elif is_follower:
+            # If the viewer is a follower, show public and friends-only posts (EXCLUDE UNLISTED)
+            return Post.objects.filter(author=author).exclude(visibility__in=[Post.DELETED, Post.UNLISTED]).order_by("-created_at")
+        else:
+            # If the viewer is NOT a follower, only show public posts (EXCLUDE FRIENDS-ONLY AND UNLISTED)
+            return Post.objects.filter(author=author, visibility=Post.PUBLIC).exclude(visibility=Post.DELETED).order_by("-created_at")
+
+
     
     def perform_create(self, serializer):
         if not self.request.user.is_authenticated:
