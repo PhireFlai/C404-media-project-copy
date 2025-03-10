@@ -14,6 +14,7 @@ import "../pages/css/home.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart as solidHeart } from "@fortawesome/free-solid-svg-icons";
 import { faHeart as regularHeart } from "@fortawesome/free-regular-svg-icons";
+import { format } from "date-fns"
 
 const PostItem = ({ post, refetchPosts }) => {
   const [deletePost] = useDeletePostMutation();
@@ -177,6 +178,9 @@ const PostItem = ({ post, refetchPosts }) => {
         <>
           <h3 className="sub-title">{post.title}</h3>
           <p className="text-muted">Visibility: {post.visibility}</p>
+          <p className="text-muted">
+            Last updated: {format(new Date(post.updated_at), "PPPppp")}
+          </p>
 
           <Link to={`/${post.author.id}`}>
             <p>Author: {post.author.username}</p>
