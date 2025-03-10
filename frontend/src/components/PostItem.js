@@ -46,7 +46,7 @@ const PostItem = ({ post, refetchPosts }) => {
       return;
     }
     if (likesLoading) {
-      console.log("Loading likes...");
+      // console.log("Loading likes...");
     } else if (likesError) {
       console.error("Error fetching likes:", likesError);
     } else if (likes && likes.length > 0) {
