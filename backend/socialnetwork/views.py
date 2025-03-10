@@ -150,14 +150,16 @@ class PostListCreateView(generics.ListCreateAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
     parser_classes = (MultiPartParser, FormParser)
-    permission_classes = [IsAuthenticated]  
+    permission_classes = [AllowAny]  
 
     def get_queryset(self):
         user_id = self.kwargs.get('userId')  # Extract userId from URL
         viewer = self.request.user  # The logged-in user
 
-        if not user_id:
-            return Post.objects.exclude(visibility=Post.DELETED).order_by("-created_at")
+        author = get_object_or_404(User, id=user_id)  # Fetch the profile owner
+
+        if not viewer.is_authenticated:
+            return Post.objects.filter(author=author, visibility=Post.PUBLIC).order_by("-updated_at")
 
         author = get_object_or_404(User, id=user_id)  # Fetch the profile owner
 
@@ -169,10 +171,10 @@ class PostListCreateView(generics.ListCreateAPIView):
         # Fetch posts based on visibility ranking
         if viewer == author:
             # If the viewer is the profile owner, show all their posts
-            return Post.objects.filter(author=author).exclude(visibility=Post.DELETED).order_by("-created_at")
+            return Post.objects.filter(author=author).exclude(visibility=Post.DELETED).order_by("-updated_at")
         elif mutual_follow:
             # If the viewer and author follow each other, show public, friends-only, and unlisted posts
-            return Post.objects.filter(author=author).exclude(visibility=Post.DELETED).order_by("-created_at")
+            return Post.objects.filter(author=author).exclude(visibility=Post.DELETED).order_by("-updated_at")
         elif viewer_follows_author:
             # If the viewer follows the author, show public + unlisted posts (but NOT friends-only)
             return Post.objects.filter(author=author, visibility__in=[Post.PUBLIC, Post.UNLISTED]).exclude(visibility=Post.DELETED).order_by("-created_at")
