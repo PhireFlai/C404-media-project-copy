@@ -90,3 +90,20 @@ class LikeAPITestCase(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['id'], str(like.id))
+
+    def test_get_post_likes(self):
+            """Test endpoint api/posts/{POST_FQID}/likes"""
+            # Like the first post
+            data = {"user": self.user.id, "post": self.post.id}
+            url = f'/api/authors/{self.user.id}/posts/{self.post.id}/like/'
+            response = self.client.post(url, data)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertTrue(Like.objects.filter(post=self.post, user=self.user).exists())
+
+            # Retrieve likes for the post
+            url = f'/api/posts/{self.post.id}/likes/'
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertEqual(len(response.data), 1)
+            self.assertEqual(str(response.data[0]['post']), str(self.post.id))  
+            self.assertEqual(response.data[0]['user']['id'], str(self.user.id))

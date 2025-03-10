@@ -562,6 +562,7 @@ class GetLiked(generics.ListCreateAPIView):
         response = requests.post(f'http://localhost:8000/api/authors/{author}/inbox/', data=like_data)
         return response
 
+# Get a single like by id
 @permission_classes([AllowAny])
 class GetSingleLike(generics.RetrieveAPIView):
     queryset = Like.objects.all()
@@ -572,6 +573,7 @@ class GetSingleLike(generics.RetrieveAPIView):
         likeID = self.kwargs['id']
         return Like.objects.filter(id=likeID)
 
+# Get likes by author
 @permission_classes([AllowAny])
 class GetLikesByAuthor(generics.ListAPIView):
     serializer_class = LikeSerializer
@@ -579,6 +581,15 @@ class GetLikesByAuthor(generics.ListAPIView):
     def get_queryset(self):
         authorID = self.kwargs['authorId']
         return Like.objects.filter(user=authorID)
+
+# Get likes by post
+@permission_classes([AllowAny])
+class GetPostLikes(generics.ListAPIView):
+    serializer_class = LikeSerializer
+
+    def get_queryset(self):
+        postID = self.kwargs['postId']
+        return Like.objects.filter(post=postID)
 
 # Add a like on a comment
 @api_view(['POST'])
