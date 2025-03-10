@@ -555,7 +555,7 @@ class CommentLikesList(generics.ListCreateAPIView):
     
 class UserFeedView(ListAPIView):
     serializer_class = PostSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get_queryset(self):
         """
@@ -567,6 +567,10 @@ class UserFeedView(ListAPIView):
         """
         
         user = self.request.user
+
+        if not user.is_authenticated:
+            # Return only public posts if the user is not authenticated
+            return Post.objects.filter(visibility=Post.PUBLIC).exclude(visibility=Post.DELETED).order_by("-updated_at")
 
         # Extract only the IDs of friends and followers
         friend_ids = user.friends.values_list('id', flat=True)  # Extract only the 'id' field
