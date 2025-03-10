@@ -552,6 +552,68 @@ class LikesList(generics.ListCreateAPIView):
     def get_queryset(self):
         post_id = self.kwargs['pk']
         return Like.objects.filter(post_id=post_id)
+    
+@permission_classes([AllowAny])
+class GetLiked(generics.ListCreateAPIView):
+    queryset = Like.objects.all()
+    serializer_class = LikeSerializer
+
+    def get_queryset(self):
+        authorID = self.kwargs['userId']
+        return Like.objects.filter(user=authorID)
+    
+    def perform_create(self, serializer):
+        authorID = self.kwargs['userId']
+        author = User.objects.get(id=authorID)
+        postID = self.request.data.get('post')
+        try:
+            post = Post.objects.get(id=postID)
+        except Post.DoesNotExist:
+            return Response({"error": "Post not found"}, status=status.HTTP_404_NOT_FOUND)
+        post_author = post.author.id
+        like_data = {'post': postID}
+        serializer = LikeSerializer(data=like_data)
+    
+        if serializer.is_valid():
+            serializer.save(user=author)
+            like = Like.objects.get(id=serializer.data["id"])
+            response = self.forward_to_inbox(like, post_author)
+            return response
+
+    def forward_to_inbox(self, like, author):
+        like_data = LikeSerializer(like).data
+        
+        response = requests.post(f'http://localhost:8000/api/authors/{author}/inbox/', data=like_data)
+        return response
+
+# Get a single like by id
+@permission_classes([AllowAny])
+class GetSingleLike(generics.RetrieveAPIView):
+    queryset = Like.objects.all()
+    serializer_class = LikeSerializer
+    lookup_field = 'id'
+
+    def get_queryset(self):
+        likeID = self.kwargs['id']
+        return Like.objects.filter(id=likeID)
+
+# Get likes by author
+@permission_classes([AllowAny])
+class GetLikesByAuthor(generics.ListAPIView):
+    serializer_class = LikeSerializer
+
+    def get_queryset(self):
+        authorID = self.kwargs['authorId']
+        return Like.objects.filter(user=authorID)
+
+# Get likes by post
+@permission_classes([AllowAny])
+class GetPostLikes(generics.ListAPIView):
+    serializer_class = LikeSerializer
+
+    def get_queryset(self):
+        postID = self.kwargs['postId']
+        return Like.objects.filter(post=postID)
 
 # Add a like on a comment
 @api_view(['POST'])
