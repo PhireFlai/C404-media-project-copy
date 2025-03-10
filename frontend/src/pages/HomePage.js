@@ -1,5 +1,5 @@
-import React from "react";
-import { useGetUserFeedQuery } from "../Api"; // Import new feed query
+import React, {useEffect} from "react";
+import { useGetUserFeedQuery} from "../Api"; // Import new feed query
 import PostItem from "../components/PostItem";
 import { useNavigate } from "react-router-dom";
 import "./css/home.css";
@@ -13,6 +13,10 @@ const HomePage = () => {
   const handleCreatePostClick = () => {
     navigate("/create"); // Navigate to the create post page
   };
+
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
 
   return (
     <div className="recent-posts-container">

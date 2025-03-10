@@ -149,14 +149,38 @@ class FriendsPostsView(ListAPIView):
 class PostListCreateView(generics.ListCreateAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
-    parser_classes = (MultiPartParser, FormParser)  # Allow image file uploads
-    permission_classes = [IsAuthenticated]  # Requires authentication
+    parser_classes = (MultiPartParser, FormParser)
+    permission_classes = [IsAuthenticated]  
 
     def get_queryset(self):
-        user_id = self.kwargs.get('userId')
-        if user_id:
-            return Post.objects.filter(author_id=user_id).exclude(visibility=Post.DELETED).order_by("-created_at")
-        return Post.objects.exclude(visibility=Post.DELETED).order_by("-created_at")
+        user_id = self.kwargs.get('userId')  # Extract userId from URL
+        viewer = self.request.user  # The logged-in user
+
+        if not user_id:
+            return Post.objects.exclude(visibility=Post.DELETED).order_by("-created_at")
+
+        author = get_object_or_404(User, id=user_id)  # Fetch the profile owner
+
+        # Check if viewer follows the author
+        viewer_follows_author = viewer in author.followers.all()
+        author_follows_viewer = author in viewer.followers.all()
+        mutual_follow = viewer_follows_author and author_follows_viewer
+
+        # Fetch posts based on visibility ranking
+        if viewer == author:
+            # If the viewer is the profile owner, show all their posts
+            return Post.objects.filter(author=author).exclude(visibility=Post.DELETED).order_by("-created_at")
+        elif mutual_follow:
+            # If the viewer and author follow each other, show public, friends-only, and unlisted posts
+            return Post.objects.filter(author=author).exclude(visibility=Post.DELETED).order_by("-created_at")
+        elif viewer_follows_author:
+            # If the viewer follows the author, show public + unlisted posts (but NOT friends-only)
+            return Post.objects.filter(author=author, visibility__in=[Post.PUBLIC, Post.UNLISTED]).exclude(visibility=Post.DELETED).order_by("-created_at")
+        else:
+            # If no relationship, only show public posts
+            return Post.objects.filter(author=author, visibility=Post.PUBLIC).exclude(visibility=Post.DELETED).order_by("-created_at")
+
+
     
     def perform_create(self, serializer):
         if not self.request.user.is_authenticated:
@@ -621,7 +645,7 @@ class UserFeedView(ListAPIView):
 
     def get_queryset(self):
         """
-        Fetches the authenticated user's feed, ensuring the user sees:
+        Fetches the feed, ensuring the user sees:
         - Their own posts (excluding deleted ones).
         - Public posts from any author.
         - Friends-only posts if the author is a friend.

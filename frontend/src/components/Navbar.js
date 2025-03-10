@@ -8,6 +8,8 @@ const Navbar = () => {
   const [user, setUser] = useState(JSON.parse(localStorage.getItem("user")));
   const navigate = useNavigate();
 
+
+
   useEffect(() => {
     const handleStorageChange = () => {
       setUser(JSON.parse(localStorage.getItem("user")));

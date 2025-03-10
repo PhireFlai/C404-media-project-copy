@@ -16,6 +16,7 @@ const CommentItem = ({ comment, postId, userId, refetchComments }) => {
     data: likes,
     error: likesError,
     isLoading: likesLoading,
+    refetch: refetchLikes,
   } = useGetCommentLikesQuery({
     userId: userId,
     postId: postId,
@@ -32,6 +33,7 @@ const CommentItem = ({ comment, postId, userId, refetchComments }) => {
         }).unwrap();
         setIsLiked(true);
         refetchComments(); // Refetch comments after liking
+        refetchLikes();
       }
     } catch (err) {
       console.error("Error toggling like:", err);

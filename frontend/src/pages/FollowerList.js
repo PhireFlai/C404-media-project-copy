@@ -53,7 +53,7 @@ const FollowersList = () => {
                   {follower.username}
                 </Link>
               </div>
-              {currentUser.id === userId && (
+              {currentUser && currentUser.id === userId && (
                 <button
                   onClick={() => handleRemoveFollower(follower.id)}
                   className="remove-button"
@@ -65,8 +65,8 @@ const FollowersList = () => {
           ))}
         </ul>
       )}
-      {currentUser.id === userId && (
-        <FollowRequests userId={userId} onFollowChange={refetch} />
+      {currentUser && currentUser.id === userId && (
+        <FollowRequests userId={userId} onFollowChange={refetch} allowChange={"valid"} />
       )}
     </div>
   );
