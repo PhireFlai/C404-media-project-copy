@@ -21,7 +21,7 @@ const CommentItem = ({ comment, postId, userId, refetchComments }) => {
     userId: userId,
     postId: postId,
     commentId: comment.id,
-  });
+  }, { skip: !userId });
 
   const handleLikeToggle = async (commentId) => {
     try {
@@ -42,7 +42,7 @@ const CommentItem = ({ comment, postId, userId, refetchComments }) => {
 
   useEffect(() => {
     if (likesLoading) {
-      console.log("Loading likes...");
+      // console.log("Loading likes...");
     } else if (likesError) {
       console.error("Error fetching likes:", likesError);
     } else if (likes && likes.length > 0) {
