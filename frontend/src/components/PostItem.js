@@ -237,11 +237,7 @@ const PostItem = ({ post, refetchPosts }) => {
       </div>
 
       {user && showCommentBox && currentPostId === post.id && (
-        <CommentSection
-          key={post.id}
-          postId={post.id}
-          author={post.author.id}
-        />
+        <CommentSection postId={post.id} author={post.author.id} />
       )}
     </div>
   );
