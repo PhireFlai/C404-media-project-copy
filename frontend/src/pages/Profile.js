@@ -14,20 +14,27 @@ import "./css/profile.css";
 
 const Profile = () => {
   const { userId } = useParams();
-  const { data: user, isLoading, error, refetch } = useGetUserProfileQuery(userId);
+  const {
+    data: user,
+    isLoading,
+    error,
+    refetch,
+  } = useGetUserProfileQuery(userId);
   const curUser = JSON.parse(localStorage.getItem("user")); // Get the current user from local storage
   const [isEditing, setIsEditing] = useState(false); // State for editing mode
   const [newUsername, setNewUsername] = useState(""); // State for new username
   const [updateUsername] = useUpdateUsernameMutation(); // Mutation for updating username
   const [createFollowRequest] = useCreateFollowRequestMutation();
   const [unfollowUser] = useUnfollowUserMutation();
-  const { data: followingList } = useGetFollowingQuery(curUser?.id);
-  const { data: followRequests, refetch: refetchFollowRequests } = useGetFollowRequestsQuery(userId);
+  const { data: followingList } = useGetFollowingQuery(curUser?.id, {
+    skip: !curUser?.id, // Skip API call if user is not logged in
+  });
+  const { data: followRequests, refetch: refetchFollowRequests } =
+    useGetFollowRequestsQuery(userId);
 
   const [isFollowing, setIsFollowing] = useState(false);
   const [hasRequested, setHasRequested] = useState(false);
-  const [usernameUpdated, setUsernameUpdated] = useState(false); 
-
+  const [usernameUpdated, setUsernameUpdated] = useState(false);
 
   useEffect(() => {
     if (followingList) {
@@ -196,7 +203,7 @@ const Profile = () => {
       {/* User's Posts Section */}
 
       <h2 className="user-posts-title">{user.username}'s Posts</h2>
-      <UserPosts userId={userId} editedUsername={usernameUpdated}/>
+      <UserPosts userId={userId} editedUsername={usernameUpdated} />
     </div>
   );
 };
