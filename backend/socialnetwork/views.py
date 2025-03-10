@@ -6,7 +6,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework import status, generics  
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated, AllowAny, IsAdminUser
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated, AllowAny, IsAdminUser, BasePermission
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -331,7 +331,37 @@ def CreateComment(request, userId, pk):
 def PostToInbox(request, receiver):
     return Response({"message": "Request received"}, status=status.HTTP_200_OK)
 
-# Lists and creates comments for a specific post
+
+class IsFriendOrAuthor(BasePermission):
+    def has_permission(self, request, view):
+        post_id = view.kwargs.get('pk')
+        post = get_object_or_404(Post, id=post_id)
+        user = request.user
+
+        if post.visibility == Post.PUBLIC:
+            return True
+        elif post.visibility == Post.FRIENDS_ONLY:
+            return user in post.author.friends.all() or user == post.author
+        elif post.visibility == Post.UNLISTED:
+            return user in post.author.followers.all() or user == post.author
+        return False
+
+class IsCommentAuthorOrPostAuthorOrFriend(BasePermission):
+    def has_permission(self, request, view):
+        comment_id = view.kwargs.get('commentId')
+        comment = get_object_or_404(Comment, id=comment_id)
+        post = comment.post
+        user = request.user
+
+        if post.visibility == Post.PUBLIC:
+            return True
+        if post.visibility == Post.FRIENDS_ONLY:
+            return user in post.author.friends.all() or user == post.author or user == comment.author
+        elif post.visibility == Post.UNLISTED:
+            return user in post.author.followers.all() or user == post.author or user == comment.author
+        return False
+
+@permission_classes([IsFriendOrAuthor])
 class CommentsList(generics.ListCreateAPIView):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
@@ -340,8 +370,8 @@ class CommentsList(generics.ListCreateAPIView):
         post_id = self.kwargs['pk']
         return Comment.objects.filter(post_id=post_id)
 
-
-@permission_classes([AllowAny])
+@permission_classes([IsCommentAuthorOrPostAuthorOrFriend])
+# @permission_classes([AllowAny])
 class GetComment(generics.ListCreateAPIView):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer

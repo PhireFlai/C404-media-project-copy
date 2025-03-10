@@ -157,7 +157,7 @@ const Profile = () => {
       {/* Edit Profile Section (Only for Logged-in User) */}
       {curUser && curUser.id === userId && (
         <div className="edit-profile-section">
-          <ProfilePicUpload userId={curUser.id} />
+          <ProfilePicUpload refetch={refetch} userId={curUser.id} />
 
           {!isEditing ? (
             <button

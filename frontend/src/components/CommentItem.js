@@ -67,13 +67,16 @@ const CommentItem = ({ comment, postId, userId, refetchComments }) => {
           <small>{comment.created_at}</small>
         </p>
       </div>
-      <div>
+      <div>{userId &&
         <button
           className="like-button"
           onClick={() => handleLikeToggle(comment.id)}
         >
-          <FontAwesomeIcon icon={isLiked ? solidHeart : regularHeart} />
+          
+            <FontAwesomeIcon icon={isLiked ? solidHeart : regularHeart} />
+          
         </button>
+        }
         <div className="like-count">Likes: {comment.like_count}</div>
       </div>
     </div>

@@ -271,7 +271,7 @@ const PostPage = () => {
             key={comment.id}
             comment={comment}
             postId={post.id}
-            userId={user.id}
+            userId={user?.id}
             refetchComments={refetchComments}
           />
         ))
