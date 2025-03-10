@@ -19,11 +19,6 @@ const PostItem = ({ post, refetchPosts }) => {
   const [deletePost] = useDeletePostMutation();
   const [editPost] = useEditPostMutation();
   const [addLike] = useAddLikeMutation();
-  const {
-    data: likes,
-    error: likesError,
-    isLoading: likesLoading,
-  } = useGetLikesQuery({ userId: post.author.id, postId: post.id });
   const [showCommentBox, setShowCommentBox] = useState(false);
   const [currentPostId, setCurrentPostId] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -33,6 +28,15 @@ const PostItem = ({ post, refetchPosts }) => {
   const [editImage, setEditImage] = useState(null);
   const [editVisibility, setEditVisibility] = useState(post.visibility);
   const [isLiked, setIsLiked] = useState(false);
+
+  const {
+    data: likes,
+    error: likesError,
+    isLoading: likesLoading,
+  } = useGetLikesQuery(
+    { userId: post.author.id, postId: post.id },
+    { skip: !user }
+  );
 
   useEffect(() => {
     if (!user || !post || !post.author) {
@@ -209,13 +213,13 @@ const PostItem = ({ post, refetchPosts }) => {
 
         {user && (
           <button
-              className="button-secondary"
-              onClick={() => handleCommentClick(post.id)}
-            >
-              {currentPostId === post.id ? "Close Comments" : "View Comments"}
-            </button>
+            className="button-secondary"
+            onClick={() => handleCommentClick(post.id)}
+          >
+            {currentPostId === post.id ? "Close Comments" : "View Comments"}
+          </button>
         )}
-          
+
         <div className="like-container">
           {user && (
             <button className="like-button" onClick={handleLikeToggle}>
