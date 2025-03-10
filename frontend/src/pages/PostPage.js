@@ -200,9 +200,11 @@ const PostPage = () => {
       ) : (
         <>
           <h2>{post.title}</h2>
+          <Link to={`/${post.author.id}`} className="post-author">
           <p>
             <strong>Author:</strong> {post.author.username}
           </p>
+          </Link>
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             rehypePlugins={[rehypeRaw]}
