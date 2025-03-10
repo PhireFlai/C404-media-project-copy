@@ -6,7 +6,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework import status, generics  
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated, AllowAny, IsAdminUser
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated, AllowAny, IsAdminUser, BasePermission
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -331,7 +331,37 @@ def CreateComment(request, userId, pk):
 def PostToInbox(request, receiver):
     return Response({"message": "Request received"}, status=status.HTTP_200_OK)
 
-# Lists and creates comments for a specific post
+
+class IsFriendOrAuthor(BasePermission):
+    def has_permission(self, request, view):
+        post_id = view.kwargs.get('pk')
+        post = get_object_or_404(Post, id=post_id)
+        user = request.user
+
+        if post.visibility == Post.PUBLIC:
+            return True
+        elif post.visibility == Post.FRIENDS_ONLY:
+            return user in post.author.friends.all() or user == post.author
+        elif post.visibility == Post.UNLISTED:
+            return user in post.author.followers.all() or user == post.author
+        return False
+
+class IsCommentAuthorOrPostAuthorOrFriend(BasePermission):
+    def has_permission(self, request, view):
+        comment_id = view.kwargs.get('commentId')
+        comment = get_object_or_404(Comment, id=comment_id)
+        post = comment.post
+        user = request.user
+
+        if post.visibility == Post.PUBLIC:
+            return True
+        if post.visibility == Post.FRIENDS_ONLY:
+            return user in post.author.friends.all() or user == post.author or user == comment.author
+        elif post.visibility == Post.UNLISTED:
+            return user in post.author.followers.all() or user == post.author or user == comment.author
+        return False
+
+@permission_classes([IsFriendOrAuthor])
 class CommentsList(generics.ListCreateAPIView):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
@@ -340,8 +370,8 @@ class CommentsList(generics.ListCreateAPIView):
         post_id = self.kwargs['pk']
         return Comment.objects.filter(post_id=post_id)
 
-
-@permission_classes([AllowAny])
+@permission_classes([IsCommentAuthorOrPostAuthorOrFriend])
+# @permission_classes([AllowAny])
 class GetComment(generics.ListCreateAPIView):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
@@ -552,6 +582,68 @@ class LikesList(generics.ListCreateAPIView):
     def get_queryset(self):
         post_id = self.kwargs['pk']
         return Like.objects.filter(post_id=post_id)
+    
+@permission_classes([AllowAny])
+class GetLiked(generics.ListCreateAPIView):
+    queryset = Like.objects.all()
+    serializer_class = LikeSerializer
+
+    def get_queryset(self):
+        authorID = self.kwargs['userId']
+        return Like.objects.filter(user=authorID)
+    
+    def perform_create(self, serializer):
+        authorID = self.kwargs['userId']
+        author = User.objects.get(id=authorID)
+        postID = self.request.data.get('post')
+        try:
+            post = Post.objects.get(id=postID)
+        except Post.DoesNotExist:
+            return Response({"error": "Post not found"}, status=status.HTTP_404_NOT_FOUND)
+        post_author = post.author.id
+        like_data = {'post': postID}
+        serializer = LikeSerializer(data=like_data)
+    
+        if serializer.is_valid():
+            serializer.save(user=author)
+            like = Like.objects.get(id=serializer.data["id"])
+            response = self.forward_to_inbox(like, post_author)
+            return response
+
+    def forward_to_inbox(self, like, author):
+        like_data = LikeSerializer(like).data
+        
+        response = requests.post(f'http://localhost:8000/api/authors/{author}/inbox/', data=like_data)
+        return response
+
+# Get a single like by id
+@permission_classes([AllowAny])
+class GetSingleLike(generics.RetrieveAPIView):
+    queryset = Like.objects.all()
+    serializer_class = LikeSerializer
+    lookup_field = 'id'
+
+    def get_queryset(self):
+        likeID = self.kwargs['id']
+        return Like.objects.filter(id=likeID)
+
+# Get likes by author
+@permission_classes([AllowAny])
+class GetLikesByAuthor(generics.ListAPIView):
+    serializer_class = LikeSerializer
+
+    def get_queryset(self):
+        authorID = self.kwargs['authorId']
+        return Like.objects.filter(user=authorID)
+
+# Get likes by post
+@permission_classes([AllowAny])
+class GetPostLikes(generics.ListAPIView):
+    serializer_class = LikeSerializer
+
+    def get_queryset(self):
+        postID = self.kwargs['postId']
+        return Like.objects.filter(post=postID)
 
 # Add a like on a comment
 @api_view(['POST'])

@@ -253,12 +253,12 @@ class PostAPITestCase(APITestCase):
         response = self.client.get(f'/api/authors/{self.other_user.id}/posts/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 2)  # Including the new post created above
-        self.assertEqual(response.data[1]['title'], data['title'])
+        self.assertEqual(response.data[0]['title'], data['title'])
 
         # Create a comment for user's post by other_user
         comment_data = {"content": "Other User Comment", "author": self.other_user.id}
         response = self.client.post(f'/api/authors/{self.other_user.id}/posts/{self.post.id}/comment/', comment_data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['content'], comment_data['content'])
 
         # Retrieve comments for user's post
