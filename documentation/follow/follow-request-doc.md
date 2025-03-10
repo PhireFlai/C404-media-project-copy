@@ -12,8 +12,7 @@ It should only be used for remote. It shouldn't be used for local.
 ## Example 1: Request
 POST http://nodebbbb/api/authors/222/inbox
 ```
-{
-    "type": "follow",      
+{      
     "summary":"Greg wants to follow Lara",
     "actor":{
         "type":"author",
@@ -37,6 +36,34 @@ POST http://nodebbbb/api/authors/222/inbox
     }
 }
 ```
+
+## Request Fields
+
+| Field        | Type   | Example Value                             | Required | Description                                                          |
+| ------------ | ------ | ----------------------------------------- | -------- | -------------------------------------------------------------------- |
+| `summary`   | string | `"Greg wants to follow Lara"`               | Yes      | Summary of the request                                                             |
+| `actor`    | User | {
+        "type":"author",
+        "id":"http://nodeaaaa/api/authors/111",
+        "host":"http://nodeaaaa/api/",
+        "displayName":"Greg Johnson",
+        "github": "http://github.com/gjohnson",
+        "profileImage": "https://i.imgur.com/k7XVwpB.jpeg",
+        // URL of the user's HTML profile page
+        "page": "http://nodeaaaa/authors/greg"
+    }                                                              | Yes      | The user sending the request                                                         |
+| `object`  | User | {
+        "type":"author",
+        "id":"http://nodebbbb/api/authors/222",
+        "host":"http://nodebbbb/api/",
+        "displayName":"Lara Croft",
+        // URL of the user's HTML profile page
+        "page":"http://nodebbbb/authors/222",
+        "github": "http://github.com/laracroft",
+        "profileImage": "http://nodebbbb/api/authors/222/posts/217/image"
+    }                                                               | Yes      | The user that is being sent the request |                    
+
+---
 
 ## Example 2: Response
 ```
@@ -65,3 +92,28 @@ POST http://nodebbbb/api/authors/222/inbox
     }
 }
 ```
+
+## Response Fields
+| Field        | Type   | Example Value                             Description                                                          |
+| ------------ | ------ | ----------------------------------------- | -------- | 
+| `summary`   | string | `"Greg wants to follow Lara"`              | Summary of the request                                                             
+| `actor`    | User | {
+        "type":"author",
+        "id":"http://nodeaaaa/api/authors/111",
+        "host":"http://nodeaaaa/api/",
+        "displayName":"Greg Johnson",
+        "github": "http://github.com/gjohnson",
+        "profileImage": "https://i.imgur.com/k7XVwpB.jpeg",
+        // URL of the user's HTML profile page
+        "page": "http://nodeaaaa/authors/greg"
+    }                                                               | The user sending the request                                                         
+| `object`  | User | {
+        "type":"author",
+        "id":"http://nodebbbb/api/authors/222",
+        "host":"http://nodebbbb/api/",
+        "displayName":"Lara Croft",
+        // URL of the user's HTML profile page
+        "page":"http://nodebbbb/authors/222",
+        "github": "http://github.com/laracroft",
+        "profileImage": "http://nodebbbb/api/authors/222/posts/217/image"
+    }                                                               | The user that is being sent the request  
