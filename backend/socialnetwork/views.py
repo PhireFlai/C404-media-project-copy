@@ -505,7 +505,6 @@ class FollowingList(generics.ListCreateAPIView):
         user = get_object_or_404(User, id=userId)
         return user.following.all()
 
-
 # Add a like on a post
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -553,3 +552,36 @@ class CommentLikesList(generics.ListCreateAPIView):
     def get_queryset(self):
         comment_id = self.kwargs['ck']
         return CommentLike.objects.filter(comment_id=comment_id)
+    
+class UserFeedView(ListAPIView):
+    serializer_class = PostSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        """
+        Fetches the authenticated user's feed, ensuring the user sees:
+        - Their own posts (excluding deleted ones).
+        - Public posts from any author.
+        - Friends-only posts if the author is a friend.
+        - Unlisted posts if the author is a friend or follower.
+        """
+        
+        user = self.request.user
+
+        if not user.is_authenticated:
+            # Return only public posts if the user is not authenticated
+            return Post.objects.filter(visibility=Post.PUBLIC).exclude(visibility=Post.DELETED).order_by("-updated_at")
+
+        # Extract only the IDs of friends and followers
+        friend_ids = user.friends.values_list('id', flat=True)  # Extract only the 'id' field
+        following_ids = user.following.values_list('id', flat=True) # Changed follower to following
+
+        return Post.objects.filter(
+            Q(author=user) |  # Show ALL posts by the user (excluding deleted)
+            Q(visibility=Post.PUBLIC) |
+            Q(visibility=Post.FRIENDS_ONLY, author__in=friend_ids) |
+            Q(visibility=Post.UNLISTED, author__in=friend_ids) |  # Unlisted for friends
+            Q(visibility=Post.UNLISTED, author__in=following_ids)  # Unlisted for followers
+        ).exclude(
+            visibility=Post.DELETED
+        ).order_by("-updated_at")  # Show latest posts first

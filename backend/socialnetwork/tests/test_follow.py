@@ -26,8 +26,14 @@ class FollowAPITestCase(APITestCase):
     def test_send_follow_request(self):
         """Test sending a follow request."""
         response = self.client.post(f'/api/authors/{self.user.id}/follow/authors/{self.other_user.id}/')
+        response = self.client.post(f'/api/authors/{self.other_user.id}/inbox/')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue(FollowRequest.objects.filter(actor=self.user, object=self.other_user).exists())
+
+    def list_follow_requests(self):
+        response = self.client.get(f'api/authors/{self.other_user.id}/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertGreaterEqual(len(response.data), 1)
 
     def test_accept_follow_request(self):
         """Test accepting a follow request."""

@@ -182,6 +182,9 @@ export const api = createApi({
     getPost: builder.query({
       query: (postId) => `api/posts/${postId}/`, //endpoint for fetching a single post
     }),
+    getUserFeed: builder.query({
+      query: () => `api/authors/feed/`, //endpoint for user feed
+    }),    
   }),
 });
 
@@ -217,4 +220,5 @@ export const {
   usePostToInboxMutation,
   useGetFollowRequestsQuery,
   useGetPostQuery,
+  useGetUserFeedQuery,
 } = api;
