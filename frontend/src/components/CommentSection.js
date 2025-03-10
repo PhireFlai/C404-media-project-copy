@@ -1,20 +1,18 @@
 import React, { useState } from "react";
-import {
-  useGetCommentsQuery,
-  useCreateCommentMutation,
-  usePostCommentMutation,
-} from "../Api";
-import { useSelector } from "react-redux";
+import { useGetCommentsQuery, useCreateCommentMutation } from "../Api";
+import "./css/button.css";
+import "./css/input.css";
+import "./css/text.css";
+import CommentItem from "./CommentItem";
 
 const CommentSection = ({ postId, author }) => {
   const [comment, setComment] = useState(""); // State to manage the comment input
-  const user = useSelector((state) => state.user.user); // Get the current user from the Redux store
+  const user = JSON.parse(localStorage.getItem("user")); // Get the current user from local storage
   const { data: comments, refetch: refetchComments } = useGetCommentsQuery(
     { userId: user.id, postId },
     { skip: !postId }
   ); // Fetch comments using the custom hook
   const [createComment] = useCreateCommentMutation(); // Mutation hook for creating a comment
-  const [postComment] = usePostCommentMutation(); // Mutation hook for posting a comment to the author's inbox
 
   // Handle comment submission
   const handleCommentSubmit = async () => {
@@ -26,13 +24,6 @@ const CommentSection = ({ postId, author }) => {
         commentData: { content: comment },
       }).unwrap();
       console.log("Comment created:", createResponse);
-
-      // Post the comment to the author's inbox
-      const postResponse = await postComment({
-        author,
-        commentId: createResponse.id,
-      }).unwrap();
-      console.log("Comment posted to inbox:", postResponse);
 
       refetchComments(); // Refetch comments after submission
     } catch (err) {
@@ -47,12 +38,13 @@ const CommentSection = ({ postId, author }) => {
       {/* Render the list of comments if there are any, otherwise display a message */}
       {comments?.length > 0 ? (
         comments.map((comment) => (
-          <div className="comment-item" key={comment.id}>
-            <p>{comment.content}</p>
-            <p>
-              <small>{comment.created_at}</small>
-            </p>
-          </div>
+          <CommentItem
+            key={comment.id}
+            comment={comment}
+            postId={postId}
+            userId={user.id}
+            refetchComments={refetchComments}
+          />
         ))
       ) : (
         <p>No comments yet.</p>

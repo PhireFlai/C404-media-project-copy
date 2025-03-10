@@ -1,7 +1,6 @@
 import React, { useState } from "react";
-import { useCreatePostMutation, useGetPostsQuery } from "../Api";
+import { useCreatePostMutation, useGetUserFeedQuery } from "../Api";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
 import "./css/post.css";
 
 const CreatePostPage = () => {
@@ -10,9 +9,9 @@ const CreatePostPage = () => {
   const [image, setImage] = useState(null);
   const [visibility, setVisibility] = useState("public"); // Default to "public"
   const [createPost] = useCreatePostMutation();
-  const { refetch } = useGetPostsQuery();
+  const { refetch } = useGetUserFeedQuery();
   const navigate = useNavigate();
-  const user = useSelector((state) => state.user.user); // Get the user from the Redux store
+  const user = JSON.parse(localStorage.getItem('user')); // Get the current user from local storage
 
   const handleImageChange = (e) => {
     setImage(e.target.files[0]); // Store the selected file
@@ -36,7 +35,7 @@ const CreatePostPage = () => {
 
   return (
     <div className="post-container">
-      <h1 className="create-post-title">Create a Post</h1>
+      <h1 className="title">Create a Post</h1>
       <form
         className="create-post-form"
         onSubmit={handleSubmit}
@@ -77,7 +76,7 @@ const CreatePostPage = () => {
           onChange={handleImageChange}
         />
         <br />
-        <button className="submit-post-button" type="submit">
+        <button className="button-primary" type="submit">
           Post
         </button>
       </form>

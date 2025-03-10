@@ -1,11 +1,14 @@
-import React from 'react';
+import React, { useEffect} from 'react';
 import { useGetUserPostsQuery } from '../Api';
-import { useSelector } from 'react-redux';
 import PostItem from './PostItem';
 
-const UserPosts = () => {
-  const user = useSelector((state) => state.user.user); // Get the user from the Redux store
-  const { data: posts, refetch } = useGetUserPostsQuery(user.id); // Fetch user-specific posts
+const UserPosts = ({userId, editedUsername}) => {
+  const { data: posts, refetch } = useGetUserPostsQuery(userId); // Fetch user-specific posts
+
+  useEffect(() => {
+    refetch();
+  }, [refetch, editedUsername]);
+
 
   return (
     <div className="user-posts">

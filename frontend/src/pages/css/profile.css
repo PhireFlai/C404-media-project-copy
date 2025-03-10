@@ -1,18 +1,22 @@
+@import url('../../components/css/button.css');
+@import url('../../components/css/links.css'); 
+@import url('../../components/css/text.css');
+@import url('../../components/css/input.css');
+
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Arial', sans-serif;
     background-color: #f4f4f9;
-    /* Light background */
     margin: 0;
     padding: 0;
 }
 
 .profile-container {
-    max-width: 500px;
+    max-width: 600px;
     margin: 50px auto;
-    background-color: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     text-align: center;
 }
 
@@ -25,18 +29,19 @@ body {
 }
 
 .profile-avatar {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    border: 3px solid #003366;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%; /* Make the profile picture a circle */
+    border: 4px solid #3D405B; /* deep slate blue */
     object-fit: cover;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
 }
 
 .profile-title {
-    color: #003366;
-    font-size: 22px;
-    margin: 5px 0;
+    font-size: 24px;
+    font-weight: bold;
+    color: #3D405B; /* deep slate blue */
+    margin-bottom: 10px;
 }
 
 /* Profile Stats */
@@ -45,43 +50,36 @@ body {
     justify-content: space-around;
     font-size: 16px;
     color: #666;
-    padding: 10px 0;
+    padding: 15px 0;
     border-bottom: 1px solid #ddd;
+}
+
+.profile-stats p {
+    margin: 0;
+}
+
+.profile-stats a {
+    color: #3D405B; /* deep slate blue */
+    text-decoration: none;
+}
+
+.profile-stats a:hover {
+    text-decoration: underline;
 }
 
 /* Edit Profile Section */
 .edit-profile-section {
-    margin-top: 15px;
+    margin-top: 20px;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
 }
 
-.edit-button,
-.save-button,
-.cancel-button {
-    background-color: #003366;
-    color: white;
-    padding: 8px 12px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    margin: 5px;
-    transition: background 0.3s ease;
+.spacing {
+    margin-left: 15px;
 }
 
-.edit-button:hover,
-.save-button:hover {
-    background-color: #0055aa;
-}
-
-.cancel-button {
-    background-color: #ff4444;
-}
-
-.cancel-button:hover {
-    background-color: #cc0000;
-}
-
-/* Username Edit Input */
 .username-edit-container {
     display: flex;
     justify-content: center;
@@ -90,25 +88,80 @@ body {
 }
 
 .username-edit-input {
-    padding: 8px;
-    font-size: 14px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    width: 60%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    width: 200px;
 }
 
 /* User Posts Section */
 .user-posts-title {
-    color: #003366;
-    font-size: 20px;
-    margin-top: 20px;
-    padding-bottom: 5px;
+    color: #3D405B; /* deep slate blue */
+    font-size: 22px;
+    margin-top: 30px;
+    padding-bottom: 10px;
     border-bottom: 2px solid #ddd;
 }
 
-.loading-message,
-.error-message {
-    color: red;
-    font-size: 14px;
-    margin-top: 10px;
+.button-success {
+    background-color: #81B29A; /* muted sage green */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.button-success:hover {
+    background-color: #6A9B83; /* darker shade of muted sage green */
+}
+
+.button-danger {
+    background-color: #E07A5F; /* terra cotta */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.button-danger:hover {
+    background-color: #C0604A; /* darker shade of terra cotta */
+}
+
+.button-disabled {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: not-allowed;
+}
+
+/* Profile Picture Upload */
+.profile-pic-upload {
+    margin-bottom: 15px;
+}
+
+.profile-pic-input {
+    display: none;
+}
+
+.profile-pic-label {
+    background-color: #81B29A; /* muted sage green */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    display: inline-block;
+}
+
+.profile-pic-label:hover {
+    background-color: #6A9B83; /* darker shade of muted sage green */
 }

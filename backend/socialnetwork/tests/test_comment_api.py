@@ -20,6 +20,8 @@ class CommentAPITestCase(APITestCase):
         cls.comment2 = Comment.objects.create(content="Test Comment 2", author=cls.other_user, post=cls.post2)
         cls.token = Token.objects.create(user=cls.user)
         cls.other_token = Token.objects.create(user=cls.other_user)
+        
+
 
     def setUp(self):
         """Runs before each test."""
@@ -30,19 +32,20 @@ class CommentAPITestCase(APITestCase):
     def test_get_comments(self):
         """Test retrieving comments for a post."""
         response = self.client.get(f'/api/authors/{self.user.id}/posts/{self.post.id}/comments/')
+        # print(response2.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertGreaterEqual(len(response.data), 1)
-        # Need to expand to check that the data is correct
 
     def test_create_comment(self):
         data = {"content": "New comment", "author": self.user.id, "post": self.post.id}
-        response = self.client.post(f'/api/authors/{self.user.id}/inbox/')
+        response = self.client.post(f'/api/authors/{self.user.id}/inbox/', data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
     
     def test_get_comment_on_post(self):
-        response = self.client.get(f'/api/authors/{self.user.id}/posts/{self.post.id}/comment/{self.comment.id}/')
+        response = self.client.get(f'/api/authors/{self.user.id}/posts/{self.post.id}/comments/{self.comment.id}/')
+        # print(response.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['content'], self.comment['content'])
+        self.assertEqual(response.data[0]['content'], self.comment.content)
 
     def test_get_commented(self):
         response = self.client.get(f'/api/authors/{self.user.id}/commented/')
@@ -51,11 +54,11 @@ class CommentAPITestCase(APITestCase):
 
     def test_post_commented(self):
         data = {"content": "New comment", "author": self.user.id, "post": self.post.id}
-        response = self.client.post(f'/api/authors/{self.user.id}/commented')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response = self.client.post(f'/api/authors/{self.user.id}/commented/', data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['content'], data['content'])
 
     def test_get_comment_from_commented(self):
         response = self.client.get(f'/api/authors/{self.user.id}/commented/{self.comment.id}/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['content'], self.comment['content'])
+        self.assertEqual(response.data[0]['content'], self.comment.content)

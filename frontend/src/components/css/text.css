@@ -1,0 +1,63 @@
+/* Common heading styles */
+h1, h2, h3, h4, h5, h6 {
+    margin: 0;
+    padding: 0;
+    color: #3D405B; /* deep slate blue */
+    font-family: 'Arial', sans-serif;
+}
+
+/* Specific heading styles */
+.title {
+    text-align: center;
+    color: #3D405B; /* deep slate blue */
+    font-family: 'Arial', sans-serif;
+}
+
+/* Subtitle styles */
+.subtitle {
+    font-size: 18px;
+    color: #81B29A; /* muted sage green */
+    margin-bottom: 10px;
+    font-family: 'Arial', sans-serif;
+}
+
+/* Paragraph styles */
+p {
+    margin: 0 0 10px;
+    padding: 0;
+    color: #333;
+    line-height: 1.6;
+    font-family: 'Arial', sans-serif;
+}
+
+/* Error message styles */
+.error-message {
+    color: #E07A5F; /* terra cotta */
+    font-size: 14px;
+    text-align: center;
+    margin-top: 10px;
+    font-family: 'Arial', sans-serif;
+}
+
+/* Success message styles */
+.success-message {
+    color: #81B29A; /* muted sage green */
+    font-size: 14px;
+    text-align: center;
+    margin-top: 10px;
+    font-family: 'Arial', sans-serif;
+}
+
+/* General text styles */
+.text-bold {
+    font-weight: bold;
+}
+
+.text-italic {
+    font-style: italic;
+}
+
+.text-muted {
+    color: #666;
+    font-family: 'Arial', sans-serif;
+}
