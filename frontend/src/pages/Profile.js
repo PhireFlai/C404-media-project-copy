@@ -163,6 +163,12 @@ const Profile = () => {
           </Link>{" "}
           {user.following.length}
         </p>
+        <p>
+          <Link to={`/${userId}/friends`}>
+            <strong>Friends:</strong>{" "}
+          </Link>{" "}
+          {user.friends.length}
+        </p>
       </div>
 
       {/* Edit Profile Section (Only for Logged-in User) */}

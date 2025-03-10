@@ -9,6 +9,7 @@ import Navbar from "./components/Navbar"; // Import Navbar component
 import PrivateRoute from "./components/PrivateRoute"; // Import PrivateRoute component for protected routes
 import FollowersList from "./pages/FollowerList";
 import FollowingList from "./pages/FollowingList";
+import FriendsList from "./pages/FriendsList"
 import FriendsOnlyPosts from "./pages/FriendsOnlyPosts";
 import PostPage from "./pages/PostPage";
 
@@ -38,6 +39,7 @@ const App = () => {
             {/* Protected route for the create post page */}
             <Route path="/:userId/followers" element={<FollowersList />} />{" "}
             <Route path="/:userId/following" element={<FollowingList />} />{" "}
+            <Route path="/:userId/friends" element={<FriendsList />} />{" "}
             <Route path="/:userId" element={<Profile />} />{" "}
             <Route path="/posts/:postId" element={<PostPage />} />
           </Routes>

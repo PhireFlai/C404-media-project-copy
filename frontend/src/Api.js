@@ -131,6 +131,9 @@ export const api = createApi({
     getFollowers: builder.query({
       query: (userId) => `api/authors/${userId}/followers/`,
     }),
+    getFriends: builder.query({
+      query: (userId) => `api/authors/${userId}/friends/`,
+    }),
     getFollowing: builder.query({
       query: (userId) => `api/authors/${userId}/following/`,
     }),
@@ -209,6 +212,7 @@ export const {
   useUpdateUsernameMutation,
   useGetUserPostsQuery,
   useGetFollowersQuery,
+  useGetFriendsQuery,
   useGetFollowingQuery,
   useCreateFollowRequestMutation,
   useAcceptFollowRequestMutation,

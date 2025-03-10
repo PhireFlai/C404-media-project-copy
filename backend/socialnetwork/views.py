@@ -561,6 +561,15 @@ class FollowingList(generics.ListCreateAPIView):
         user = get_object_or_404(User, id=userId)
         return user.following.all()
 
+
+@permission_classes([AllowAny])
+class FriendsList(generics.ListCreateAPIView):
+    serializer_class = UserSerializer
+
+    def get_queryset(self):
+        userId = self.kwargs['userId']
+        user = get_object_or_404(User, id=userId)
+        return user.friends.all()
 # Add a like on a post
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
