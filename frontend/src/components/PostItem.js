@@ -33,6 +33,7 @@ const PostItem = ({ post, refetchPosts }) => {
     data: likes,
     error: likesError,
     isLoading: likesLoading,
+    refetch: refetchLikes
   } = useGetLikesQuery(
     { userId: post.author.id, postId: post.id },
     { skip: !user }
@@ -118,6 +119,7 @@ const PostItem = ({ post, refetchPosts }) => {
         await addLike({ userId: user.id, postId: post.id }).unwrap();
         setIsLiked(true);
         refetchPosts(); // Refetch posts after liking
+        refetchLikes();
       }
     } catch (err) {
       console.error("Error toggling like:", err);
