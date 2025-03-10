@@ -6,7 +6,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework import status, generics  
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated, AllowAny, IsAdminUser
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated, AllowAny, IsAdminUser, BasePermission
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -150,14 +150,16 @@ class PostListCreateView(generics.ListCreateAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
     parser_classes = (MultiPartParser, FormParser)
-    permission_classes = [IsAuthenticated]  
+    permission_classes = [AllowAny]  
 
     def get_queryset(self):
         user_id = self.kwargs.get('userId')  # Extract userId from URL
         viewer = self.request.user  # The logged-in user
 
-        if not user_id:
-            return Post.objects.exclude(visibility=Post.DELETED).order_by("-created_at")
+        author = get_object_or_404(User, id=user_id)  # Fetch the profile owner
+
+        if not viewer.is_authenticated:
+            return Post.objects.filter(author=author, visibility=Post.PUBLIC).order_by("-updated_at")
 
         author = get_object_or_404(User, id=user_id)  # Fetch the profile owner
 
@@ -169,10 +171,10 @@ class PostListCreateView(generics.ListCreateAPIView):
         # Fetch posts based on visibility ranking
         if viewer == author:
             # If the viewer is the profile owner, show all their posts
-            return Post.objects.filter(author=author).exclude(visibility=Post.DELETED).order_by("-created_at")
+            return Post.objects.filter(author=author).exclude(visibility=Post.DELETED).order_by("-updated_at")
         elif mutual_follow:
             # If the viewer and author follow each other, show public, friends-only, and unlisted posts
-            return Post.objects.filter(author=author).exclude(visibility=Post.DELETED).order_by("-created_at")
+            return Post.objects.filter(author=author).exclude(visibility=Post.DELETED).order_by("-updated_at")
         elif viewer_follows_author:
             # If the viewer follows the author, show public + unlisted posts (but NOT friends-only)
             return Post.objects.filter(author=author, visibility__in=[Post.PUBLIC, Post.UNLISTED]).exclude(visibility=Post.DELETED).order_by("-created_at")
@@ -331,7 +333,37 @@ def CreateComment(request, userId, pk):
 def PostToInbox(request, receiver):
     return Response({"message": "Request received"}, status=status.HTTP_200_OK)
 
-# Lists and creates comments for a specific post
+
+class IsFriendOrAuthor(BasePermission):
+    def has_permission(self, request, view):
+        post_id = view.kwargs.get('pk')
+        post = get_object_or_404(Post, id=post_id)
+        user = request.user
+
+        if post.visibility == Post.PUBLIC:
+            return True
+        elif post.visibility == Post.FRIENDS_ONLY:
+            return user in post.author.friends.all() or user == post.author
+        elif post.visibility == Post.UNLISTED:
+            return user in post.author.followers.all() or user == post.author
+        return False
+
+class IsCommentAuthorOrPostAuthorOrFriend(BasePermission):
+    def has_permission(self, request, view):
+        comment_id = view.kwargs.get('commentId')
+        comment = get_object_or_404(Comment, id=comment_id)
+        post = comment.post
+        user = request.user
+
+        if post.visibility == Post.PUBLIC:
+            return True
+        if post.visibility == Post.FRIENDS_ONLY:
+            return user in post.author.friends.all() or user == post.author or user == comment.author
+        elif post.visibility == Post.UNLISTED:
+            return user in post.author.followers.all() or user == post.author or user == comment.author
+        return False
+
+@permission_classes([IsFriendOrAuthor])
 class CommentsList(generics.ListCreateAPIView):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
@@ -340,8 +372,8 @@ class CommentsList(generics.ListCreateAPIView):
         post_id = self.kwargs['pk']
         return Comment.objects.filter(post_id=post_id)
 
-
-@permission_classes([AllowAny])
+@permission_classes([IsCommentAuthorOrPostAuthorOrFriend])
+# @permission_classes([AllowAny])
 class GetComment(generics.ListCreateAPIView):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer

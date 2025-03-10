@@ -26,6 +26,8 @@ const Profile = () => {
 
   const [isFollowing, setIsFollowing] = useState(false);
   const [hasRequested, setHasRequested] = useState(false);
+  const [usernameUpdated, setUsernameUpdated] = useState(false); 
+
 
   useEffect(() => {
     if (followingList) {
@@ -48,6 +50,7 @@ const Profile = () => {
   }, [userId, refetch]);
 
   const handleEditClick = () => {
+    setUsernameUpdated(false);
     setIsEditing(true);
     setNewUsername(user.username);
   };
@@ -62,6 +65,7 @@ const Profile = () => {
       localStorage.setItem("user", JSON.stringify(updatedUser));
       refetch(); // Refetch the user data to reflect the changes
       await refetchFollowRequests();
+      setUsernameUpdated(true);
     } catch (err) {
       console.error("Failed to update username:", err);
     }
@@ -157,7 +161,7 @@ const Profile = () => {
       {/* Edit Profile Section (Only for Logged-in User) */}
       {curUser && curUser.id === userId && (
         <div className="edit-profile-section">
-          <ProfilePicUpload userId={curUser.id} />
+          <ProfilePicUpload refetch={refetch} userId={curUser.id} />
 
           {!isEditing ? (
             <button
@@ -192,7 +196,7 @@ const Profile = () => {
       {/* User's Posts Section */}
 
       <h2 className="user-posts-title">{user.username}'s Posts</h2>
-      <UserPosts userId={userId} />
+      <UserPosts userId={userId} editedUsername={usernameUpdated}/>
     </div>
   );
 };

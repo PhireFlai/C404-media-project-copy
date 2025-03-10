@@ -2,12 +2,13 @@ import React, { useEffect} from 'react';
 import { useGetUserPostsQuery } from '../Api';
 import PostItem from './PostItem';
 
-const UserPosts = ({userId}) => {
+const UserPosts = ({userId, editedUsername}) => {
   const { data: posts, refetch } = useGetUserPostsQuery(userId); // Fetch user-specific posts
 
   useEffect(() => {
     refetch();
-  }, [refetch]);
+  }, [refetch, editedUsername]);
+
 
   return (
     <div className="user-posts">

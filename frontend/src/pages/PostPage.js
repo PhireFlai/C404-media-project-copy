@@ -200,9 +200,11 @@ const PostPage = () => {
       ) : (
         <>
           <h2>{post.title}</h2>
+          <Link to={`/${post.author.id}`} className="post-author">
           <p>
             <strong>Author:</strong> {post.author.username}
           </p>
+          </Link>
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             rehypePlugins={[rehypeRaw]}
@@ -271,7 +273,7 @@ const PostPage = () => {
             key={comment.id}
             comment={comment}
             postId={post.id}
-            userId={user.id}
+            userId={user?.id}
             refetchComments={refetchComments}
           />
         ))
