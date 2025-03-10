@@ -559,7 +559,7 @@ class UserFeedView(ListAPIView):
 
     def get_queryset(self):
         """
-        Fetches the authenticated user's feed, ensuring the user sees:
+        Fetches the feed, ensuring the user sees:
         - Their own posts (excluding deleted ones).
         - Public posts from any author.
         - Friends-only posts if the author is a friend.
