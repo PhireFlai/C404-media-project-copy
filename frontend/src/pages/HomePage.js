@@ -6,7 +6,7 @@ import "./css/home.css";
 
 const HomePage = () => {
   const { data: posts, refetch } = useGetUserFeedQuery(); // Fetch user feed
-  console.log(posts);  // Debugging output
+  // console.log(posts);  // Debugging output
   const navigate = useNavigate(); // Initialize navigation
 
   // Handle the click event for creating a new post
