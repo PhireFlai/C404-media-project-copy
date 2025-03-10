@@ -21,7 +21,7 @@ const Profile = () => {
   const [updateUsername] = useUpdateUsernameMutation(); // Mutation for updating username
   const [createFollowRequest] = useCreateFollowRequestMutation();
   const [unfollowUser] = useUnfollowUserMutation();
-  const { data: followingList } = useGetFollowingQuery(userId);
+  const { data: followingList } = useGetFollowingQuery(curUser.id);
   const { data: followRequests } = useGetFollowRequestsQuery(userId);
 
   const [isFollowing, setIsFollowing] = useState(false);
