@@ -38,7 +38,7 @@ const FollowingList = () => {
       ) : (
         <ul className="following-list">
           {following?.map((following) => (
-            <li key={following.id} className>
+            <li key={following.id}>
               {following.profilePicture && (
                 <img
                   src={following.profilePicture}
