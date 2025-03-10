@@ -37,9 +37,9 @@ const Navbar = () => {
         </li>
         {user && (
           <>
-            <li>
+            {/* <li>
               <Link to="/friends-only">Friends Only</Link>
-            </li>
+            </li> */}
             <li>
               <Dropdown label={`Follow Requests`}>
                 <FollowRequests userId={user.id} />

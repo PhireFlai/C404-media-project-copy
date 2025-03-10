@@ -2,7 +2,7 @@ import React from "react";
 import { useUpdateProfilePictureMutation } from "../Api";
 import "../pages/css/profile.css";
 
-const ProfilePictureUpload = ({ userId }) => {
+const ProfilePictureUpload = ({ userId, refetch }) => {
   const [updateProfilePicture, { isLoading, error }] =
     useUpdateProfilePictureMutation();
 
@@ -17,7 +17,7 @@ const ProfilePictureUpload = ({ userId }) => {
         try {
           await updateProfilePicture({ userId, profilePicture: file }).unwrap();
           alert("Profile picture updated successfully!");
-          window.location.reload(); // Refresh the page to reflect the changes
+          refetch(); // Refetch the user data to reflect the changes
         } catch (err) {
           console.error("Failed to update profile picture:", err);
         }

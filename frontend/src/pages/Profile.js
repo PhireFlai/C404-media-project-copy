@@ -21,11 +21,13 @@ const Profile = () => {
   const [updateUsername] = useUpdateUsernameMutation(); // Mutation for updating username
   const [createFollowRequest] = useCreateFollowRequestMutation();
   const [unfollowUser] = useUnfollowUserMutation();
-  const { data: followingList } = useGetFollowingQuery(curUser.id);
-  const { data: followRequests } = useGetFollowRequestsQuery(userId);
+  const { data: followingList } = useGetFollowingQuery(curUser?.id);
+  const { data: followRequests, refetch: refetchFollowRequests } = useGetFollowRequestsQuery(userId);
 
   const [isFollowing, setIsFollowing] = useState(false);
   const [hasRequested, setHasRequested] = useState(false);
+  const [usernameUpdated, setUsernameUpdated] = useState(false); 
+
 
   useEffect(() => {
     if (followingList) {
@@ -47,8 +49,8 @@ const Profile = () => {
     refetch();
   }, [userId, refetch]);
 
-
   const handleEditClick = () => {
+    setUsernameUpdated(false);
     setIsEditing(true);
     setNewUsername(user.username);
   };
@@ -61,23 +63,27 @@ const Profile = () => {
       const updatedUser = { id: curUser.id, username: newUsername };
 
       localStorage.setItem("user", JSON.stringify(updatedUser));
-
-      window.location.reload(); // Refresh the page to reflect the changes
+      refetch(); // Refetch the user data to reflect the changes
+      await refetchFollowRequests();
+      setUsernameUpdated(true);
     } catch (err) {
       console.error("Failed to update username:", err);
     }
   };
 
   const handleFollowClick = async () => {
-    setHasRequested(true);
     try {
+      // setHasRequested(true); // Update the state immediately after the request is successful
       await createFollowRequest({
         actorId: curUser.id,
         objectId: user.id,
       }).unwrap();
+      setHasRequested(true);
+      refetch(); // Refetch the user data to reflect the changes
+      await refetchFollowRequests();
     } catch (err) {
       console.error("Failed to create follow request:", err);
-      setHasRequested(false);
+      // setHasRequested(false);
     }
   };
 
@@ -88,6 +94,7 @@ const Profile = () => {
         followerId: curUser.id,
         followedId: user.id,
       }).unwrap();
+      refetch(); // Refetch the user data to reflect the changes
     } catch (err) {
       console.error("Failed to unfollow user:", err);
       setIsFollowing(true);
@@ -154,7 +161,7 @@ const Profile = () => {
       {/* Edit Profile Section (Only for Logged-in User) */}
       {curUser && curUser.id === userId && (
         <div className="edit-profile-section">
-          <ProfilePicUpload userId={curUser.id} />
+          <ProfilePicUpload refetch={refetch} userId={curUser.id} />
 
           {!isEditing ? (
             <button
@@ -189,7 +196,7 @@ const Profile = () => {
       {/* User's Posts Section */}
 
       <h2 className="user-posts-title">{user.username}'s Posts</h2>
-      <UserPosts userId={userId} />
+      <UserPosts userId={userId} editedUsername={usernameUpdated}/>
     </div>
   );
 };
