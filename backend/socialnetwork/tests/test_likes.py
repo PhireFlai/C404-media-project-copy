@@ -43,24 +43,50 @@ class LikeAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(CommentLike.objects.filter(comment=self.comment, user=self.user).exists())
     
-    def test_retrieve_post_like_count(self):
-            """Test retrieving like count for a post. - Comment/Likes 4"""
-            # User 1 likes the post
-            self.client.login(username='testuser', password='password')
-            self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
-            url = f'/api/authors/{self.user.id}/posts/{self.post.id}/like/'
-            response = self.client.post(url)
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
+    def test_likes_by_author(self):
+        """Test endpoint .//service/api/authors/{AUTHOR_SERIAL}/liked"""
+        # Like the first post
+        data = {"user": self.user.id, "post": self.post.id}
+        url = f'/api/authors/{self.user.id}/posts/{self.post.id}/like/'
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(Like.objects.filter(post=self.post, user=self.user).exists())
 
-            # User 2 likes the post
-            self.client.login(username='otheruser', password='password')
-            self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.other_token.key)
-            url = f'/api/authors/{self.other_user.id}/posts/{self.post.id}/like/'
-            response = self.client.post(url)
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Like the second post
+        data = {"user": self.user.id, "post": self.post2.id}
+        url = f'/api/authors/{self.user.id}/posts/{self.post2.id}/like/'
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(Like.objects.filter(post=self.post2, user=self.user).exists())
 
-            # Retrieve the post and check like count
-            url = f'/api/authors/{self.user.id}/posts/{self.post.id}/'
-            response = self.client.get(url)
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
-            self.assertEqual(response.data['like_count'], 2)
+        # Retrieve likes by author
+        url = f'/api/authors/{self.user.id}/liked/'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 2)
+    
+    def test_get_single_like_authors(self):
+        """Test endpoint //service/api/authors/{AUTHOR_SERIAL}/liked/{LIKE_SERIAL}"""
+        # Like the first post
+        data = {"user": self.user.id, "post": self.post.id}
+        url = f'/api/authors/{self.user.id}/posts/{self.post.id}/like/'
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        like_id = response.data['id']
+
+        # Retrieve the single like
+        url = f'/api/authors/{self.user.id}/liked/{like_id}/'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['id'], like_id)
+
+    def test_get_single_like(self):
+        """Test endpoint api/liked/<uuid:id>/"""
+        # Create a like for the first post
+        like = Like.objects.create(user=self.user, post=self.post)
+
+        # Retrieve the like using the endpoint
+        url = f'/api/liked/{like.id}/'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['id'], str(like.id))
