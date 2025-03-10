@@ -31,7 +31,7 @@ class FollowAPITestCase(APITestCase):
         self.assertTrue(FollowRequest.objects.filter(actor=self.user, object=self.other_user).exists())
 
     def list_follow_requests(self):
-        response = self.client.get(f'api/authors/{self.other_user.id}/')
+        response = self.client.get(f'api/authors/{self.other_user.id}/follow-requests/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertGreaterEqual(len(response.data), 1)
 
