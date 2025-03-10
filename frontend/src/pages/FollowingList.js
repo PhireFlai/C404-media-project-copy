@@ -51,7 +51,7 @@ const FollowingList = () => {
                   {following.username}
                 </Link>
               </div>
-              {currentUser.id === userId && (
+              {currentUser && currentUser.id === userId && (
                 <button
                   onClick={() => handleUnfollow(following.id)}
                   className="remove-button"
