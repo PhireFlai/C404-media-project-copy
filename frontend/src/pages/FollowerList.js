@@ -66,7 +66,7 @@ const FollowersList = () => {
         </ul>
       )}
       {currentUser && currentUser.id === userId && (
-        <FollowRequests userId={userId} onFollowChange={refetch} />
+        <FollowRequests userId={userId} onFollowChange={refetch} allowChange={"valid"} />
       )}
     </div>
   );

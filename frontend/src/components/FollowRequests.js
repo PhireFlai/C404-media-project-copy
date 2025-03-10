@@ -5,12 +5,12 @@ import {
 } from "../Api";
 import { Link } from "react-router-dom";
 
-const FollowRequests = ({ userId, onFollowChange }) => {
+const FollowRequests = ({ userId, onFollowChange, allowChange }) => {
     const { data: requests, isLoading, isError, error, refetch: refetchRequests } = useGetFollowRequestsQuery(
         userId
     );
     const [acceptFollowRequest] = useAcceptFollowRequestMutation();
-
+    
     if (isLoading) return <div className="loader">Loading requests...</div>;
     if (isError) return <div>Error loading requests: {error.message}</div>;
 
@@ -43,22 +43,26 @@ const FollowRequests = ({ userId, onFollowChange }) => {
                                 <Link to={`/${request.actor.id}`} className="requester-name">
                                     {request.actor.username}
                                 </Link>
-                                <button
-                                    onClick={() =>
-                                        handleApproveOrReject(request.object.id, request.actor.id, "accept")
-                                    }
-                                    className="approve-btn"
-                                >
-                                    ✅
-                                </button>
-                                <button
-                                    onClick={() =>
-                                        handleApproveOrReject(request.object.id, request.actor.id, "reject")
-                                    }
-                                    className="reject-btn"
-                                >
-                                    ❌
-                                </button>
+                                {allowChange && (
+                                    <div>
+                                        <button
+                                            onClick={() =>
+                                                handleApproveOrReject(request.object.id, request.actor.id, "accept")
+                                            }
+                                            className="approve-btn"
+                                        >
+                                            ✅
+                                        </button>
+                                        <button
+                                            onClick={() =>
+                                                handleApproveOrReject(request.object.id, request.actor.id, "reject")
+                                            }
+                                            className="reject-btn"
+                                        >
+                                            ❌
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </li>
                     ))}

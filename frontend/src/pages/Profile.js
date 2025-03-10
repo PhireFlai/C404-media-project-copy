@@ -34,14 +34,14 @@ const Profile = () => {
   }, [followingList, userId]);
 
   useEffect(() => {
-    if (followRequests) {
+    if (followRequests && curUser) {
       setHasRequested(
         followRequests.some(
           (r) => r.actor.id === curUser.id && r.object.id === userId
         )
       );
     }
-  }, [followRequests, curUser.id, userId]);
+  }, [followRequests, curUser, userId]);
 
   useEffect(() => {
     refetch();
