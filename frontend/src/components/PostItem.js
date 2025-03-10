@@ -206,21 +206,27 @@ const PostItem = ({ post, refetchPosts }) => {
         <button onClick={handleCopyLink} className="button-secondary">
           Copy Link
         </button>
-        <button
-          className="button-secondary"
-          onClick={() => handleCommentClick(post.id)}
-        >
-          {currentPostId === post.id ? "Close Comments" : "View Comments"}
-        </button>
+
+        {user && (
+          <button
+              className="button-secondary"
+              onClick={() => handleCommentClick(post.id)}
+            >
+              {currentPostId === post.id ? "Close Comments" : "View Comments"}
+            </button>
+        )}
+          
         <div className="like-container">
-          <button className="like-button" onClick={handleLikeToggle}>
-            <FontAwesomeIcon icon={isLiked ? solidHeart : regularHeart} />
-          </button>
+          {user && (
+            <button className="like-button" onClick={handleLikeToggle}>
+              <FontAwesomeIcon icon={isLiked ? solidHeart : regularHeart} />
+            </button>
+          )}
           <div className="like-count">Likes: {post.like_count}</div>
         </div>
       </div>
 
-      {showCommentBox && currentPostId === post.id && (
+      {user && showCommentBox && currentPostId === post.id && (
         <CommentSection postId={post.id} author={post.author.id} />
       )}
     </div>
