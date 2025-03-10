@@ -116,21 +116,7 @@ class FollowRequest(models.Model):
     summary = models.TextField()
     actor = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_follow_request")
     object = models.ForeignKey(User, on_delete=models.CASCADE, related_name="received_follow_request")
-# Use User.friends
-# Friendship model for the friends-only Stream
-class Friendship(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="friendships")
-    friend = models.ForeignKey(User, on_delete=models.CASCADE, related_name="friends_of")
-    created_at = models.DateTimeField(auto_now_add=True)
 
-    class Meta:
-        unique_together = ("user", "friend")
-
-    def save(self, *args, **kwargs):
-        """Ensure bidirectional friendship"""
-        super().save(*args, **kwargs)
-        if not Friendship.objects.filter(user=self.friend, friend=self.user).exists():
-            Friendship.objects.create(user=self.friend, friend=self.user)
 
 class EnvironmentSetting(models.Model):
     require_admin_approval_for_signup = models.BooleanField(default=False)
