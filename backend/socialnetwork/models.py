@@ -50,20 +50,19 @@ class User(AbstractUser):
 
         super().save(*args, **kwargs)  # Save the instance
 
-        
 class Post(models.Model):
     PUBLIC = 'public'
     FRIENDS_ONLY = 'friends-only'
     UNLISTED = 'unlisted'
     DELETED = 'deleted'
-    
+
     VISIBILITY_CHOICES = [
         (PUBLIC, 'Public'),
         (FRIENDS_ONLY, 'Friends Only'),
         (UNLISTED, 'Unlisted'),
         (DELETED, 'Deleted')
     ]
-    
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     author = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     title = models.CharField(max_length=255)

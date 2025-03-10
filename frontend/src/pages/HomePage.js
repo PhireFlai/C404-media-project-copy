@@ -1,12 +1,13 @@
 import React from "react";
-import { useGetPostsQuery } from "../Api";
+import { useGetUserFeedQuery } from "../Api"; // Import new feed query
 import PostItem from "../components/PostItem";
 import { useNavigate } from "react-router-dom";
 import "./css/home.css";
 
 const HomePage = () => {
-  const { data: posts, refetch } = useGetPostsQuery(); // Fetch posts using the custom hook and destructure the data and refetch function
-  const navigate = useNavigate(); // Initialize the navigate function for navigation
+  const { data: posts, refetch } = useGetUserFeedQuery(); // Fetch user feed
+  console.log(posts);  // Debugging output
+  const navigate = useNavigate(); // Initialize navigation
 
   // Handle the click event for creating a new post
   const handleCreatePostClick = () => {
@@ -15,7 +16,7 @@ const HomePage = () => {
 
   return (
     <div className="recent-posts-container">
-      <h1 className="title">Recent Posts</h1>
+      <h1 className="title">Your Feed</h1>
 
       <button
         className="button-primary create-post"
@@ -30,7 +31,7 @@ const HomePage = () => {
           <PostItem key={post.id} post={post} refetchPosts={refetch} />
         ))
       ) : (
-        <p className="text-muted">No posts yet.</p>
+        <p className="text-muted">No posts in your feed yet.</p>
       )}
     </div>
   );
