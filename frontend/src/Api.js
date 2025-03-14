@@ -13,9 +13,6 @@ export const api = createApi({
     },
   }),
   endpoints: (builder) => ({
-    getPosts: builder.query({
-      query: () => `api/public-posts/`, // Endpoint for fetching public posts
-    }),
     getFriendsPosts: builder.query({
       query: (userId) => `api/authors/${userId}/friends-posts/`, // Endpoint for fetching friends posts
     }),
@@ -137,7 +134,7 @@ export const api = createApi({
     getFollowing: builder.query({
       query: (userId) => `api/authors/${userId}/following/`,
     }),
-    createFollowRequest: builder.mutation({
+  createFollowRequest: builder.mutation({
       query: ({ actorId, objectId }) => ({
         url: `api/authors/${actorId}/follow/authors/${objectId}/`,
         method: "POST",
@@ -193,7 +190,6 @@ export const api = createApi({
 
 // Export hooks for each endpoint
 export const {
-  useGetPostsQuery,
   useGetFriendsPostsQuery,
   useCreatePostMutation,
   useDeletePostMutation,
