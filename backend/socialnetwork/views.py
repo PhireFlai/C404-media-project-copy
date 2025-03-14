@@ -119,15 +119,6 @@ def loginUser(request):
 class UsersList(generics.ListCreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-
-
-# Gets all public posts
-class PublicPostsView(ListAPIView):
-    serializer_class = PostSerializer
-    permission_classes = [AllowAny]
-
-    def get_queryset(self):
-        return Post.objects.filter(visibility=Post.PUBLIC).order_by("-created_at") 
     
 # Get all friends posts
 class FriendsPostsView(ListAPIView):
