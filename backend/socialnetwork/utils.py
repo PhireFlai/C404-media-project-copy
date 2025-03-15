@@ -1,9 +1,10 @@
 import requests
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 from django.utils.timezone import now
 from socialnetwork.models import Post
 import logging
-
+from rest_framework.response import Response
+from rest_framework import status
 logger = logging.getLogger(__name__)
 
 GITHUB_API_URL = "https://api.github.com/users/{}/events"
@@ -78,3 +79,46 @@ def create_github_posts(user):
         logger.info(f"Created post for {user.username}: {content}")
 
     logger.info(f"GitHub posts updated for {user.username}")
+
+
+def forward_get_request(request, encoded_url):
+    """
+    Decodes an encoded URL, validates its format, and forwards the GET request to the decoded URL.
+    
+    Parameters:
+        request: The Django request object.
+        encoded_url: The URL-encoded string (e.g., 'http%3A%2F%2Fexample-node-2%2Fauthors%2F<uuid>')
+    
+    Returns:
+        A DRF Response containing either the remote response data or an error message.
+    """
+    # Decode the URL
+    decoded_url = unquote(encoded_url)
+    parsed_url = urlparse(decoded_url)
+    
+    # Validate the path; expected format: /authors/<uuid>
+    path_parts = parsed_url.path.strip('/').split('/')
+    if len(path_parts) < 2 or path_parts[0] != 'authors':
+        return Response({'error': 'Invalid URL format'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Extract components 
+    user_uuid = path_parts[1]
+    remote_hostname = parsed_url.hostname
+    local_domain = request.get_host().split(':')[0]
+    print(user_uuid)
+    print(remote_hostname)
+    print(local_domain)
+    # Optionally, check if the request should be processed locally based on the hostname.
+    # For now, we forward regardless.
+    try:
+        remote_response = requests.get(decoded_url)
+    except requests.RequestException:
+        return Response({'error': 'Failed to forward request'}, status=status.HTTP_502_BAD_GATEWAY)
+    
+    # Attempt to return JSON data if available; fallback to plain text
+    try:
+        data = remote_response.json()
+    except ValueError:
+        data = remote_response.text
+    
+    return Response(data, status=remote_response.status_code)

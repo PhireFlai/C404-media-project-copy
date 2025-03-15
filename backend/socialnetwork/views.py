@@ -20,7 +20,7 @@ import requests
 import logging
 from rest_framework.exceptions import ValidationError
 from django.db.models import Q
-
+from .utils import forward_get_request
 @swagger_auto_schema(
     method="post",
     operation_summary="Create a new user",
@@ -258,7 +258,7 @@ class UserProfileView(APIView):
             self.permission_classes = [AllowAny]
         return super().get_permissions()
 
-    def get(self, request, userId):
+    def get(self, userId):
         try:
             user = User.objects.get(id=userId)
         except User.DoesNotExist:
@@ -712,3 +712,8 @@ class UserFeedView(ListAPIView):
         ).exclude(
             visibility=Post.DELETED
         ).order_by("-updated_at")  # Show latest posts first
+
+@permission_classes([AllowAny])        
+class SomeOtherGetView(APIView):
+    def get(self, request, encoded_url):
+        return forward_get_request(request, encoded_url)
