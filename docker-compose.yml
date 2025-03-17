@@ -1,36 +1,37 @@
 services:
-    db:
-        container_name: db
-        image: postgres
-        ports:
-        - "5432:5432"
-        volumes:
-        - db_data:/var/lib/postgresql/data
-        env_file:
-        - .env.db
+  db:
+    container_name: db
+    image: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    env_file:
+      - .env.db
 
-    backend:
-        build: ./backend
-        volumes:
-        - ./socialnetwork/media:/app/socialnetwork/media  # Store images persistently
-        - staticfiles:/app/staticfiles  # Mount staticfiles directory
-        ports:
-        - "8000:8000"
-        depends_on:
-        - db
-        env_file:
-        - .env
+  backend:
+    build: ./backend
+    volumes:
+      - ./socialnetwork/media:/app/socialnetwork/media  # Store images persistently
+      - staticfiles:/app/staticfiles  # Mount staticfiles directory
+    ports:
+      - "[::]:8000:8000"  # Bind to all IPv6 addresses on port 8000
+    depends_on:
+      - db
+    env_file:
+      - .env
 
-    frontend:
-        build: ./frontend
-        ports:
-        - "80:80"
-        depends_on:
-        - backend
-        volumes:
-        - staticfiles:/staticfiles  # Ensure frontend can access static files        
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    volumes:
+      - staticfiles:/staticfiles  # Ensure frontend can access static files
+
 
 volumes:
-    db_data:
-    media:  # Persistent storage for images
-    staticfiles:
+  db_data:
+  media:  # Persistent storage for images
+  staticfiles:
