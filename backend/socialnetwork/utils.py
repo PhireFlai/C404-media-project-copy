@@ -81,6 +81,7 @@ def create_github_posts(user):
     logger.info(f"GitHub posts updated for {user.username}")
 
 
+logger = logging.getLogger(__name__)
 def forward_get_request(request, encoded_url):
     """
     Decodes an encoded URL, validates its format, and forwards the GET request to the decoded URL.
@@ -98,22 +99,21 @@ def forward_get_request(request, encoded_url):
     
     # Validate the path; expected format: /authors/<uuid>
     path_parts = parsed_url.path.strip('/').split('/')
-    if len(path_parts) < 2 or path_parts[0] != 'authors':
-        return Response({'error': 'Invalid URL format'}, status=status.HTTP_400_BAD_REQUEST)
+    # if len(path_parts) < 2:
+    #     return Response({'error': 'Invalid URL format'}, status=status.HTTP_400_BAD_REQUEST)
     
     # Extract components 
-    user_uuid = path_parts[1]
-    remote_hostname = parsed_url.hostname
-    local_domain = request.get_host().split(':')[0]
-    print(user_uuid)
-    print(remote_hostname)
-    print(local_domain)
+    # uuid = path_parts[-1]
+    # remote_hostname = parsed_url.hostname
+    # local_domain = request.get_host().split(':')[0]
+
     # Optionally, check if the request should be processed locally based on the hostname.
     # For now, we forward regardless.
     try:
         remote_response = requests.get(decoded_url)
-    except requests.RequestException:
-        return Response({'error': 'Failed to forward request'}, status=status.HTTP_502_BAD_GATEWAY)
+    except requests.RequestException as e:
+        logger.error(f"Failed to forward request to {e}")
+        return Response({'error': 'Failed to forward request ' + decoded_url}, status=status.HTTP_502_BAD_GATEWAY)
     
     # Attempt to return JSON data if available; fallback to plain text
     try:
