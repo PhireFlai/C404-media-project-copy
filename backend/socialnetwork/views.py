@@ -714,6 +714,6 @@ class UserFeedView(ListAPIView):
         ).order_by("-updated_at")  # Show latest posts first
 
 @permission_classes([AllowAny])        
-class SomeOtherGetView(APIView):
+class ForwardGetView(APIView):
     def get(self, request, encoded_url):
         return forward_get_request(request, encoded_url)
