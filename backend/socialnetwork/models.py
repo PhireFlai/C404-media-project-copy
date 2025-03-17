@@ -123,3 +123,12 @@ class EnvironmentSetting(models.Model):
 
     def __str__(self):
         return f"Require admin approval for signup: {self.require_admin_approval_for_signup}"
+
+class RemoteNode(models.Model):
+    url = models.URLField(unique=True)
+    username = models.CharField(max_length=100)
+    password = models.CharField(max_length=255)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.url} ({'Active' if self.is_active else 'Disabled'})"
