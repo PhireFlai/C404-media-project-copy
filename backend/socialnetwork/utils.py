@@ -95,17 +95,6 @@ def forward_get_request(request, encoded_url):
     """
     # Decode the URL
     decoded_url = unquote(encoded_url)
-    parsed_url = urlparse(decoded_url)
-    
-    # Validate the path; expected format: /authors/<uuid>
-    path_parts = parsed_url.path.strip('/').split('/')
-    # if len(path_parts) < 2:
-    #     return Response({'error': 'Invalid URL format'}, status=status.HTTP_400_BAD_REQUEST)
-    
-    # Extract components 
-    # uuid = path_parts[-1]
-    # remote_hostname = parsed_url.hostname
-    # local_domain = request.get_host().split(':')[0]
 
     # Optionally, check if the request should be processed locally based on the hostname.
     # For now, we forward regardless.
