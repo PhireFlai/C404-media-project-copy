@@ -134,7 +134,7 @@ export const api = createApi({
     getFollowing: builder.query({
       query: (userId) => `api/authors/${userId}/following/`,
     }),
-    createFollowRequest: builder.mutation({
+  createFollowRequest: builder.mutation({
       query: ({ actorId, objectId }) => ({
         url: `api/authors/${actorId}/follow/authors/${objectId}/`,
         method: "POST",

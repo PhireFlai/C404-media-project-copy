@@ -17,7 +17,7 @@ from .serializers import *
 import requests
 from django.db.models import Q
 from socialnetwork.permissions import IPLockPermission, MultiAuthPermission, ConditionalMultiAuthPermission
-
+from .utils import forward_get_request
 
 @swagger_auto_schema(
     method="post",
@@ -247,7 +247,7 @@ class UserProfileView(APIView):
             self.permission_classes = [ConditionalMultiAuthPermission]
         return super().get_permissions()
 
-    def get(self, request, userId):
+    def get(self, userId):
         try:
             user = User.objects.get(id=userId)
         except User.DoesNotExist:
@@ -703,3 +703,8 @@ class UserFeedView(ListAPIView):
         ).exclude(
             visibility=Post.DELETED
         ).order_by("-updated_at")  # Show latest posts first
+
+@permission_classes([AllowAny])        
+class ForwardGetView(APIView):
+    def get(self, request, encoded_url):
+        return forward_get_request(request, encoded_url)

@@ -62,6 +62,7 @@ urlpatterns = [
     path("api/authors/<uuid:authorId>/liked/<uuid:id>/", GetSingleLike.as_view(), name="single-like"),
     path("api/liked/<uuid:id>/", GetSingleLike.as_view(), name="single-like"),
     path("api/posts/<uuid:postId>/likes/", GetPostLikes.as_view(), name="post-likes"),
+    path('api/forward/<path:encoded_url>/', ForwardGetView.as_view(), name='forward'),
 ]
 
 # Serve media files during development
