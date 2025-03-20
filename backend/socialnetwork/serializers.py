@@ -111,15 +111,21 @@ class FollowRequestSerializer(serializers.ModelSerializer):
 
         follow_request = FollowRequest.objects.create(summary=summary, actor=actor, object=object)
         return follow_request
-
+#   path("api/authors/<uuid:userId>/posts/<uuid:pk>/like/", AddLike, name='add-like'),
+#   path("api/authors/<uuid:userId>/posts/<uuid:pk>/likes/", LikesList.as_view(), name="likes-list"),
+#   path("api/authors/<uuid:userId>/posts/<uuid:pk>/comments/<uuid:ck>/like/", AddCommentLike, name='add-like'),
+#   path("api/authors/<uuid:userId>/posts/<uuid:pk>/comments/<uuid:ck>/likes/", CommentLikesList.as_view(), name="likes-list"),
+#   api/liked/<uuid:id>/
 class LikeSerializer(serializers.ModelSerializer):
-
+    id = serializers.SerializerMethodField()  # Add this field
     user = UserSerializer(read_only=True)
     class Meta:
         model = Like
         fields = ['id', 'user', 'post', 'created_at']
         
-
+            
+    def get_id(self, obj) -> str:
+        return f"http://{my_ip}:8000/api/liked/{obj.id}/"
     
     def validate(self, data):
         return data
@@ -132,10 +138,14 @@ class LikeSerializer(serializers.ModelSerializer):
         return like 
 
 class CommentLikeSerializer(serializers.ModelSerializer):
+    id = serializers.SerializerMethodField()  # Add this field
     user = UserSerializer(read_only=True)
     class Meta:
         model = CommentLike
         fields = ['id', 'user', 'comment', 'created_at']
+        
+    def get_id(self, obj) -> str:
+        return f"http://{my_ip}:8000/api/liked/{obj.id}/"
     
     def validate(self, data):
         return data
