@@ -3,6 +3,7 @@ from urllib.parse import unquote, urlparse
 from django.utils.timezone import now
 from socialnetwork.models import Post
 import logging
+import urllib.request
 from rest_framework.response import Response
 from rest_framework import status
 logger = logging.getLogger(__name__)
@@ -81,7 +82,7 @@ def create_github_posts(user):
     logger.info(f"GitHub posts updated for {user.username}")
 
 
-logger = logging.getLogger(__name__)
+
 def forward_get_request(request, encoded_url):
     """
     Decodes an encoded URL, validates its format, and forwards the GET request to the decoded URL.
@@ -111,3 +112,11 @@ def forward_get_request(request, encoded_url):
         data = remote_response.text
     
     return Response(data, status=remote_response.status_code)
+
+def get_local_ip():
+    try:
+        # Use a third-party service like ipify
+        with urllib.request.urlopen('https://api.ipify.org', timeout=5) as response:
+            return response.read().decode('utf-8')
+    except Exception as e:
+        return f"Error: {str(e)}"

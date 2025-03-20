@@ -247,7 +247,7 @@ class UserProfileView(APIView):
             self.permission_classes = [ConditionalMultiAuthPermission]
         return super().get_permissions()
 
-    def get(self, userId):
+    def get(self, request, userId):
         try:
             user = User.objects.get(id=userId)
         except User.DoesNotExist:
