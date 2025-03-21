@@ -12,7 +12,7 @@ services:
     backend:
         build: ./backend
         volumes:
-        - ./socialnetwork/media:/app/socialnetwork/media  # Store images persistently
+        - ./backend/socialnetwork/media:/app/socialnetwork/media  # Store images persistently
         - staticfiles:/app/staticfiles  # Mount staticfiles directory
         ports:
         - "8000:8000"

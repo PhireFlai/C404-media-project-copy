@@ -53,3 +53,26 @@ nav .logo a:hover {
 .remove-shadow {
     box-shadow: none;
 }
+
+.search-dropdown {
+    position: absolute;
+    color: black !important;
+    background: white;
+    border: 1px solid #ccc;
+    width: 200px;
+    max-height: 200px;
+    overflow-y: auto;
+    list-style: none;
+    padding: 5px;
+    margin-top: 5px;
+    z-index: 1000;
+  }
+  
+  .search-dropdown li {
+    padding: 5px;
+    cursor: pointer;
+  }
+  
+  .search-dropdown li:hover {
+    background-color: #f0f0f0;
+  }  

@@ -1,6 +1,8 @@
 import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom"; // Import Router, Route, and Routes from react-router-dom for routing
 import HomePage from "./pages/HomePage"; // Import HomePage component
+import FriendsFeedPage from "./pages/FriendsFeed"
+import FollowersFeedPage from "./pages/FollowersFeed"
 import CreatePostPage from "./pages/CreatePostPage"; // Import CreatePostPage component
 import SignUp from "./pages/Signup"; // Import SignUp component
 import Login from "./pages/Login"; // Import Login component
@@ -27,6 +29,10 @@ const App = () => {
             {/* Route for the login page */}
             <Route path="/" element={<HomePage />} />{" "}
             {/*Route for the home page */}
+            <Route path="/friends-feed" element={<FriendsFeedPage />} />{" "}
+            {/*Route for the friends feed page */}
+            <Route path="/followers-feed" element={<FollowersFeedPage />} />{" "}
+            {/*Route for the followers feed page */}
             <Route
               path="/create"
               element={<PrivateRoute element={CreatePostPage} />}

@@ -1,11 +1,11 @@
 import React, {useEffect} from "react";
-import { useGetUserFeedQuery} from "../Api"; // Import new feed query
+import { useGetPublicFeedQuery} from "../Api"; // Import new feed query
 import PostItem from "../components/PostItem";
 import { useNavigate } from "react-router-dom";
 import "./css/home.css";
 
 const HomePage = () => {
-  const { data: posts, refetch } = useGetUserFeedQuery(); // Fetch user feed
+  const { data: posts, refetch } = useGetPublicFeedQuery(); // Fetch user feed
   // console.log(posts);  // Debugging output
   const navigate = useNavigate(); // Initialize navigation
 

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useCreatePostMutation, useGetUserFeedQuery } from "../Api";
+import { useCreatePostMutation, useGetPublicFeedQuery } from "../Api";
 import { useNavigate } from "react-router-dom";
 import "./css/post.css";
 
@@ -9,7 +9,7 @@ const CreatePostPage = () => {
   const [image, setImage] = useState(null);
   const [visibility, setVisibility] = useState("public"); // Default to "public"
   const [createPost] = useCreatePostMutation();
-  const { refetch } = useGetUserFeedQuery();
+  const { refetch } = useGetPublicFeedQuery();
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user')); // Get the current user from local storage
 

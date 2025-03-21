@@ -88,6 +88,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:80",
     "http://localhost",
+    "http://[2605:fd00:4:1001:f816:3eff:fe6e:788d]",
 ]
 
 # Database
