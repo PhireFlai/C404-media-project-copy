@@ -5,7 +5,6 @@ from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework import status, generics  
 from rest_framework.views import APIView
-from rest_framework.permissions import AllowAny, BasePermission
 from rest_framework.permissions import AllowAny, BasePermission, IsAuthenticated
 from django.core.exceptions import PermissionDenied
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -311,7 +310,6 @@ def CreateComment(request, userId, pk):
     
     if serializer.is_valid():
         serializer.save(author=author)
-        comment = Comment.objects.get(id=serializer.data['id'])
         comment_id = serializer.data['id'].strip('/').split('/')[-1]
         comment = Comment.objects.get(id=comment_id)
         response = requests.post(f'http://localhost:8000/api/authors/{userId}/inbox/', data=CommentSerializer(comment).data)
@@ -565,7 +563,6 @@ class FriendsList(generics.ListCreateAPIView):
 
 # Add a like on a post
 @api_view(['POST'])
-@permission_classes([MultiAuthPermission])
 @permission_classes([IsAuthenticated])
 def AddLike(request, userId, pk):
     post = get_object_or_404(Post, id=pk)
@@ -654,7 +651,6 @@ class GetPostLikes(generics.ListAPIView):
 
 # Add a like on a comment
 @api_view(['POST'])
-@permission_classes([MultiAuthPermission])
 @permission_classes([IsAuthenticated])
 def AddCommentLike(request, userId, pk, ck):
     comment = get_object_or_404(Comment, id=ck)
@@ -664,7 +660,6 @@ def AddCommentLike(request, userId, pk, ck):
 
     if serializer.is_valid():
         serializer.save(user=user)
-        like = CommentLike.objects.get(id=serializer.data['id'])
         like_id = serializer.data['id'].strip('/').split('/')[-1]
         like = CommentLike.objects.get(id=like_id)
         response = requests.post(f'http://localhost:8000/api/authors/{userId}/inbox/', data=CommentLikeSerializer(like).data)
