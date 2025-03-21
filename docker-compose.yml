@@ -2,8 +2,11 @@ services:
   db:
     container_name: db
     image: postgres
+    networks:
+      app_network:
+        ipv6_address: fd00:dead:beef:1::2  # Static ULA (optional)
     ports:
-      - "5432:5432"
+      - "5432:5432"  # Or "[::]:5432:5432" for explicit IPv6 binding
     volumes:
       - db_data:/var/lib/postgresql/data
     env_file:
@@ -11,11 +14,13 @@ services:
 
   backend:
     build: ./backend
+    networks:
+      - app_network
     volumes:
-      - ./socialnetwork/media:/app/socialnetwork/media  # Store images persistently
-      - staticfiles:/app/staticfiles  # Mount staticfiles directory
+      - ./socialnetwork/media:/app/socialnetwork/media
+      - staticfiles:/app/staticfiles
     ports:
-      - "[::]:8000:8000"  # Bind to all IPv6 addresses on port 8000
+      - "[::]:8000:8000"  # Listen on all host IPv6 addresses
     depends_on:
       - db
     env_file:
@@ -23,15 +28,25 @@ services:
 
   frontend:
     build: ./frontend
+    networks:
+      - app_network
     ports:
-      - "80:80"
+      - "[::]:80:80"  # IPv6 port mapping
     depends_on:
       - backend
     volumes:
-      - staticfiles:/staticfiles  # Ensure frontend can access static files
-
+      - staticfiles:/staticfiles
 
 volumes:
   db_data:
-  media:  # Persistent storage for images
+  media:
   staticfiles:
+
+networks:
+  app_network:
+    enable_ipv6: true
+    ipam:
+      driver: default
+      config:
+        - subnet: "fd00:dead:beef:1::/64"  # ULA subnet
+          gateway: "fd00:dead:beef:1::1"
