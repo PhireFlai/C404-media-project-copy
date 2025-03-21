@@ -15,8 +15,11 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart as solidHeart } from "@fortawesome/free-solid-svg-icons";
 import { faHeart as regularHeart } from "@fortawesome/free-regular-svg-icons";
 import { format } from "date-fns";
-
+import parseId from "../utils/parseId";
 const PostItem = ({ post, refetchPosts }) => {
+  const parsedPostId = parseId(post.id);
+  const parsedAuthorId = parseId(post.author?.id);
+
   const [deletePost] = useDeletePostMutation();
   const [editPost] = useEditPostMutation();
   const [addLike] = useAddLikeMutation();
@@ -36,9 +39,15 @@ const PostItem = ({ post, refetchPosts }) => {
     isLoading: likesLoading,
     refetch: refetchLikes,
   } = useGetLikesQuery(
-    { userId: post.author.id, postId: post.id },
-    { skip: !user }
+    {
+      userId: parsedAuthorId,
+      postId: parsedPostId
+    }, { skip: !user }
   );
+
+  // likes.forEach(like => {
+  //   like.id = parseId(like.id);
+  // });
 
   useEffect(() => {
     if (!user || !post || !post.author) {
@@ -51,7 +60,7 @@ const PostItem = ({ post, refetchPosts }) => {
       console.error("Error fetching likes:", likesError);
     } else if (likes && likes.length > 0) {
       likes.forEach((like) => {
-        if (like.user.id === user.id) {
+        if (parseId(like.user?.id) === parseId(user.id)) {
           setIsLiked(true);
         }
       });
@@ -60,8 +69,8 @@ const PostItem = ({ post, refetchPosts }) => {
 
   // Handle post deletion
   const handleDelete = async (postId) => {
-    await deletePost({ userId: user.id, postId });
-    refetchPosts(); // Refetch posts after deletion
+    await deletePost({ userId: parseId(user.id), postId: parsedPostId });
+    refetchPosts();
   };
 
   // Handle comment section toggle
@@ -84,8 +93,8 @@ const PostItem = ({ post, refetchPosts }) => {
   const handleSaveClick = async () => {
     try {
       await editPost({
-        userId: user.id,
-        postId: post.id,
+        userId: parseId(user.id),
+        postId: parseId(post.id),
         updatedPost: {
           title: editTitle,
           content: editContent,
@@ -101,9 +110,8 @@ const PostItem = ({ post, refetchPosts }) => {
   };
 
   const handleCopyLink = () => {
-    const postLink = `${window.location.origin}/posts/${post.id}`;
+    const postLink = `${window.location.origin}/posts/${parsedPostId}`;
     navigator.clipboard.writeText(postLink);
-    alert("Post link copied to clipboard!");
   };
 
   // Handle cancel button click
@@ -117,8 +125,10 @@ const PostItem = ({ post, refetchPosts }) => {
   const handleLikeToggle = async () => {
     try {
       if (!isLiked) {
-        await addLike({ userId: user.id, postId: post.id }).unwrap();
-        setIsLiked(true);
+        await addLike({
+          userId: user.id,
+          postId: parsedPostId
+        }).unwrap();
         refetchPosts(); // Refetch posts after liking
         refetchLikes();
       }
@@ -128,7 +138,7 @@ const PostItem = ({ post, refetchPosts }) => {
   };
 
   return (
-    <div className="post-item" key={post.id}>
+    <div className="post-item" key={parseId(post.id)}>
       {isEditing ? (
         <div>
           <input
@@ -182,7 +192,7 @@ const PostItem = ({ post, refetchPosts }) => {
             Last updated: {format(new Date(post.updated_at), "PPPppp")}
           </p>
 
-          <Link to={`/${post.author.id}`}>
+          <Link to={`/${parsedAuthorId}`}>
             <p>Author: {post.author.username}</p>
           </Link>
           <div>
@@ -199,7 +209,7 @@ const PostItem = ({ post, refetchPosts }) => {
         </>
       )}
       <div className="post-actions">
-        {user && user.id === post.author.id && !isEditing && (
+        {user && user.id === parseId(post.author.id) && !isEditing && (
           <>
             <button onClick={handleEditClick} className="button-secondary">
               Edit
@@ -220,7 +230,7 @@ const PostItem = ({ post, refetchPosts }) => {
         {user && (
           <button
             className="button-secondary"
-            onClick={() => handleCommentClick(post.id)}
+            onClick={() => handleCommentClick(parsedPostId)}
           >
             {currentPostId === post.id ? "Close Comments" : "View Comments"}
           </button>
@@ -236,8 +246,11 @@ const PostItem = ({ post, refetchPosts }) => {
         </div>
       </div>
 
-      {user && showCommentBox && currentPostId === post.id && (
-        <CommentSection postId={post.id} author={post.author.id} />
+      {user && showCommentBox && currentPostId === parsedPostId && (
+        <CommentSection
+          postId={parsedPostId}
+          author={parsedAuthorId}
+        />
       )}
     </div>
   );

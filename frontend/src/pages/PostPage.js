@@ -13,7 +13,6 @@ import {
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
-import CommentSection from "../components/CommentSection";
 import CommentItem from "../components/CommentItem"; // Import CommentItem component
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart as solidHeart } from "@fortawesome/free-solid-svg-icons";
@@ -36,7 +35,6 @@ const PostPage = () => {
   const [deletePost] = useDeletePostMutation();
   const [editPost] = useEditPostMutation();
   const [addLike] = useAddLikeMutation();
-  const [showCommentBox, setShowCommentBox] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
@@ -240,14 +238,6 @@ const PostPage = () => {
           Copy Link
         </button>
 
-        {user && (
-          <button
-            className="button-secondary"
-            onClick={() => setShowCommentBox(!showCommentBox)}
-          >
-            {showCommentBox ? "Close Comments" : "View Comments"}
-          </button>
-        )}
 
         <div className="like-container">
           {user && (
@@ -259,9 +249,7 @@ const PostPage = () => {
         </div>
       </div>
 
-      {user && showCommentBox && (
-        <CommentSection postId={post.id} author={post.author.id} />
-      )}
+
 
       {/* View Comments Section */}
       <h3>Comments</h3>

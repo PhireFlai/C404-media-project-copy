@@ -563,6 +563,7 @@ class FriendsList(generics.ListCreateAPIView):
 # Add a like on a post
 @api_view(['POST'])
 @permission_classes([MultiAuthPermission])
+@permission_classes([IsAuthenticated])
 def AddLike(request, userId, pk):
     post = get_object_or_404(Post, id=pk)
     user = request.user
@@ -571,7 +572,8 @@ def AddLike(request, userId, pk):
 
     if serializer.is_valid():
         serializer.save(user=user)
-        like = Like.objects.get(id=serializer.data['id'])
+        like_id = serializer.data['id'].strip('/').split('/')[-1]
+        like = Like.objects.get(id=like_id)
         response = requests.post(f'http://localhost:8000/api/authors/{userId}/inbox/', data=LikeSerializer(like).data)
         return Response(serializer.data, status=response.status_code)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

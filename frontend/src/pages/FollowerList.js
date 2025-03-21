@@ -4,7 +4,7 @@ import { useGetFollowersQuery, useRemoveFollowerMutation } from "../Api";
 import { Link } from "react-router-dom";
 import FollowRequests from "../components/FollowRequests";
 import "./css/followers.css";
-
+import parseId from "../utils/parseId";
 const FollowersList = () => {
   const currentUser = JSON.parse(localStorage.getItem("user"));
   const { userId } = useParams();
@@ -16,6 +16,10 @@ const FollowersList = () => {
     refetch,
   } = useGetFollowersQuery(userId);
   const [removeFollower] = useRemoveFollowerMutation();
+
+  followers.forEach(follower => {
+    follower.id = parseId(follower.id);
+  });
 
   if (isLoading) return <div className="loader">Loading followers...</div>;
   if (isError) return <div>Error loading followers: {error.message}</div>;
