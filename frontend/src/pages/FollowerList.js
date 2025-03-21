@@ -57,7 +57,7 @@ const FollowersList = () => {
               </div>
               {currentUser && currentUser.id === userId && (
                 <button
-                  onClick={() => handleRemoveFollower(follower.id)}
+                  onClick={() => handleRemoveFollower(parseId(follower.id))}
                   className="remove-button"
                 >
                   Remove

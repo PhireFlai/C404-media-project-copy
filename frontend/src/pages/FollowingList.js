@@ -6,7 +6,8 @@ import "./css/following.css";
 import parseId from "../utils/parseId";
 const FollowingList = () => {
   const currentUser = JSON.parse(localStorage.getItem("user"));
-  const { userId } = useParams();
+  const { userId: rawUserId } = useParams();
+  const userId = parseId(rawUserId);
   const {
     data: following,
     isLoading,

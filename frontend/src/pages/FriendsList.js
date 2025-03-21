@@ -47,13 +47,13 @@ const FriendsList = () => {
                 />
               )}
               <div className="friends-info">
-                <Link to={`/${friends.id}`} className="friends-name">
+                <Link to={`/${parseId(friends.id)}`} className="friends-name">
                   {friends.username}
                 </Link>
               </div>
               {currentUser && currentUser.id === userId && (
                 <button
-                  onClick={() => handleUnfollow(friends.id)}
+                  onClick={() => handleUnfollow(parseId(friends.id))}
                   className="remove-button"
                 >
                   Remove
