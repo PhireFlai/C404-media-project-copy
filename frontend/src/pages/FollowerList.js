@@ -17,9 +17,7 @@ const FollowersList = () => {
   } = useGetFollowersQuery(userId);
   const [removeFollower] = useRemoveFollowerMutation();
 
-  followers.forEach(follower => {
-    follower.id = parseId(follower.id);
-  });
+
 
   if (isLoading) return <div className="loader">Loading followers...</div>;
   if (isError) return <div>Error loading followers: {error.message}</div>;
@@ -44,7 +42,7 @@ const FollowersList = () => {
       ) : (
         <ul className="followers-list">
           {followers?.map((follower) => (
-            <li key={follower.id}>
+            <li key={parseId(follower.id)}>
               {follower.profilePicture && (
                 <img
                   src={follower.profilePicture}
@@ -53,7 +51,7 @@ const FollowersList = () => {
                 />
               )}
               <div className="follower-info">
-                <Link to={`/${follower.id}`} className="follower-name">
+                <Link to={`/${parseId(follower.id)}`} className="follower-name">
                   {follower.username}
                 </Link>
               </div>
