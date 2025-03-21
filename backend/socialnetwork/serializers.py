@@ -10,6 +10,10 @@ my_ip = get_local_ip()
 # Serializer for the User model
 class UserSerializer(serializers.ModelSerializer):
     id = serializers.SerializerMethodField()  # Add this field
+    friends = serializers.SerializerMethodField()
+    followers = serializers.SerializerMethodField()
+    following = serializers.SerializerMethodField()
+
     class Meta:
         model = User        
         fields = ['id', 'username', 'password', 'email', 'profile_picture', 'followers', 'following', 'friends']
@@ -22,6 +26,15 @@ class UserSerializer(serializers.ModelSerializer):
         
     def get_id(self, obj) -> str:
         return f"http://{my_ip}:8000/api/authors/{obj.id}/"
+    
+    def get_friends(self, obj):
+        return [f"http://{my_ip}/api/authors/{friend.id}/" for friend in obj.friends.all()]
+   
+    def get_followers(self, obj):
+        return [f"http://{my_ip}/api/authors/{follower.id}/" for follower in obj.followers.all()]
+    
+    def get_following(self, obj):
+        return [f"http://{my_ip}/api/authors/{following.id}/" for following in obj.following.all()]
     
     def validate_password(self, value):
         # Validate the password using Django's password validation
