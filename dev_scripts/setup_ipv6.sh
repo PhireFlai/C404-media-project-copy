@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 1. Configure Docker daemon.json with nano editor
-sudo nano /etc/docker/daemon.json <<EOF
+sudo tee /etc/docker/daemon.json <<EOF
 {
   "experimental": true,
   "ip6tables": true,
