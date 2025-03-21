@@ -756,7 +756,6 @@ class FollowersFeedView(ListAPIView):
             visibility=Post.DELETED
         ).order_by("-updated_at")  # Show latest posts first
 
-<<<<<<< HEAD
 def search_users(request):
     query = request.GET.get("q", "")
     if not query:
@@ -764,11 +763,10 @@ def search_users(request):
 
     users = User.objects.filter(Q(username__icontains=query))
     user_list = [{"id": user.id, "username": user.username} for user in users]
-    
+
     return JsonResponse({"users": user_list})
-=======
+
 @permission_classes([AllowAny])        
 class ForwardGetView(APIView):
     def get(self, request, encoded_url):
         return forward_get_request(request, encoded_url)
->>>>>>> 345a8479145d1b687d690812e50a7a7c178e4ce4
