@@ -11,27 +11,35 @@ import {
 import ProfilePicUpload from "../components/ProfilePicUpload";
 import UserPosts from "../components/UserPosts";
 import "./css/profile.css";
+import parseId from "../utils/parseId";
 
 const Profile = () => {
   const { userId } = useParams();
-  const { data: user, isLoading, error, refetch } = useGetUserProfileQuery(userId);
+  const {
+    data: user,
+    isLoading,
+    error,
+    refetch,
+  } = useGetUserProfileQuery(userId);
   const curUser = JSON.parse(localStorage.getItem("user")); // Get the current user from local storage
   const [isEditing, setIsEditing] = useState(false); // State for editing mode
   const [newUsername, setNewUsername] = useState(""); // State for new username
   const [updateUsername] = useUpdateUsernameMutation(); // Mutation for updating username
   const [createFollowRequest] = useCreateFollowRequestMutation();
   const [unfollowUser] = useUnfollowUserMutation();
-  const { data: followingList } = useGetFollowingQuery(curUser?.id);
-  const { data: followRequests, refetch: refetchFollowRequests } = useGetFollowRequestsQuery(userId);
+  const { data: followingList } = useGetFollowingQuery(curUser?.id, {
+    skip: !curUser?.id, // Skip API call if user is not logged in
+  });
+  const { data: followRequests, refetch: refetchFollowRequests } =
+    useGetFollowRequestsQuery(userId);
 
   const [isFollowing, setIsFollowing] = useState(false);
   const [hasRequested, setHasRequested] = useState(false);
-  const [usernameUpdated, setUsernameUpdated] = useState(false); 
-
+  const [usernameUpdated, setUsernameUpdated] = useState(false);
 
   useEffect(() => {
     if (followingList) {
-      setIsFollowing(followingList.some((f) => f.id === userId));
+      setIsFollowing(followingList.some((f) => parseId(f.id) === userId));
     }
   }, [followingList, userId]);
 
@@ -39,7 +47,7 @@ const Profile = () => {
     if (followRequests && curUser) {
       setHasRequested(
         followRequests.some(
-          (r) => r.actor.id === curUser.id && r.object.id === userId
+          (r) => parseId(r.actor.id) === curUser.id && parseId(r.object.id) === userId
         )
       );
     }
@@ -76,7 +84,7 @@ const Profile = () => {
       // setHasRequested(true); // Update the state immediately after the request is successful
       await createFollowRequest({
         actorId: curUser.id,
-        objectId: user.id,
+        objectId: parseId(user.id),
       }).unwrap();
       setHasRequested(true);
       refetch(); // Refetch the user data to reflect the changes
@@ -92,7 +100,7 @@ const Profile = () => {
     try {
       await unfollowUser({
         followerId: curUser.id,
-        followedId: user.id,
+        followedId: parseId(user.id),
       }).unwrap();
       refetch(); // Refetch the user data to reflect the changes
     } catch (err) {
@@ -156,6 +164,12 @@ const Profile = () => {
           </Link>{" "}
           {user.following.length}
         </p>
+        <p>
+          <Link to={`/${userId}/friends`}>
+            <strong>Friends:</strong>{" "}
+          </Link>{" "}
+          {user.friends.length}
+        </p>
       </div>
 
       {/* Edit Profile Section (Only for Logged-in User) */}
@@ -196,7 +210,7 @@ const Profile = () => {
       {/* User's Posts Section */}
 
       <h2 className="user-posts-title">{user.username}'s Posts</h2>
-      <UserPosts userId={userId} editedUsername={usernameUpdated}/>
+      <UserPosts userId={userId} editedUsername={usernameUpdated} />
     </div>
   );
 };

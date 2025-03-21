@@ -1,13 +1,11 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import get_object_or_404
 from django.contrib.auth import authenticate
-from django.core.files.base import ContentFile
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework import status, generics  
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated, AllowAny, IsAdminUser, BasePermission
-from django.contrib.auth import get_user_model
+from rest_framework.permissions import AllowAny, BasePermission, IsAuthenticated
 from django.core.exceptions import PermissionDenied
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.authentication import TokenAuthentication
@@ -17,10 +15,10 @@ from rest_framework.generics import ListAPIView
 from .models import *
 from .serializers import *
 import requests
-import logging
-from rest_framework.exceptions import ValidationError
 from django.db.models import Q
 from django.http import JsonResponse
+from socialnetwork.permissions import IPLockPermission, MultiAuthPermission, ConditionalMultiAuthPermission
+from .utils import forward_get_request
 
 @swagger_auto_schema(
     method="post",
@@ -67,7 +65,7 @@ from django.http import JsonResponse
 
 # Creates a new user
 @api_view(['POST'])
-@permission_classes([AllowAny])  # Allows anyone to sign up
+@permission_classes([IPLockPermission])  # Allows anyone to sign up locally
 def createUser(request):
     username = request.data.get('username')
     password = request.data.get('password')
@@ -97,7 +95,7 @@ def createUser(request):
 
 # Logs in a user
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([IPLockPermission])
 def loginUser(request):
     username = request.data.get('username')
     password = request.data.get('password')
@@ -116,24 +114,15 @@ def loginUser(request):
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
 
 # Lists all users
-@permission_classes([AllowAny])         
+@permission_classes([MultiAuthPermission])         
 class UsersList(generics.ListCreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-
-
-# Gets all public posts
-class PublicPostsView(ListAPIView):
-    serializer_class = PostSerializer
-    permission_classes = [AllowAny]
-
-    def get_queryset(self):
-        return Post.objects.filter(visibility=Post.PUBLIC).order_by("-created_at") 
     
 # Get all friends posts
 class FriendsPostsView(ListAPIView):
     serializer_class = PostSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [MultiAuthPermission]
 
     def get_queryset(self):
         # Get the userID from the URL parameter
@@ -151,7 +140,7 @@ class PostListCreateView(generics.ListCreateAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
     parser_classes = (MultiPartParser, FormParser)
-    permission_classes = [AllowAny]  
+    permission_classes = [ConditionalMultiAuthPermission]  
 
     def get_queryset(self):
         user_id = self.kwargs.get('userId')  # Extract userId from URL
@@ -197,8 +186,8 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_permissions(self):
         """Allow any user to GET but require authentication for updates/deletes."""
         if self.request.method == 'GET':
-            return [AllowAny()]
-        return [IsAuthenticated()]
+            return [IPLockPermission]
+        return [MultiAuthPermission]
 
     def get_queryset(self):
         """Filters posts based on visibility and user authentication."""
@@ -254,9 +243,9 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
 class UserProfileView(APIView):
     def get_permissions(self):
         if self.request.method == 'PUT':
-            self.permission_classes = [IsAuthenticated]
+            self.permission_classes = [MultiAuthPermission]
         else:
-            self.permission_classes = [AllowAny]
+            self.permission_classes = [ConditionalMultiAuthPermission]
         return super().get_permissions()
 
     def get(self, request, userId):
@@ -292,7 +281,7 @@ class UserProfileView(APIView):
 # Updates a user's profile picture
 @api_view(['PUT'])
 @authentication_classes([TokenAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([MultiAuthPermission])
 def updateUserProfile(request, userId):
     try:
         user = User.objects.get(id=userId)
@@ -312,7 +301,7 @@ def updateUserProfile(request, userId):
     
 # Creates a comment on a post
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([MultiAuthPermission])
 def CreateComment(request, userId, pk):
     post = get_object_or_404(Post, id=pk)
     author = request.user
@@ -322,7 +311,8 @@ def CreateComment(request, userId, pk):
     
     if serializer.is_valid():
         serializer.save(author=author)
-        comment = Comment.objects.get(id=serializer.data['id'])
+        comment_id = serializer.data['id'].strip('/').split('/')[-1]
+        comment = Comment.objects.get(id=comment_id)
         response = requests.post(f'http://localhost:8000/api/authors/{userId}/inbox/', data=CommentSerializer(comment).data)
         return Response(serializer.data, status=response.status_code)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -383,7 +373,7 @@ class GetComment(generics.ListCreateAPIView):
         id = self.kwargs['commentId']
         return Comment.objects.filter(id=id)
 
-@permission_classes([AllowAny])
+@permission_classes([ConditionalMultiAuthPermission])
 class GetCommented(generics.ListCreateAPIView):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
@@ -417,7 +407,7 @@ class GetCommented(generics.ListCreateAPIView):
         response = requests.post(f'http://localhost:8000/api/authors/{author}/inbox/', data=comment_data)
         return response
 
-@permission_classes([AllowAny])
+@permission_classes([ConditionalMultiAuthPermission])
 class GetCommentFromCommented(generics.ListCreateAPIView):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
@@ -427,7 +417,7 @@ class GetCommentFromCommented(generics.ListCreateAPIView):
         commentID = self.kwargs['commentId']
         return Comment.objects.filter(id=commentID, author=authorID)
     
-@permission_classes([AllowAny])
+@permission_classes([ConditionalMultiAuthPermission])
 class FollowRequestListView(generics.ListCreateAPIView):
     queryset = FollowRequest.objects.all()
     serializer_class = FollowRequestSerializer
@@ -437,7 +427,7 @@ class FollowRequestListView(generics.ListCreateAPIView):
         return FollowRequest.objects.filter(object=objectId)
     
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([ConditionalMultiAuthPermission])
 def CreateFollowRequest(request, actorId, objectId):
     actor = User.objects.get(id=actorId)
     object = User.objects.get(id=objectId)
@@ -459,7 +449,7 @@ def CreateFollowRequest(request, actorId, objectId):
 
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([MultiAuthPermission])
 def AcceptFollowRequest(request, objectId, actorId ):
     try:
         follow_request = FollowRequest.objects.get(actor=actorId, object=objectId)
@@ -497,7 +487,7 @@ def AcceptFollowRequest(request, objectId, actorId ):
     
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([MultiAuthPermission])
 def Unfollow(request, followedId, followerId):
     try:
         followed = User.objects.get(id=followedId)
@@ -522,7 +512,7 @@ def Unfollow(request, followedId, followerId):
 
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([MultiAuthPermission])
 def RemoveFollower(request, followerId, followedId):
     try:
         followed = User.objects.get(id=followedId)
@@ -544,7 +534,7 @@ def RemoveFollower(request, followerId, followedId):
     
     return Response({'message': 'Follower removed successfully'}, status=status.HTTP_200_OK)    
     
-@permission_classes([AllowAny])
+@permission_classes([ConditionalMultiAuthPermission])
 class FollowersList(generics.ListCreateAPIView):
     serializer_class = UserSerializer
 
@@ -553,7 +543,7 @@ class FollowersList(generics.ListCreateAPIView):
         user = get_object_or_404(User, id=userId)
         return user.followers.all()
     
-@permission_classes([AllowAny])
+@permission_classes([ConditionalMultiAuthPermission])
 class FollowingList(generics.ListCreateAPIView):
     serializer_class = UserSerializer
 
@@ -561,6 +551,16 @@ class FollowingList(generics.ListCreateAPIView):
         userId = self.kwargs['userId']
         user = get_object_or_404(User, id=userId)
         return user.following.all()
+
+
+@permission_classes([ConditionalMultiAuthPermission])
+class FriendsList(generics.ListCreateAPIView):
+    serializer_class = UserSerializer
+
+    def get_queryset(self):
+        userId = self.kwargs['userId']
+        user = get_object_or_404(User, id=userId)
+        return user.friends.all()
 
 # Add a like on a post
 @api_view(['POST'])
@@ -573,11 +573,13 @@ def AddLike(request, userId, pk):
 
     if serializer.is_valid():
         serializer.save(user=user)
-        like = Like.objects.get(id=serializer.data['id'])
+        like_id = serializer.data['id'].strip('/').split('/')[-1]
+        like = Like.objects.get(id=like_id)
         response = requests.post(f'http://localhost:8000/api/authors/{userId}/inbox/', data=LikeSerializer(like).data)
         return Response(serializer.data, status=response.status_code)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@permission_classes([ConditionalMultiAuthPermission])
 class LikesList(generics.ListCreateAPIView):
     queryset = Like.objects.all()
     serializer_class = LikeSerializer
@@ -586,7 +588,7 @@ class LikesList(generics.ListCreateAPIView):
         post_id = self.kwargs['pk']
         return Like.objects.filter(post_id=post_id)
     
-@permission_classes([AllowAny])
+@permission_classes([ConditionalMultiAuthPermission])
 class GetLiked(generics.ListCreateAPIView):
     queryset = Like.objects.all()
     serializer_class = LikeSerializer
@@ -620,7 +622,7 @@ class GetLiked(generics.ListCreateAPIView):
         return response
 
 # Get a single like by id
-@permission_classes([AllowAny])
+@permission_classes([ConditionalMultiAuthPermission])
 class GetSingleLike(generics.RetrieveAPIView):
     queryset = Like.objects.all()
     serializer_class = LikeSerializer
@@ -631,7 +633,7 @@ class GetSingleLike(generics.RetrieveAPIView):
         return Like.objects.filter(id=likeID)
 
 # Get likes by author
-@permission_classes([AllowAny])
+@permission_classes([ConditionalMultiAuthPermission])
 class GetLikesByAuthor(generics.ListAPIView):
     serializer_class = LikeSerializer
 
@@ -640,7 +642,7 @@ class GetLikesByAuthor(generics.ListAPIView):
         return Like.objects.filter(user=authorID)
 
 # Get likes by post
-@permission_classes([AllowAny])
+@permission_classes([ConditionalMultiAuthPermission])
 class GetPostLikes(generics.ListAPIView):
     serializer_class = LikeSerializer
 
@@ -659,7 +661,8 @@ def AddCommentLike(request, userId, pk, ck):
 
     if serializer.is_valid():
         serializer.save(user=user)
-        like = CommentLike.objects.get(id=serializer.data['id'])
+        like_id = serializer.data['id'].strip('/').split('/')[-1]
+        like = CommentLike.objects.get(id=like_id)
         response = requests.post(f'http://localhost:8000/api/authors/{userId}/inbox/', data=CommentLikeSerializer(like).data)
         return Response(serializer.data, status=response.status_code)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -674,7 +677,7 @@ class CommentLikesList(generics.ListCreateAPIView):
     
 class PublicFeedView(ListAPIView):
     serializer_class = PostSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [ConditionalMultiAuthPermission]
 
     def get_queryset(self):
         """
@@ -753,6 +756,7 @@ class FollowersFeedView(ListAPIView):
             visibility=Post.DELETED
         ).order_by("-updated_at")  # Show latest posts first
 
+<<<<<<< HEAD
 def search_users(request):
     query = request.GET.get("q", "")
     if not query:
@@ -762,3 +766,9 @@ def search_users(request):
     user_list = [{"id": user.id, "username": user.username} for user in users]
     
     return JsonResponse({"users": user_list})
+=======
+@permission_classes([AllowAny])        
+class ForwardGetView(APIView):
+    def get(self, request, encoded_url):
+        return forward_get_request(request, encoded_url)
+>>>>>>> 345a8479145d1b687d690812e50a7a7c178e4ce4

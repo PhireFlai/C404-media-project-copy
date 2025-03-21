@@ -1,24 +1,23 @@
 import React from "react";
 import { useParams } from "react-router-dom";
-import { useGetFollowingQuery, useUnfollowUserMutation } from "../Api";
+import { useGetFriendsQuery, useUnfollowUserMutation } from "../Api";
 import { Link } from "react-router-dom";
 import "./css/following.css";
 import parseId from "../utils/parseId";
-const FollowingList = () => {
+const FriendsList = () => {
   const currentUser = JSON.parse(localStorage.getItem("user"));
-  const { userId: rawUserId } = useParams();
-  const userId = parseId(rawUserId);
+  const { userId } = useParams();
   const {
-    data: following,
+    data: friends,
     isLoading,
     isError,
     error,
     refetch,
-  } = useGetFollowingQuery(userId);
+  } = useGetFriendsQuery(userId);
   const [unfollowUser] = useUnfollowUserMutation();
 
-  if (isLoading) return <div className="loader">Loading following...</div>;
-  if (isError) return <div>Error loading following: {error.message}</div>;
+  if (isLoading) return <div className="loader">Loading friends...</div>;
+  if (isError) return <div>Error loading friends: {error.message}</div>;
 
   const handleUnfollow = async (followedId) => {
     try {
@@ -33,28 +32,28 @@ const FollowingList = () => {
   };
   return (
     <div className="following-container">
-      <h2>Following</h2>
-      {following?.length === 0 ? (
-        <p>Not following yet</p>
+      <h2>Friends</h2>
+      {friends?.length === 0 ? (
+        <p>No friends yet</p>
       ) : (
-        <ul className="following-list">
-          {following?.map((following) => (
-            <li key={parseId(following.id)}>
-              {following.profilePicture && (
+        <ul className="friends-list">
+          {friends?.map((friends) => (
+            <li key={parseId(friends.id)}>
+              {friends.profilePicture && (
                 <img
-                  src={following.profilePicture}
-                  alt={following.username}
-                  className="following-avatar"
+                  src={friends.profilePicture}
+                  alt={friends.username}
+                  className="friends-avatar"
                 />
               )}
-              <div className="following-info">
-                <Link to={`/${parseId(following.id)}`} className="following-name">
-                  {following.username}
+              <div className="friends-info">
+                <Link to={`/${parseId(friends.id)}`} className="friends-name">
+                  {friends.username}
                 </Link>
               </div>
               {currentUser && currentUser.id === userId && (
                 <button
-                  onClick={() => handleUnfollow(parseId(following.id))}
+                  onClick={() => handleUnfollow(parseId(friends.id))}
                   className="remove-button"
                 >
                   Remove
@@ -68,4 +67,4 @@ const FollowingList = () => {
   );
 };
 
-export default FollowingList;
+export default FriendsList;

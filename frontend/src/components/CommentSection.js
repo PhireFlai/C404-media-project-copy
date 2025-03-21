@@ -4,7 +4,7 @@ import "./css/button.css";
 import "./css/input.css";
 import "./css/text.css";
 import CommentItem from "./CommentItem";
-
+import parseId from "../utils/parseId";
 const CommentSection = ({ postId, author }) => {
   const [comment, setComment] = useState(""); // State to manage the comment input
   const user = JSON.parse(localStorage.getItem("user")); // Get the current user from local storage
@@ -13,6 +13,7 @@ const CommentSection = ({ postId, author }) => {
     { skip: !postId }
   ); // Fetch comments using the custom hook
   const [createComment] = useCreateCommentMutation(); // Mutation hook for creating a comment
+
 
   // Handle comment submission
   const handleCommentSubmit = async () => {
@@ -39,6 +40,7 @@ const CommentSection = ({ postId, author }) => {
       {comments?.length > 0 ? (
         comments.map((comment) => (
           <CommentItem
+            key={parseId(comment.id)}
             comment={comment}
             postId={postId}
             userId={user.id}

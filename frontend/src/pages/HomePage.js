@@ -3,7 +3,7 @@ import { useGetPublicFeedQuery} from "../Api"; // Import new feed query
 import PostItem from "../components/PostItem";
 import { useNavigate } from "react-router-dom";
 import "./css/home.css";
-
+import parseId from "../utils/parseId";
 const HomePage = () => {
   const { data: posts, refetch } = useGetPublicFeedQuery(); // Fetch user feed
   // console.log(posts);  // Debugging output
@@ -31,9 +31,21 @@ const HomePage = () => {
 
       {/* Render the list of posts if there are any, otherwise display a message */}
       {posts && posts.length > 0 ? (
-        posts.map((post) => (
-          <PostItem key={post.id} post={post} refetchPosts={refetch} />
-        ))
+        posts.map((post) => {
+          // Parse the ID from the URL
+          const parsedPost = {
+            ...post,
+            id: parseId(post.id)  // Transform the ID
+          };
+
+          return (
+            <PostItem
+              key={parsedPost.id}  // Use parsed UUID as the key
+              post={parsedPost}    // Pass the modified post object
+              refetchPosts={refetch}
+            />
+          );
+        })
       ) : (
         <p className="text-muted">No posts in your feed yet.</p>
       )}

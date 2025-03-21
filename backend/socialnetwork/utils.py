@@ -1,9 +1,11 @@
 import requests
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 from django.utils.timezone import now
 from socialnetwork.models import Post
 import logging
-
+import urllib.request
+from rest_framework.response import Response
+from rest_framework import status
 logger = logging.getLogger(__name__)
 
 GITHUB_API_URL = "https://api.github.com/users/{}/events"
@@ -78,3 +80,43 @@ def create_github_posts(user):
         logger.info(f"Created post for {user.username}: {content}")
 
     logger.info(f"GitHub posts updated for {user.username}")
+
+
+
+def forward_get_request(request, encoded_url):
+    """
+    Decodes an encoded URL, validates its format, and forwards the GET request to the decoded URL.
+    
+    Parameters:
+        request: The Django request object.
+        encoded_url: The URL-encoded string (e.g., 'http%3A%2F%2Fexample-node-2%2Fauthors%2F<uuid>')
+    
+    Returns:
+        A DRF Response containing either the remote response data or an error message.
+    """
+    # Decode the URL
+    decoded_url = unquote(encoded_url)
+
+    # Optionally, check if the request should be processed locally based on the hostname.
+    # For now, we forward regardless.
+    try:
+        remote_response = requests.get(decoded_url)
+    except requests.RequestException as e:
+        logger.error(f"Failed to forward request to {e}")
+        return Response({'error': 'Failed to forward request ' + decoded_url}, status=status.HTTP_502_BAD_GATEWAY)
+    
+    # Attempt to return JSON data if available; fallback to plain text
+    try:
+        data = remote_response.json()
+    except ValueError:
+        data = remote_response.text
+    
+    return Response(data, status=remote_response.status_code)
+
+def get_local_ip():
+    try:
+        # Use a third-party service like ipify
+        with urllib.request.urlopen('https://api.ipify.org', timeout=5) as response:
+            return response.read().decode('utf-8')
+    except Exception as e:
+        return f"Error: {str(e)}"

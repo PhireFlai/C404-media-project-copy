@@ -26,9 +26,10 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # Directory where media files are 
 SECRET_KEY = os.environ.get("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-#DEBUG = bool(os.environ.get("DEBUG", default=False))
-DEBUG = True
-ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", default='*').split(" ")
+DEBUG = bool(os.environ.get("DEBUG", default=False))
+ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", default='').split(" ")
+
+ALLOWED_ADMIN_IPS = os.getenv("ALLOWED_ADMIN_IPS", "").split(",")
 
 # For handling the uploaded images
 MEDIA_URL = '/media/'
@@ -84,12 +85,10 @@ TEMPLATES = [
 WSGI_APPLICATION = 'socialnetwork.wsgi.application'
 
 # Allow React App to connect to the backend
-CORS_ALLOWED_ORIGINS = [ 
-    "http://localhost:3000",
-    "http://localhost:80",
-    "http://localhost",
-    "http://[2605:fd00:4:1001:f816:3eff:fe6e:788d]",
-]
+CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
+# settings.py
+SECURE_CROSS_ORIGIN_OPENER_POLICY = None # Switch back TODO
+
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases

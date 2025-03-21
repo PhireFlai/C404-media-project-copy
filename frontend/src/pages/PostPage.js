@@ -13,30 +13,34 @@ import {
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
-import CommentSection from "../components/CommentSection";
 import CommentItem from "../components/CommentItem"; // Import CommentItem component
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHeart as solidHeart } from "@fortawesome/free-solid-svg-icons";
 import { faHeart as regularHeart } from "@fortawesome/free-regular-svg-icons";
 import { format } from "date-fns";
 import "./css/post.css"; // Add styling
-
+import parseId from "../utils/parseId";
 const PostPage = () => {
   const { postId } = useParams(); // Get postId from URL
   const { data: post, error, isLoading, refetch: refetchPost } = useGetPostQuery(postId); // Fetch post
+  const parsedPostId = post ? parseId(post.id) : null;
+  const parsedAuthorId = post?.author ? parseId(post.author.id) : null;
   const {
     data: comments,
     error: commentsError,
     isLoading: commentsLoading,
     refetch: refetchComments,
   } = useGetCommentsQuery(
-    post?.author?.id ? { userId: post.author.id, postId } : skipToken
-  );
+    post?.author?.id ? {
+      userId: parsedAuthorId,
+      postId: parsedPostId
+    } : skipToken);
+
+
   const [createComment] = useCreateCommentMutation(); // Mutation for adding comments
   const [deletePost] = useDeletePostMutation();
   const [editPost] = useEditPostMutation();
   const [addLike] = useAddLikeMutation();
-  const [showCommentBox, setShowCommentBox] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
@@ -53,7 +57,7 @@ const PostPage = () => {
     isLoading: likesLoading,
     refetch: refetchLikes,
   } = useGetLikesQuery(
-    { userId: post?.author?.id, postId: post?.id },
+    { userId: parsedAuthorId, postId: parsedPostId },
     { skip: !user }
   );
 
@@ -68,7 +72,7 @@ const PostPage = () => {
       console.error("Error fetching likes:", likesError);
     } else if (likes && likes.length > 0) {
       likes.forEach((like) => {
-        if (like.user.id === user.id) {
+        if (parseId(like.user.id) === user.id) {
           setIsLiked(true);
         }
       });
@@ -106,7 +110,7 @@ const PostPage = () => {
     try {
       await editPost({
         userId: user.id,
-        postId: post.id,
+        postId: parseId(post.id),
         updatedPost: {
           title: editTitle,
           content: editContent,
@@ -122,7 +126,7 @@ const PostPage = () => {
   };
 
   const handleCopyLink = () => {
-    const postLink = `${window.location.origin}/posts/${post.id}`;
+    const postLink = `${window.location.origin}/posts/${parseId(post.id)}`;
     navigator.clipboard.writeText(postLink);
     alert("Post link copied to clipboard!");
   };
@@ -136,7 +140,7 @@ const PostPage = () => {
   const handleLikeToggle = async () => {
     try {
       if (!isLiked) {
-        await addLike({ userId: user.id, postId: post.id }).unwrap();
+        await addLike({ userId: user.id, postId: parseId(post.id) }).unwrap();
         setIsLiked(true);
         refetchPost(); // Refetch posts after liking
         refetchLikes();
@@ -200,10 +204,10 @@ const PostPage = () => {
       ) : (
         <>
           <h2>{post.title}</h2>
-          <Link to={`/${post.author.id}`} className="post-author">
-          <p>
-            <strong>Author:</strong> {post.author.username}
-          </p>
+          <Link to={`/${parseId(post.author.id)}`} className="post-author">
+            <p>
+              <strong>Author:</strong> {post.author.username}
+            </p>
           </Link>
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
@@ -222,13 +226,13 @@ const PostPage = () => {
       )}
 
       <div className="post-actions">
-        {user && user.id === post.author.id && !isEditing && (
+        {user && user.id === parseId(post.author.id) && !isEditing && (
           <>
             <button onClick={handleEditClick} className="button-secondary">
               Edit
             </button>
             <button
-              onClick={() => handleDelete(post.id)}
+              onClick={() => handleDelete(parseId(post.id))}
               className="button-danger"
             >
               Delete
@@ -240,14 +244,6 @@ const PostPage = () => {
           Copy Link
         </button>
 
-        {user && (
-          <button
-            className="button-secondary"
-            onClick={() => setShowCommentBox(!showCommentBox)}
-          >
-            {showCommentBox ? "Close Comments" : "View Comments"}
-          </button>
-        )}
 
         <div className="like-container">
           {user && (
@@ -259,9 +255,7 @@ const PostPage = () => {
         </div>
       </div>
 
-      {user && showCommentBox && (
-        <CommentSection postId={post.id} author={post.author.id} />
-      )}
+
 
       {/* View Comments Section */}
       <h3>Comments</h3>
@@ -270,9 +264,9 @@ const PostPage = () => {
       {comments?.length > 0 ? (
         comments.map((comment) => (
           <CommentItem
-            key={comment.id}
+            key={parseId(comment.id)}
             comment={comment}
-            postId={post.id}
+            postId={parseId(post.id)}
             userId={user?.id}
             refetchComments={refetchComments}
           />
