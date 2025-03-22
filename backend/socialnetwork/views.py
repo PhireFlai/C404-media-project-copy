@@ -372,7 +372,7 @@ def PostToInbox(request, receiver):
                     like_id = like["id"]
 
                     like_data = {"published": published, "id": like_id, "object": comment.id}
-                    comment_like_serializer = CommentLikeSerializer(data=like_data)
+                    comment_like_serializer = LikeSerializer(data=like_data)
 
                     if comment_like_serializer.is_valid():
                         comment_like_serializer.save(author=comment_author)
@@ -451,7 +451,7 @@ def PostToInbox(request, receiver):
                 "id": id,
                 "comment": comment,
             }
-            serializer = CommentLikeSerializer(data=data)
+            serializer = LikeSerializer(data=data)
             if serializer.is_valid():
                 serializer.save(user=author_obj)
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
