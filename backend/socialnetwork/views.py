@@ -113,10 +113,10 @@ def loginUser(request):
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
 
 # Lists all users
-@permission_classes([MultiAuthPermission])         
 class UsersList(generics.ListCreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    permission_classes = [MultiAuthPermission]
     
 # Get all friends posts
 class FriendsPostsView(ListAPIView):
@@ -510,10 +510,10 @@ class GetComment(generics.ListCreateAPIView):
         id = self.kwargs['commentId']
         return Comment.objects.filter(id=id)
 
-@permission_classes([ConditionalMultiAuthPermission])
 class GetCommented(generics.ListCreateAPIView):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
+    permission_classes = [ConditionalMultiAuthPermission]
 
     def get_queryset(self):
         authorID = self.kwargs['userId']
@@ -544,20 +544,20 @@ class GetCommented(generics.ListCreateAPIView):
         response = requests.post(f'http://localhost:8000/api/authors/{author}/inbox/', data=comment_data)
         return response
 
-@permission_classes([ConditionalMultiAuthPermission])
 class GetCommentFromCommented(generics.ListCreateAPIView):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
+    permission_classes = [ConditionalMultiAuthPermission]
 
     def get_queryset(self):
         authorID = self.kwargs['userId']
         commentID = self.kwargs['commentId']
         return Comment.objects.filter(id=commentID, author=authorID)
     
-@permission_classes([ConditionalMultiAuthPermission])
 class FollowRequestListView(generics.ListCreateAPIView):
     queryset = FollowRequest.objects.all()
     serializer_class = FollowRequestSerializer
+    permission_classes = [ConditionalMultiAuthPermission]
 
     def get_queryset(self):
         objectId = self.kwargs['objectId']
@@ -671,18 +671,18 @@ def RemoveFollower(request, followerId, followedId):
     
     return Response({'message': 'Follower removed successfully'}, status=status.HTTP_200_OK)    
     
-@permission_classes([ConditionalMultiAuthPermission])
 class FollowersList(generics.ListCreateAPIView):
     serializer_class = UserSerializer
+    permission_classes = [ConditionalMultiAuthPermission]
 
     def get_queryset(self):
         userId = self.kwargs['userId']
         user = get_object_or_404(User, id=userId)
         return user.followers.all()
     
-@permission_classes([ConditionalMultiAuthPermission])
 class FollowingList(generics.ListCreateAPIView):
     serializer_class = UserSerializer
+    permission_classes = [ConditionalMultiAuthPermission]
 
     def get_queryset(self):
         userId = self.kwargs['userId']
@@ -690,9 +690,9 @@ class FollowingList(generics.ListCreateAPIView):
         return user.following.all()
 
 
-@permission_classes([ConditionalMultiAuthPermission])
 class FriendsList(generics.ListCreateAPIView):
     serializer_class = UserSerializer
+    permission_classes = [ConditionalMultiAuthPermission]
 
     def get_queryset(self):
         userId = self.kwargs['userId']
@@ -728,19 +728,19 @@ def AddLikeOnPost(request, userId, object_id):
     requests.post(inbox_url, data=LikeSerializer(like).data)
     return Response(LikeSerializer(like).data, status=status.HTTP_200_OK)
 
-@permission_classes([ConditionalMultiAuthPermission])
 class LikesList(generics.ListCreateAPIView):
     queryset = Like.objects.all()
     serializer_class = LikeSerializer
+    permission_classes = [ConditionalMultiAuthPermission]
 
     def get_queryset(self):
         object_id = self.kwargs['object_id']
         return Like.objects.filter(object_id=object_id)
     
-@permission_classes([ConditionalMultiAuthPermission])
 class GetLiked(generics.ListCreateAPIView):
     queryset = Like.objects.all()
     serializer_class = LikeSerializer
+    permission_classes = [ConditionalMultiAuthPermission]
 
     def get_queryset(self):
         authorID = self.kwargs['userId']
@@ -771,10 +771,10 @@ class GetLiked(generics.ListCreateAPIView):
         return response
 
 # Get a single like by id
-@permission_classes([ConditionalMultiAuthPermission])
 class GetSingleLike(generics.RetrieveAPIView):
     queryset = Like.objects.all()
     serializer_class = LikeSerializer
+    permission_classes = [ConditionalMultiAuthPermission]
     lookup_field = 'id'
 
     def get_queryset(self):
@@ -782,9 +782,9 @@ class GetSingleLike(generics.RetrieveAPIView):
         return Like.objects.filter(id=likeID)
 
 # Get likes by author
-@permission_classes([ConditionalMultiAuthPermission])
 class GetLikesByAuthor(generics.ListAPIView):
     serializer_class = LikeSerializer
+    permission_classes = [ConditionalMultiAuthPermission]
 
     def get_queryset(self):
         authorID = self.kwargs['authorId']
@@ -794,6 +794,7 @@ class GetLikesByAuthor(generics.ListAPIView):
 @permission_classes([ConditionalMultiAuthPermission])
 class GetPostLikes(generics.ListAPIView):
     serializer_class = LikeSerializer
+    permission_classes = [ConditionalMultiAuthPermission]
 
     def get_queryset(self):
         postID = self.kwargs['postId']
@@ -880,7 +881,7 @@ from requests.auth import HTTPBasicAuth
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def fetch_authors(request):
-    url = 'http://[2605:fd00:4:1001:f816:3eff:fe98:dfdc]/api/authors/'
+    url = 'http://[2605:fd00:4:1001:f816:3eff:fe38:3824]/api/authors/'
     username = 'canoe'
     password = 'eonac'
 
