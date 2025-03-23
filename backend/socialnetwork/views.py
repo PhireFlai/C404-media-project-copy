@@ -575,6 +575,7 @@ def AddLikeOnPost(request, userId, object_id):
 
     # Create the Like object
     content_type = ContentType.objects.get_for_model(Post)
+    data = {'user': user.id, 'content_type': content_type.id, 'object_id': post.id}
     like = Like.objects.create(user=user, content_type=content_type, object_id=post.id)
 
     # Forward the like to the inbox (if this functionality exists)
@@ -587,9 +588,7 @@ def AddLikeOnPost(request, userId, object_id):
         like = Like.objects.get(id=like_id)
     
     requests.post(inbox_url, data=LikeSerializer(like).data)
-
-    # Return the created Like object with status 200
-    return Response(like_data, status=status.HTTP_200_OK)
+    return Response(LikeSerializer(like).data, status=status.HTTP_200_OK)
 
 @permission_classes([ConditionalMultiAuthPermission])
 class LikesList(generics.ListCreateAPIView):
@@ -677,6 +676,7 @@ def AddCommentLike(request, userId, pk, ck):
 
     # Create the Like object
     content_type = ContentType.objects.get_for_model(Comment)
+    data = {'user': user.id, 'content_type': content_type.id, 'object_id': comment.id}
     like = Like.objects.create(user=user, content_type=content_type, object_id=comment.id)
 
     # Forward the like to the inbox (if this functionality exists)
@@ -686,11 +686,10 @@ def AddCommentLike(request, userId, pk, ck):
     if serializer.is_valid():
         serializer.save(user=user)
         like_id = serializer.data['id'].strip('/').split('/')[-1]
-        like = CommentLike.objects.get(id=like_id)
-    requests.post(inbox_url, data=CommentLikeSerializer(like).data)
+        like = Like.objects.get(id=like_id)
+    requests.post(inbox_url, data=LikeSerializer(like).data)
 
-    # Return the created Like object with status 200
-    return Response(like_data, status=status.HTTP_200_OK)
+    return Response(LikeSerializer(like).data, status=status.HTTP_200_OK)
 
 class CommentLikesList(generics.ListCreateAPIView):
     serializer_class = LikeSerializer
