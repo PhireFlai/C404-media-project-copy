@@ -318,10 +318,148 @@ def CreateComment(request, userId, pk):
 
 
 # Post to an author's inbox
-@api_view(['POST'])
+@api_view(["POST"])
 @permission_classes([AllowAny])
 def PostToInbox(request, receiver):
-    return Response({"message": "Request received"}, status=status.HTTP_200_OK)
+    try:
+        type = request.data.get("type")
+
+        if type == "follow":
+            summary = request.data.get("summary")
+            actor = request.data.get("actor")
+            object = request.data.get("object")
+
+            actor_obj = get_object_or_404(User, id=actor["id"])
+            object_obj = get_object_or_404(User, id=object["id"])
+
+            if FollowRequest.objects.filter(actor=actor_obj, object=object_obj).exists():
+                return Response({"message": "Follow request has already been sent"}, status=status.HTTP_400_BAD_REQUEST)
+
+            if actor_obj.following.filter(id=object_obj.id).exists():
+                return Response({"message": "You are already following this user"}, status=status.HTTP_400_BAD_REQUEST)
+
+            data = {"summary": summary}
+            serializer = FollowRequestSerializer(data=data)
+
+            if serializer.is_valid():
+                serializer.save(actor=actor_obj, object=object_obj)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        elif type == "comment":
+            author = request.data.get("author")
+            comment = request.data.get("comment")
+            published = request.data.get("published")
+            id = request.data.get("id")
+            post = request.data.get("post")
+            like_count = request.data.get("like_count")
+
+            author_obj = get_object_or_404(User, id=author["id"])
+            post_obj = get_object_or_404(Post, id=post)
+
+            data = {"comment": comment, "post": post_obj.id, "published": published, "id": id, "like_count": like_count}
+            serializer = CommentSerializer(data=data)
+
+            if serializer.is_valid():
+                serializer.save(author=author_obj)
+                comment = Comment.objects.get(id=serializer.data["id"])
+
+                likes = request.data.get("likes", [])
+                for like in likes:
+                    comment_author = get_object_or_404(User, id=like["author"]["id"])
+                    published = like["published"]
+                    like_id = like["id"]
+
+                    like_data = {"published": published, "id": like_id, "object": comment.id}
+                    comment_like_serializer = CommentLikeSerializer(data=like_data)
+
+                    if comment_like_serializer.is_valid():
+                        comment_like_serializer.save(author=comment_author)
+
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        elif type == "post":
+            id = request.data.get("id")
+            author = request.data.get("author")
+            title = request.data.get("title")
+            content = request.data.get("content")
+            visibility = request.data.get("visibility")
+            created_at = request.data.get("published")
+            like_count = request.data.get("like_count")
+
+            author_obj = get_object_or_404(User, id=author["id"])
+
+            data = {
+                "id": id,
+                "author": author_obj.id,
+                "title": title,
+                "content": content,
+                "visibility": visibility,
+                "created_at": created_at,
+                "like_count": like_count,
+            }
+            post_serializer = PostSerializer(data=data)
+
+            if post_serializer.is_valid():
+                post_serializer.save(author=author_obj)
+                post = Post.objects.get(id=post_serializer.data["id"])
+
+                likes = request.data.get("likes", [])
+                for like in likes:
+                    author = get_object_or_404(User, id=like["user"]["id"])
+                    published = like["published"]
+                    like_id = like["id"]
+
+                    like_data = {"published": published, "id": like_id, "object": post.id}
+                    like_serializer = LikeSerializer(data=like_data)
+
+                    if like_serializer.is_valid():
+                        like_serializer.save(author=author)
+
+                return Response(post_serializer.data, status=status.HTTP_201_CREATED)
+
+            return Response(post_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        elif type == "post_like":
+            author = request.data.get("author")
+            created_at = request.data.get("created_at")
+            id = request.data.get("id")
+            post = request.data.get("post")
+            author_obj = get_object_or_404(User, id=author["id"])
+            data={
+                "created_at": created_at,
+                "id": id,
+                "post": post,
+            }
+            serializer = LikeSerializer(data=data)
+            if serializer.is_valid():
+                serializer.save(user=author_obj)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
+        
+        elif type == "comment_like":
+            id = request.data.get("id")
+            author = request.data.get("author")
+            created_at = request.data.get("created_at")
+            comment = request.data.get("comment")
+            author_obj = get_object_or_404(User, id=author["id"])
+            data = {
+                "created_at": created_at,
+                "id": id,
+                "comment": comment,
+            }
+            serializer = CommentLikeSerializer(data=data)
+            if serializer.is_valid():
+                serializer.save(user=author_obj)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
+
+    except Exception as e:
+        return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    return Response({"error": "Unsupported message type"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class IsFriendOrAuthor(BasePermission):
