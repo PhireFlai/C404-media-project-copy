@@ -17,11 +17,14 @@ const CommentItem = ({ comment, postId, userId, refetchComments }) => {
     error: likesError,
     isLoading: likesLoading,
     refetch: refetchLikes,
-  } = useGetCommentLikesQuery({
-    userId: userId,
-    postId: postId,
-    commentId: comment.id,
-  }, { skip: !userId });
+  } = useGetCommentLikesQuery(
+    {
+      userId: userId,
+      postId: postId,
+      commentId: comment.id,
+    },
+    { skip: !userId }
+  );
 
   const handleLikeToggle = async (commentId) => {
     try {
@@ -67,17 +70,18 @@ const CommentItem = ({ comment, postId, userId, refetchComments }) => {
           <small>{comment.created_at}</small>
         </p>
       </div>
-      <div>{userId &&
-        <button
-          className="like-button"
-          onClick={() => handleLikeToggle(comment.id)}
-        >
-          
+      <div>
+        {userId && (
+          <button
+            className="like-button"
+            onClick={() => handleLikeToggle(comment.id)}
+          >
             <FontAwesomeIcon icon={isLiked ? solidHeart : regularHeart} />
-          
-        </button>
-        }
-        <div className="like-count">Likes: {comment.like_count}</div>
+          </button>
+        )}
+        <div className="like-count">
+          Likes: {likes && likes.length > 0 ? likes.length : 0}
+        </div>
       </div>
     </div>
   );
