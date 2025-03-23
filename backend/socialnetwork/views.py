@@ -19,6 +19,7 @@ from django.db.models import Q
 from django.http import JsonResponse
 from socialnetwork.permissions import IPLockPermission, MultiAuthPermission, ConditionalMultiAuthPermission
 from .utils import forward_get_request
+from requests.auth import HTTPBasicAuth
 
 @swagger_auto_schema(
     method="post",
@@ -65,7 +66,7 @@ from .utils import forward_get_request
 
 # Creates a new user
 @api_view(['POST'])
-@permission_classes([IPLockPermission])  # Allows anyone to sign up locally
+@permission_classes([AllowAny])  # Allows anyone to sign up locally
 def createUser(request):
     username = request.data.get('username')
     password = request.data.get('password')
@@ -95,7 +96,7 @@ def createUser(request):
 
 # Logs in a user
 @api_view(['POST'])
-@permission_classes([IPLockPermission])
+@permission_classes([AllowAny])
 def loginUser(request):
     username = request.data.get('username')
     password = request.data.get('password')
@@ -114,10 +115,10 @@ def loginUser(request):
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
 
 # Lists all users
-@permission_classes([MultiAuthPermission])         
 class UsersList(generics.ListCreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    permission_classes = [MultiAuthPermission]
     
 # Get all friends posts
 class FriendsPostsView(ListAPIView):
@@ -319,10 +320,148 @@ def CreateComment(request, userId, pk):
 
 
 # Post to an author's inbox
-@api_view(['POST'])
+@api_view(["POST"])
 @permission_classes([AllowAny])
 def PostToInbox(request, receiver):
-    return Response({"message": "Request received"}, status=status.HTTP_200_OK)
+    try:
+        type = request.data.get("type")
+
+        if type == "follow":
+            summary = request.data.get("summary")
+            actor = request.data.get("actor")
+            object = request.data.get("object")
+
+            actor_obj = get_object_or_404(User, id=actor["id"])
+            object_obj = get_object_or_404(User, id=object["id"])
+
+            if FollowRequest.objects.filter(actor=actor_obj, object=object_obj).exists():
+                return Response({"message": "Follow request has already been sent"}, status=status.HTTP_400_BAD_REQUEST)
+
+            if actor_obj.following.filter(id=object_obj.id).exists():
+                return Response({"message": "You are already following this user"}, status=status.HTTP_400_BAD_REQUEST)
+
+            data = {"summary": summary}
+            serializer = FollowRequestSerializer(data=data)
+
+            if serializer.is_valid():
+                serializer.save(actor=actor_obj, object=object_obj)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        elif type == "comment":
+            author = request.data.get("author")
+            comment = request.data.get("comment")
+            published = request.data.get("published")
+            id = request.data.get("id")
+            post = request.data.get("post")
+            like_count = request.data.get("like_count")
+
+            author_obj = get_object_or_404(User, id=author["id"])
+            post_obj = get_object_or_404(Post, id=post)
+
+            data = {"comment": comment, "post": post_obj.id, "published": published, "id": id, "like_count": like_count}
+            serializer = CommentSerializer(data=data)
+
+            if serializer.is_valid():
+                serializer.save(author=author_obj)
+                comment = Comment.objects.get(id=serializer.data["id"])
+
+                likes = request.data.get("likes", [])
+                for like in likes:
+                    comment_author = get_object_or_404(User, id=like["author"]["id"])
+                    published = like["published"]
+                    like_id = like["id"]
+
+                    like_data = {"published": published, "id": like_id, "object": comment.id}
+                    comment_like_serializer = LikeSerializer(data=like_data)
+
+                    if comment_like_serializer.is_valid():
+                        comment_like_serializer.save(author=comment_author)
+
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        elif type == "post":
+            id = request.data.get("id")
+            author = request.data.get("author")
+            title = request.data.get("title")
+            content = request.data.get("content")
+            visibility = request.data.get("visibility")
+            created_at = request.data.get("published")
+            like_count = request.data.get("like_count")
+
+            author_obj = get_object_or_404(User, id=author["id"])
+
+            data = {
+                "id": id,
+                "author": author_obj.id,
+                "title": title,
+                "content": content,
+                "visibility": visibility,
+                "created_at": created_at,
+                "like_count": like_count,
+            }
+            post_serializer = PostSerializer(data=data)
+
+            if post_serializer.is_valid():
+                post_serializer.save(author=author_obj)
+                post = Post.objects.get(id=post_serializer.data["id"])
+
+                likes = request.data.get("likes", [])
+                for like in likes:
+                    author = get_object_or_404(User, id=like["user"]["id"])
+                    published = like["published"]
+                    like_id = like["id"]
+
+                    like_data = {"published": published, "id": like_id, "object": post.id}
+                    like_serializer = LikeSerializer(data=like_data)
+
+                    if like_serializer.is_valid():
+                        like_serializer.save(author=author)
+
+                return Response(post_serializer.data, status=status.HTTP_201_CREATED)
+
+            return Response(post_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        elif type == "post_like":
+            author = request.data.get("author")
+            created_at = request.data.get("created_at")
+            id = request.data.get("id")
+            post = request.data.get("post")
+            author_obj = get_object_or_404(User, id=author["id"])
+            data={
+                "created_at": created_at,
+                "id": id,
+                "post": post,
+            }
+            serializer = LikeSerializer(data=data)
+            if serializer.is_valid():
+                serializer.save(user=author_obj)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
+        
+        elif type == "comment_like":
+            id = request.data.get("id")
+            author = request.data.get("author")
+            created_at = request.data.get("created_at")
+            comment = request.data.get("comment")
+            author_obj = get_object_or_404(User, id=author["id"])
+            data = {
+                "created_at": created_at,
+                "id": id,
+                "comment": comment,
+            }
+            serializer = LikeSerializer(data=data)
+            if serializer.is_valid():
+                serializer.save(user=author_obj)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
+
+    except Exception as e:
+        return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    return Response({"error": "Unsupported message type"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class IsFriendOrAuthor(BasePermission):
@@ -373,10 +512,10 @@ class GetComment(generics.ListCreateAPIView):
         id = self.kwargs['commentId']
         return Comment.objects.filter(id=id)
 
-@permission_classes([ConditionalMultiAuthPermission])
 class GetCommented(generics.ListCreateAPIView):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
+    permission_classes = [ConditionalMultiAuthPermission]
 
     def get_queryset(self):
         authorID = self.kwargs['userId']
@@ -407,20 +546,20 @@ class GetCommented(generics.ListCreateAPIView):
         response = requests.post(f'http://localhost:8000/api/authors/{author}/inbox/', data=comment_data)
         return response
 
-@permission_classes([ConditionalMultiAuthPermission])
 class GetCommentFromCommented(generics.ListCreateAPIView):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
+    permission_classes = [ConditionalMultiAuthPermission]
 
     def get_queryset(self):
         authorID = self.kwargs['userId']
         commentID = self.kwargs['commentId']
         return Comment.objects.filter(id=commentID, author=authorID)
     
-@permission_classes([ConditionalMultiAuthPermission])
 class FollowRequestListView(generics.ListCreateAPIView):
     queryset = FollowRequest.objects.all()
     serializer_class = FollowRequestSerializer
+    permission_classes = [ConditionalMultiAuthPermission]
 
     def get_queryset(self):
         objectId = self.kwargs['objectId']
@@ -534,18 +673,18 @@ def RemoveFollower(request, followerId, followedId):
     
     return Response({'message': 'Follower removed successfully'}, status=status.HTTP_200_OK)    
     
-@permission_classes([ConditionalMultiAuthPermission])
 class FollowersList(generics.ListCreateAPIView):
     serializer_class = UserSerializer
+    permission_classes = [ConditionalMultiAuthPermission]
 
     def get_queryset(self):
         userId = self.kwargs['userId']
         user = get_object_or_404(User, id=userId)
         return user.followers.all()
     
-@permission_classes([ConditionalMultiAuthPermission])
 class FollowingList(generics.ListCreateAPIView):
     serializer_class = UserSerializer
+    permission_classes = [ConditionalMultiAuthPermission]
 
     def get_queryset(self):
         userId = self.kwargs['userId']
@@ -553,45 +692,57 @@ class FollowingList(generics.ListCreateAPIView):
         return user.following.all()
 
 
-@permission_classes([ConditionalMultiAuthPermission])
 class FriendsList(generics.ListCreateAPIView):
     serializer_class = UserSerializer
+    permission_classes = [ConditionalMultiAuthPermission]
 
     def get_queryset(self):
         userId = self.kwargs['userId']
         user = get_object_or_404(User, id=userId)
         return user.friends.all()
+    
 
 # Add a like on a post
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def AddLike(request, userId, pk):
-    post = get_object_or_404(Post, id=pk)
+def AddLikeOnPost(request, userId, object_id):
     user = request.user
-    data = {'post': post.id}
+    post = get_object_or_404(Post, id=object_id)
+
+    # Check if the user has already liked the post
+    if Like.objects.filter(user=user, object_id=post.id, content_type=ContentType.objects.get_for_model(Post)).exists():
+        return Response({'error': 'You have already liked this post.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Create the Like object
+    content_type = ContentType.objects.get_for_model(Post)
+    data = {'user': user.id, 'content_type': content_type.id, 'object_id': post.id}
+    like = Like.objects.create(user=user, content_type=content_type, object_id=post.id)
+
+    # Forward the like to the inbox (if this functionality exists)
+    inbox_url = f"http://localhost:8000/api/authors/{userId}/inbox/"
     serializer = LikeSerializer(data=data)
 
     if serializer.is_valid():
         serializer.save(user=user)
         like_id = serializer.data['id'].strip('/').split('/')[-1]
         like = Like.objects.get(id=like_id)
-        response = requests.post(f'http://localhost:8000/api/authors/{userId}/inbox/', data=LikeSerializer(like).data)
-        return Response(serializer.data, status=response.status_code)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    requests.post(inbox_url, data=LikeSerializer(like).data)
+    return Response(LikeSerializer(like).data, status=status.HTTP_200_OK)
 
-@permission_classes([ConditionalMultiAuthPermission])
 class LikesList(generics.ListCreateAPIView):
     queryset = Like.objects.all()
     serializer_class = LikeSerializer
+    permission_classes = [ConditionalMultiAuthPermission]
 
     def get_queryset(self):
-        post_id = self.kwargs['pk']
-        return Like.objects.filter(post_id=post_id)
+        object_id = self.kwargs['object_id']
+        return Like.objects.filter(object_id=object_id)
     
-@permission_classes([ConditionalMultiAuthPermission])
 class GetLiked(generics.ListCreateAPIView):
     queryset = Like.objects.all()
     serializer_class = LikeSerializer
+    permission_classes = [ConditionalMultiAuthPermission]
 
     def get_queryset(self):
         authorID = self.kwargs['userId']
@@ -622,10 +773,10 @@ class GetLiked(generics.ListCreateAPIView):
         return response
 
 # Get a single like by id
-@permission_classes([ConditionalMultiAuthPermission])
 class GetSingleLike(generics.RetrieveAPIView):
     queryset = Like.objects.all()
     serializer_class = LikeSerializer
+    permission_classes = [ConditionalMultiAuthPermission]
     lookup_field = 'id'
 
     def get_queryset(self):
@@ -633,9 +784,9 @@ class GetSingleLike(generics.RetrieveAPIView):
         return Like.objects.filter(id=likeID)
 
 # Get likes by author
-@permission_classes([ConditionalMultiAuthPermission])
 class GetLikesByAuthor(generics.ListAPIView):
     serializer_class = LikeSerializer
+    permission_classes = [ConditionalMultiAuthPermission]
 
     def get_queryset(self):
         authorID = self.kwargs['authorId']
@@ -645,35 +796,49 @@ class GetLikesByAuthor(generics.ListAPIView):
 @permission_classes([ConditionalMultiAuthPermission])
 class GetPostLikes(generics.ListAPIView):
     serializer_class = LikeSerializer
+    permission_classes = [ConditionalMultiAuthPermission]
 
     def get_queryset(self):
         postID = self.kwargs['postId']
-        return Like.objects.filter(post=postID)
+        return Like.objects.filter(object_id=postID)
 
 # Add a like on a comment
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def AddCommentLike(request, userId, pk, ck):
-    comment = get_object_or_404(Comment, id=ck)
     user = request.user
-    data = {'comment': comment.id}
-    serializer = CommentLikeSerializer(data=data)
+
+    # Fetch the comment based on the comment ID (ck)
+    comment = get_object_or_404(Comment, id=ck)
+
+    # Check if the user has already liked the comment
+    if Like.objects.filter(user=user, object_id=comment.id, content_type=ContentType.objects.get_for_model(Comment)).exists():
+        return Response({'error': 'You have already liked this comment.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Create the Like object
+    content_type = ContentType.objects.get_for_model(Comment)
+    data = {'user': user.id, 'content_type': content_type.id, 'object_id': comment.id}
+    like = Like.objects.create(user=user, content_type=content_type, object_id=comment.id)
+
+    # Forward the like to the inbox (if this functionality exists)
+    inbox_url = f"http://localhost:8000/api/authors/{userId}/inbox/"
+    serializer = LikeSerializer(data=data)
 
     if serializer.is_valid():
         serializer.save(user=user)
         like_id = serializer.data['id'].strip('/').split('/')[-1]
-        like = CommentLike.objects.get(id=like_id)
-        response = requests.post(f'http://localhost:8000/api/authors/{userId}/inbox/', data=CommentLikeSerializer(like).data)
-        return Response(serializer.data, status=response.status_code)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        like = Like.objects.get(id=like_id)
+    requests.post(inbox_url, data=LikeSerializer(like).data)
+
+    return Response(LikeSerializer(like).data, status=status.HTTP_200_OK)
 
 class CommentLikesList(generics.ListCreateAPIView):
-    queryset = CommentLike.objects.all()
-    serializer_class = CommentLikeSerializer
+    serializer_class = LikeSerializer
 
     def get_queryset(self):
+        # Fetch likes for the specific comment based on the comment ID (ck)
         comment_id = self.kwargs['ck']
-        return CommentLike.objects.filter(comment_id=comment_id)
+        return Like.objects.filter(object_id=comment_id)
     
 class PublicFeedView(ListAPIView):
     serializer_class = PostSerializer
@@ -770,3 +935,20 @@ def search_users(request):
 class ForwardGetView(APIView):
     def get(self, request, encoded_url):
         return forward_get_request(request, encoded_url)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def fetch_authors(request):
+    url = 'http://[2605:fd00:4:1001:f816:3eff:fe38:3824]/api/authors/'
+    username = 'canoe'
+    password = 'eonac'
+
+    try:
+        response = requests.get(url, auth=HTTPBasicAuth(username, password))
+        print(response)
+        print(response.json())
+        response.raise_for_status()  # Raise an error for bad status codes
+        data = response.json()
+        return Response(data, status=response.status_code)
+    except requests.exceptions.RequestException as e:
+        return Response({'error': str(e)}, status=500)

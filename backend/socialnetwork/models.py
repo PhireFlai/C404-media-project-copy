@@ -7,6 +7,8 @@ from django.contrib.auth.models import AbstractUser
 import uuid
 import os
 from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.contenttypes.fields import GenericForeignKey,  GenericRelation
+from django.contrib.contenttypes.models import ContentType
 
 def user_profile_picture_path(instance, filename):
     # Extract the file extension from the original filename
@@ -18,7 +20,10 @@ class User(AbstractUser):
     # username = models.CharField(max_length=32, unique=True)
     # password = models.CharField(max_length=128)
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    type = models.TextField(default="author", editable=False)
+    #profile_picture = models.ImageField(upload_to=user_profile_picture_path, null=True, blank=True)
     profile_picture = models.ImageField(upload_to=user_profile_picture_path, default="profile_pictures/default.png", null=True, blank=True)
+    
     followers = models.ManyToManyField(
         'self', symmetrical=False, related_name='following', blank=True
     )
@@ -50,6 +55,24 @@ class User(AbstractUser):
 
         super().save(*args, **kwargs)  # Save the instance
 
+class Like(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    type = models.TextField(default="post_like", editable=False)
+    
+    # Fields for Generic Foreign Key
+    content_type = models.ForeignKey(
+        ContentType, 
+        on_delete=models.CASCADE
+    )
+    object_id = models.UUIDField()
+    content_object = GenericForeignKey("content_type", "object_id")
+    
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    def __str__(self):
+        return f"{self.user.username} likes {self.content_object}"
+    
 class Post(models.Model):
     PUBLIC = 'public'
     FRIENDS_ONLY = 'friends-only'
@@ -64,6 +87,7 @@ class Post(models.Model):
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    type = models.TextField(default="post", editable=False)
     author = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     title = models.CharField(max_length=255)
     content = models.TextField()
@@ -72,47 +96,37 @@ class Post(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    likes = GenericRelation(Like)  # Enable reverse relation
+
     @property
     def like_count(self):
-        return self.likes.count()
+        try:
+            return self.likes.count()
+        except Exception:
+            return 0
 
     def __str__(self):
         return self.title  # Display the title in the admin panel
 
 class Comment(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    type = models.TextField(default="comment", editable=False)
     author = models.ForeignKey(User, on_delete=models.CASCADE, null=True)  # Author can be null for now
     content = models.TextField()
     post = models.ForeignKey(Post, on_delete=models.CASCADE)
     created_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    likes = GenericRelation(Like)  # Enable reverse relation
 
     @property
     def like_count(self):
         return self.likes.count()
 
     def __str__(self):
-        return f'{self.author.username} comments {self.content}'
-
-
-class Like(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
-    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='likes')
-    created_at = models.DateTimeField(default=timezone.now, editable=False)
-
-    def __str__(self):
-        return f'{self.user.username} likes {self.post.title}'
-    
-class CommentLike(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
-    comment = models.ForeignKey(Comment, on_delete=models.CASCADE, related_name='likes')
-    created_at = models.DateTimeField(default=timezone.now, editable=False)
-
-    def __str__(self):
-        return f'{self.user.username} likes {self.comment.content}'
+        return f"{self.author.username} comments {self.content}"
 
 class FollowRequest(models.Model):
+    type = models.TextField(default="follow", editable=False)
     summary = models.TextField()
     actor = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_follow_request")
     object = models.ForeignKey(User, on_delete=models.CASCADE, related_name="received_follow_request")
