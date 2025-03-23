@@ -248,7 +248,6 @@ class UserProfileView(APIView):
         return super().get_permissions()
 
     def get(self, request, userId):
-    def get(self, request, userId):
         try:
             user = User.objects.get(id=userId)
         except User.DoesNotExist:
