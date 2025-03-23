@@ -40,5 +40,21 @@ python3 manage.py makemigrations
 python3 manage.py makemigrations socialnetwork
 python3 manage.py migrate
 
-# Launch the Django development server
-python3 manage.py createsuperuser
+# Create the superuser programmatically
+python3 manage.py shell <<EOF
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+username = "admin"
+email = ""
+password = "pass"
+
+if not User.objects.filter(username=username).exists():
+    user = User.objects.create_superuser(username=username, email=email, password=password)
+    user.is_approved = True  # Set the is_approved field to True
+    user.save()
+    print(f"Superuser '{username}' created and approved.")
+else:
+    print(f"Superuser '{username}' already exists.")
+EOF
