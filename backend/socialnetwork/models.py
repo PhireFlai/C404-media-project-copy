@@ -106,14 +106,6 @@ class Post(models.Model):
     def __str__(self):
         return self.title  # Display the title in the admin panel
 
-
-    @property
-    def like_count(self):
-        return self.likes.count()
-
-    def __str__(self):
-        return self.title  # Display the title in the admin panel
-
 class Comment(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     type = models.TextField(default="comment", editable=False)

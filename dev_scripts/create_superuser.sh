@@ -11,6 +11,7 @@ export DB_ENGINE=django.db.backends.postgresql
 export SECRET_KEY='django-insecure-0((h29a37al@^re@e!a#jclgqzdo2j!j&4t-!b8(-5#)=kf@e!'
 export DEBUG=1
 export DJANGO_ALLOWED_HOSTS="localhost 127.0.0.1 [::1] *"
+export CORS_ALLOWED_ORIGINS="http://localhost:3000,http://localhost:80,http://localhost,http://[2605:fd00:4:1001:f816:3eff:fe04:65df],http://[2605:fd00:4:1001:f816:3eff:fe04:65df]:8000,http://[2605:fd00:4:1001:f816:3eff:fe38:3824],http://[2605:fd00:4:1001:f816:3eff:fe38:3824]:8000"
 
 # Check if running inside a virtual environment
 if [[ "$VIRTUAL_ENV" != "" ]]; then
