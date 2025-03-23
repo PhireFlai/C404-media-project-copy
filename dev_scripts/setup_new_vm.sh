@@ -16,3 +16,4 @@ sudo apt install -y docker-compose-plugin
 sudo usermod -aG docker $USER
 newgrp docker
 docker ps
+sudo apt install python3-pip
