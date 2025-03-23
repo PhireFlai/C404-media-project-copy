@@ -64,7 +64,7 @@ from .utils import forward_get_request
 
 # Creates a new user
 @api_view(['POST'])
-@permission_classes([IPLockPermission])  # Allows anyone to sign up locally
+@permission_classes([AllowAny])  # Allows anyone to sign up locally
 def createUser(request):
     username = request.data.get('username')
     password = request.data.get('password')
@@ -94,7 +94,7 @@ def createUser(request):
 
 # Logs in a user
 @api_view(['POST'])
-@permission_classes([IPLockPermission])
+@permission_classes([AllowAny])
 def loginUser(request):
     username = request.data.get('username')
     password = request.data.get('password')
@@ -737,3 +737,22 @@ class UserFeedView(ListAPIView):
 class ForwardGetView(APIView):
     def get(self, request, encoded_url):
         return forward_get_request(request, encoded_url)
+
+from requests.auth import HTTPBasicAuth
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def fetch_authors(request):
+    url = 'http://[2605:fd00:4:1001:f816:3eff:fe98:dfdc]/api/authors/'
+    username = 'canoe'
+    password = 'eonac'
+
+    try:
+        response = requests.get(url, auth=HTTPBasicAuth(username, password))
+        print(response)
+        print(response.json())
+        response.raise_for_status()  # Raise an error for bad status codes
+        data = response.json()
+        return Response(data, status=response.status_code)
+    except requests.exceptions.RequestException as e:
+        return Response({'error': str(e)}, status=500)
