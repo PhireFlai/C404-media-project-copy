@@ -64,7 +64,7 @@ from .utils import forward_get_request
 
 # Creates a new user
 @api_view(['POST'])
-@permission_classes([IPLockPermission])  # Allows anyone to sign up locally
+@permission_classes([AllowAny])  # Allows anyone to sign up locally
 def createUser(request):
     username = request.data.get('username')
     password = request.data.get('password')
@@ -94,7 +94,7 @@ def createUser(request):
 
 # Logs in a user
 @api_view(['POST'])
-@permission_classes([IPLockPermission])
+@permission_classes([AllowAny])
 def loginUser(request):
     username = request.data.get('username')
     password = request.data.get('password')
@@ -698,23 +698,36 @@ class FriendsList(generics.ListCreateAPIView):
         userId = self.kwargs['userId']
         user = get_object_or_404(User, id=userId)
         return user.friends.all()
+    
 
 # Add a like on a post
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def AddLike(request, userId, pk):
-    post = get_object_or_404(Post, id=pk)
+def AddLikeOnPost(request, userId, object_id):
     user = request.user
-    data = {'post': post.id}
+    post = get_object_or_404(Post, id=object_id)
+
+    # Check if the user has already liked the post
+    if Like.objects.filter(user=user, object_id=post.id, content_type=ContentType.objects.get_for_model(Post)).exists():
+        return Response({'error': 'You have already liked this post.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Create the Like object
+    content_type = ContentType.objects.get_for_model(Post)
+    like = Like.objects.create(user=user, content_type=content_type, object_id=post.id)
+
+    # Forward the like to the inbox (if this functionality exists)
+    inbox_url = f"http://localhost:8000/api/authors/{userId}/inbox/"
     serializer = LikeSerializer(data=data)
 
     if serializer.is_valid():
         serializer.save(user=user)
         like_id = serializer.data['id'].strip('/').split('/')[-1]
         like = Like.objects.get(id=like_id)
-        response = requests.post(f'http://localhost:8000/api/authors/{userId}/inbox/', data=LikeSerializer(like).data)
-        return Response(serializer.data, status=response.status_code)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    requests.post(inbox_url, data=LikeSerializer(like).data)
+
+    # Return the created Like object with status 200
+    return Response(like_data, status=status.HTTP_200_OK)
 
 @permission_classes([ConditionalMultiAuthPermission])
 class LikesList(generics.ListCreateAPIView):
@@ -722,8 +735,8 @@ class LikesList(generics.ListCreateAPIView):
     serializer_class = LikeSerializer
 
     def get_queryset(self):
-        post_id = self.kwargs['pk']
-        return Like.objects.filter(post_id=post_id)
+        object_id = self.kwargs['object_id']
+        return Like.objects.filter(object_id=object_id)
     
 @permission_classes([ConditionalMultiAuthPermission])
 class GetLiked(generics.ListCreateAPIView):
@@ -785,32 +798,45 @@ class GetPostLikes(generics.ListAPIView):
 
     def get_queryset(self):
         postID = self.kwargs['postId']
-        return Like.objects.filter(post=postID)
+        return Like.objects.filter(object_id=postID)
 
 # Add a like on a comment
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def AddCommentLike(request, userId, pk, ck):
-    comment = get_object_or_404(Comment, id=ck)
     user = request.user
-    data = {'comment': comment.id}
-    serializer = CommentLikeSerializer(data=data)
+
+    # Fetch the comment based on the comment ID (ck)
+    comment = get_object_or_404(Comment, id=ck)
+
+    # Check if the user has already liked the comment
+    if Like.objects.filter(user=user, object_id=comment.id, content_type=ContentType.objects.get_for_model(Comment)).exists():
+        return Response({'error': 'You have already liked this comment.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Create the Like object
+    content_type = ContentType.objects.get_for_model(Comment)
+    like = Like.objects.create(user=user, content_type=content_type, object_id=comment.id)
+
+    # Forward the like to the inbox (if this functionality exists)
+    inbox_url = f"http://localhost:8000/api/authors/{userId}/inbox/"
+    serializer = LikeSerializer(data=data)
 
     if serializer.is_valid():
         serializer.save(user=user)
         like_id = serializer.data['id'].strip('/').split('/')[-1]
         like = CommentLike.objects.get(id=like_id)
-        response = requests.post(f'http://localhost:8000/api/authors/{userId}/inbox/', data=CommentLikeSerializer(like).data)
-        return Response(serializer.data, status=response.status_code)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    requests.post(inbox_url, data=CommentLikeSerializer(like).data)
+
+    # Return the created Like object with status 200
+    return Response(like_data, status=status.HTTP_200_OK)
 
 class CommentLikesList(generics.ListCreateAPIView):
-    queryset = CommentLike.objects.all()
-    serializer_class = CommentLikeSerializer
+    serializer_class = LikeSerializer
 
     def get_queryset(self):
+        # Fetch likes for the specific comment based on the comment ID (ck)
         comment_id = self.kwargs['ck']
-        return CommentLike.objects.filter(comment_id=comment_id)
+        return Like.objects.filter(object_id=comment_id)
     
 class UserFeedView(ListAPIView):
     serializer_class = PostSerializer
@@ -849,3 +875,22 @@ class UserFeedView(ListAPIView):
 class ForwardGetView(APIView):
     def get(self, request, encoded_url):
         return forward_get_request(request, encoded_url)
+
+from requests.auth import HTTPBasicAuth
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def fetch_authors(request):
+    url = 'http://[2605:fd00:4:1001:f816:3eff:fe98:dfdc]/api/authors/'
+    username = 'canoe'
+    password = 'eonac'
+
+    try:
+        response = requests.get(url, auth=HTTPBasicAuth(username, password))
+        print(response)
+        print(response.json())
+        response.raise_for_status()  # Raise an error for bad status codes
+        data = response.json()
+        return Response(data, status=response.status_code)
+    except requests.exceptions.RequestException as e:
+        return Response({'error': str(e)}, status=500)

@@ -4,7 +4,6 @@ venv
 
 __pycache__
 requirements.txt
-.env
 .sqlite3
 
 */db.sqlite3

@@ -52,8 +52,8 @@ urlpatterns = [
     path("api/authors/<uuid:objectId>/accept-follow-request/authors/<uuid:actorId>/", AcceptFollowRequest, name='accept-follow-request'),
     path("api/authors/<uuid:followerId>/unfollow/authors/<uuid:followedId>/", Unfollow, name='unfollow'),
     path("api/authors/<uuid:followedId>/remove-follower/authors/<uuid:followerId>/", RemoveFollower, name='remove-follower'),
-    path("api/authors/<uuid:userId>/posts/<uuid:pk>/like/", AddLike, name='add-like'),
-    path("api/authors/<uuid:userId>/posts/<uuid:pk>/likes/", LikesList.as_view(), name="likes-list"),
+    path("api/authors/<uuid:userId>/posts/<uuid:object_id>/like/", AddLikeOnPost, name='add-like'),
+    path("api/authors/<uuid:userId>/posts/<uuid:object_id>/likes/", LikesList.as_view(), name="likes-list"),
     path("api/authors/<uuid:userId>/posts/<uuid:pk>/comments/<uuid:ck>/like/", AddCommentLike, name='add-like'),
     path("api/authors/<uuid:userId>/posts/<uuid:pk>/comments/<uuid:ck>/likes/", CommentLikesList.as_view(), name="likes-list"),
     path("api/posts/<uuid:pk>/", PostDetailView.as_view(), name="post-detail"),
@@ -63,6 +63,7 @@ urlpatterns = [
     path("api/liked/<uuid:id>/", GetSingleLike.as_view(), name="single-like"),
     path("api/posts/<uuid:postId>/likes/", GetPostLikes.as_view(), name="post-likes"),
     path('api/forward/<path:encoded_url>/', ForwardGetView.as_view(), name='forward'),
+    path('api/fetch-authors/', fetch_authors, name='fetch-authors'),
 ]
 
 # Serve media files during development

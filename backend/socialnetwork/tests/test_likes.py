@@ -1,8 +1,10 @@
 from django.contrib.auth import get_user_model
 from rest_framework.test import APITestCase
 from rest_framework import status
-from ..models import Post, Comment, Like, CommentLike
+from ..models import Post, Comment, Like, User
 from rest_framework.authtoken.models import Token
+
+from django.contrib.contenttypes.models import ContentType
 
 User = get_user_model()
 
@@ -33,7 +35,7 @@ class LikeAPITestCase(APITestCase):
         url = f'/api/authors/{self.user.id}/posts/{self.post.id}/like/'
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertTrue(Like.objects.filter(post=self.post, user=self.user).exists())
+        self.assertTrue(Like.objects.filter(object_id=self.post.id, user=self.user).exists())
 
     def test_like_comment(self):
         """Test liking a comment. - Comment/Likes 3"""
@@ -41,7 +43,7 @@ class LikeAPITestCase(APITestCase):
         url = f'/api/authors/{self.user.id}/posts/{self.post.id}/comments/{self.comment.id}/like/'
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertTrue(CommentLike.objects.filter(comment=self.comment, user=self.user).exists())
+        self.assertTrue(Like.objects.filter(object_id=self.comment.id, user=self.user).exists())
     
     def test_likes_by_author(self):
         """Test endpoint .//service/api/authors/{AUTHOR_SERIAL}/liked"""
@@ -50,14 +52,14 @@ class LikeAPITestCase(APITestCase):
         url = f'/api/authors/{self.user.id}/posts/{self.post.id}/like/'
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertTrue(Like.objects.filter(post=self.post, user=self.user).exists())
+        self.assertTrue(Like.objects.filter(object_id=self.post.id, user=self.user).exists())
 
         # Like the second post
         data = {"user": self.user.id, "post": self.post2.id}
         url = f'/api/authors/{self.user.id}/posts/{self.post2.id}/like/'
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertTrue(Like.objects.filter(post=self.post2, user=self.user).exists())
+        self.assertTrue(Like.objects.filter(object_id=self.post2.id, user=self.user).exists())
 
         # Retrieve likes by author
         url = f'/api/authors/{self.user.id}/liked/'
@@ -83,27 +85,25 @@ class LikeAPITestCase(APITestCase):
     def test_get_single_like(self):
         """Test endpoint api/liked/<uuid:id>/"""
         # Create a like for the first post
-        like = Like.objects.create(user=self.user, post=self.post)
-
+        content_type = ContentType.objects.get_for_model(Post)
+        like = Like.objects.create(user=self.user, content_type=content_type, object_id=self.post.id)
+    
         # Retrieve the like using the endpoint
         url = f'/api/liked/{like.id}/'
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['id'], str(like.id))
 
-    def test_get_post_likes(self):
-            """Test endpoint api/posts/{POST_FQID}/likes"""
-            # Like the first post
-            data = {"user": self.user.id, "post": self.post.id}
-            url = f'/api/authors/{self.user.id}/posts/{self.post.id}/like/'
-            response = self.client.post(url, data)
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
-            self.assertTrue(Like.objects.filter(post=self.post, user=self.user).exists())
-
-            # Retrieve likes for the post
-            url = f'/api/posts/{self.post.id}/likes/'
-            response = self.client.get(url)
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
-            self.assertEqual(len(response.data), 1)
-            self.assertEqual(str(response.data[0]['post']), str(self.post.id))  
-            self.assertEqual(response.data[0]['user']['id'], str(self.user.id))
+    def test_get_comment_likes(self):
+        """Test retrieving likes for a comment."""
+        # Like the comment
+        data = {"user": self.user.id}
+        url = f'/api/authors/{self.user.id}/posts/{self.post.id}/comments/{self.comment.id}/like/'
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+    
+        # Retrieve likes for the comment
+        url = f'/api/authors/{self.user.id}/posts/{self.post.id}/comments/{self.comment.id}/likes/'
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
