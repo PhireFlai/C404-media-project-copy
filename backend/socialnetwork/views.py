@@ -340,7 +340,7 @@ def PostToInbox(request, receiver):
             summary = request.data.get("summary")
             actor = request.data.get("actor")
             object = request.data.get("object")
-            actor_id = actor['id'].rstrip('/').split('/')[-1]
+            actor_id = actor['id'].split('/')[-2]
 
             actor_obj, created_actor = User.objects.get_or_create(id=actor_id, remote_fqid=actor['id'])
             object_obj = get_object_or_404(User, id=actor["id"])
@@ -357,6 +357,8 @@ def PostToInbox(request, receiver):
             if serializer.is_valid():
                 serializer.save(actor=actor_obj, object=object_obj)
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
+            
+            print(serializer.errors)
 
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
