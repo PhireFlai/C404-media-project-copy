@@ -18,7 +18,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User        
-        fields = ['id', 'username', 'password', 'email', 'profile_picture', 'followers', 'following', 'friends']
+        fields = ['id', 'username', 'password', 'email', 'profile_picture', 'followers', 'following', 'friends', 'remote_fqid']
         extra_kwargs = {
             'password': {'write_only': True},  # Ensure password is write-only
             'followers': {'required': False},  # Make followers optional
@@ -71,7 +71,7 @@ class CommentSerializer(serializers.ModelSerializer):
     id = serializers.SerializerMethodField()  # Add this field
     class Meta:
         model = Comment
-        fields = ["id", "author", "content", "post", "created_at", "like_count", "type"]
+        fields = ["id", "author", "content", "post", "created_at", "like_count", "type", "remote_fqid"]
         
     def get_id(self, obj) -> str:
         return f"http://[{my_ip}]:8000/api/authors/{obj.post.author.id}/posts/{obj.post.id}/comments/{obj.id}/"
@@ -100,7 +100,7 @@ class PostSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
     class Meta:
         model = Post
-        fields = ["id", "author", "title", "content", "image", "formatted_content", "created_at", "updated_at", "visibility", "like_count", "type"]
+        fields = ["id", "author", "title", "content", "image", "formatted_content", "created_at", "updated_at", "visibility", "like_count", "type", "remote_fqid"]
         
     def get_id(self, obj) -> str:
         return f"http://[{my_ip}]:8000/api/authors/{obj.author.id}/posts/{obj.id}/"
@@ -141,7 +141,7 @@ class LikeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Like
-        fields = ['id', 'user', 'content_type', 'object_id', 'created_at', 'type']        
+        fields = ['id', 'user', 'content_type', 'object_id', 'created_at', 'type',]        
             
     def get_id(self, obj) -> str:
         return f"http://[{my_ip}]:8000/api/liked/{obj.id}/"
