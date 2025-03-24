@@ -1,14 +1,14 @@
+// filepath: /home/ubuntu/w25-project-cyan/frontend/src/components/Navbar.js
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Dropdown from "./Dropdown";
-import FollowRequests from "./FollowRequests"; // Import your separate FollowRequests component
+import FollowRequests from "./FollowRequests";
+import SearchUsers from "./SearchUsers"; // Import the new SearchUsers component
 import "./css/navbar.css";
 
 const Navbar = () => {
   const [user, setUser] = useState(JSON.parse(localStorage.getItem("user")));
   const navigate = useNavigate();
-
-
 
   useEffect(() => {
     const handleStorageChange = () => {
@@ -35,11 +35,18 @@ const Navbar = () => {
         <li>
           <Link to="/">Home</Link>
         </li>
+
         {user && (
           <>
-            {/* <li>
-              <Link to="/friends-only">Friends Only</Link>
-            </li> */}
+            <li>
+              <SearchUsers /> {/* Use the new SearchUsers component */}
+            </li>
+            <li>
+              <Link to="/friends-feed">Friends Feed</Link>
+            </li>
+            <li>
+              <Link to="/followers-feed">Followers Feed</Link>
+            </li>
             <li>
               <Dropdown label={`Follow Requests`}>
                 <FollowRequests userId={user.id} />

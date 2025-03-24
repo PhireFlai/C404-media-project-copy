@@ -11,6 +11,7 @@ import {
 import ProfilePicUpload from "../components/ProfilePicUpload";
 import UserPosts from "../components/UserPosts";
 import "./css/profile.css";
+import parseId from "../utils/parseId";
 
 const Profile = () => {
   const { userId } = useParams();
@@ -38,7 +39,7 @@ const Profile = () => {
 
   useEffect(() => {
     if (followingList) {
-      setIsFollowing(followingList.some((f) => f.id === userId));
+      setIsFollowing(followingList.some((f) => parseId(f.id) === userId));
     }
   }, [followingList, userId]);
 
@@ -46,7 +47,7 @@ const Profile = () => {
     if (followRequests && curUser) {
       setHasRequested(
         followRequests.some(
-          (r) => r.actor.id === curUser.id && r.object.id === userId
+          (r) => parseId(r.actor.id) === curUser.id && parseId(r.object.id) === userId
         )
       );
     }
@@ -83,7 +84,7 @@ const Profile = () => {
       // setHasRequested(true); // Update the state immediately after the request is successful
       await createFollowRequest({
         actorId: curUser.id,
-        objectId: user.id,
+        objectId: parseId(user.id),
       }).unwrap();
       setHasRequested(true);
       refetch(); // Refetch the user data to reflect the changes
@@ -99,7 +100,7 @@ const Profile = () => {
     try {
       await unfollowUser({
         followerId: curUser.id,
-        followedId: user.id,
+        followedId: parseId(user.id),
       }).unwrap();
       refetch(); // Refetch the user data to reflect the changes
     } catch (err) {
@@ -122,7 +123,7 @@ const Profile = () => {
       <div className="profile-header">
         {user.profile_picture && (
           <img
-            src={`http://localhost:8000${user.profile_picture}`}
+            src={`${process.env.REACT_APP_API_BASE_URL || "http://localhost"}${":8000"}${user.profile_picture}`}
             alt={`${user.username}'s avatar`}
             className="profile-avatar"
           />

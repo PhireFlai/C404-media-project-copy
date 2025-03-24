@@ -4,7 +4,7 @@ import "./css/button.css";
 import "./css/input.css";
 import "./css/text.css";
 import CommentItem from "./CommentItem";
-
+import parseId from "../utils/parseId";
 const CommentSection = ({ postId, author }) => {
   const [comment, setComment] = useState(""); // State to manage the comment input
   const user = JSON.parse(localStorage.getItem("user")); // Get the current user from local storage
@@ -32,14 +32,22 @@ const CommentSection = ({ postId, author }) => {
     setComment(""); // Clear the comment input
   };
 
+  const sanitizedComments =
+    comments?.length > 0
+      ? comments.map((comment) => ({
+          ...comment,
+          id: comment.id.split("comments/").pop().replace(/\/+$/, ""), // Extract the ID after "comments/" and remove trailing slashes
+        }))
+      : [];
+
   return (
     <div className="comment-section">
       <h4>Comments</h4>
       {/* Render the list of comments if there are any, otherwise display a message */}
-      {comments?.length > 0 ? (
-        comments.map((comment) => (
+      {sanitizedComments?.length > 0 ? (
+        sanitizedComments.map((comment) => (
           <CommentItem
-            key={comment.id}
+            key={parseId(comment.id)}
             comment={comment}
             postId={postId}
             userId={user.id}

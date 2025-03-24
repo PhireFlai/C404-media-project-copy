@@ -15,4 +15,4 @@ RUN python manage.py collectstatic --noinput
 
 # RUN ls -l /app
 
-CMD gunicorn socialnetwork.wsgi:application --bind 0.0.0.0:8000
+CMD gunicorn socialnetwork.wsgi:application --bind [::]:8000 

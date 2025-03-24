@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { useGetFriendsQuery, useUnfollowUserMutation } from "../Api";
 import { Link } from "react-router-dom";
 import "./css/following.css";
-
+import parseId from "../utils/parseId";
 const FriendsList = () => {
   const currentUser = JSON.parse(localStorage.getItem("user"));
   const { userId } = useParams();
@@ -38,7 +38,7 @@ const FriendsList = () => {
       ) : (
         <ul className="friends-list">
           {friends?.map((friends) => (
-            <li key={friends.id}>
+            <li key={parseId(friends.id)}>
               {friends.profilePicture && (
                 <img
                   src={friends.profilePicture}
@@ -47,13 +47,13 @@ const FriendsList = () => {
                 />
               )}
               <div className="friends-info">
-                <Link to={`/${friends.id}`} className="friends-name">
+                <Link to={`/${parseId(friends.id)}`} className="friends-name">
                   {friends.username}
                 </Link>
               </div>
               {currentUser && currentUser.id === userId && (
                 <button
-                  onClick={() => handleUnfollow(friends.id)}
+                  onClick={() => handleUnfollow(parseId(friends.id))}
                   className="remove-button"
                 >
                   Remove

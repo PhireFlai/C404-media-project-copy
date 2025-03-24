@@ -4,7 +4,7 @@ import {
     useAcceptFollowRequestMutation
 } from "../Api";
 import { Link } from "react-router-dom";
-
+import parseId from "../utils/parseId";
 const FollowRequests = ({ userId, onFollowChange, allowChange }) => {
     const { data: requests, isLoading, isError, error, refetch: refetchRequests } = useGetFollowRequestsQuery(
         userId
@@ -17,8 +17,8 @@ const FollowRequests = ({ userId, onFollowChange, allowChange }) => {
     const handleApproveOrReject = async (objectId, actorId, action) => {
         try {
             const response = await acceptFollowRequest({
-                objectId: objectId,
-                actorId: actorId,
+                objectId: parseId(objectId),
+                actorId: parseId(actorId),
                 action: action,
             }).unwrap();
             console.log("Follow Request Sent:", response);
@@ -38,16 +38,16 @@ const FollowRequests = ({ userId, onFollowChange, allowChange }) => {
             ) : (
                 <ul className="follower-request-list">
                     {requests.map((request) => (
-                        <li key={request.actor.id}>
+                        <li key={parseId(request.actor.id)}>
                             <div className="requester-info">
-                                <Link to={`/${request.actor.id}`} className="requester-name">
+                                <Link to={`/${parseId(request.actor.id)}`} className="requester-name">
                                     {request.actor.username}
                                 </Link>
                                 {allowChange && (
                                     <div>
                                         <button
                                             onClick={() =>
-                                                handleApproveOrReject(request.object.id, request.actor.id, "accept")
+                                                handleApproveOrReject(parseId(request.object.id), parseId(request.actor.id), "accept")
                                             }
                                             className="approve-btn"
                                         >
@@ -55,7 +55,7 @@ const FollowRequests = ({ userId, onFollowChange, allowChange }) => {
                                         </button>
                                         <button
                                             onClick={() =>
-                                                handleApproveOrReject(request.object.id, request.actor.id, "reject")
+                                                handleApproveOrReject(parseId(request.object.id), parseId(request.actor.id), "reject")
                                             }
                                             className="reject-btn"
                                         >

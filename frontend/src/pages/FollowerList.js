@@ -4,7 +4,7 @@ import { useGetFollowersQuery, useRemoveFollowerMutation } from "../Api";
 import { Link } from "react-router-dom";
 import FollowRequests from "../components/FollowRequests";
 import "./css/followers.css";
-
+import parseId from "../utils/parseId";
 const FollowersList = () => {
   const currentUser = JSON.parse(localStorage.getItem("user"));
   const { userId } = useParams();
@@ -16,6 +16,8 @@ const FollowersList = () => {
     refetch,
   } = useGetFollowersQuery(userId);
   const [removeFollower] = useRemoveFollowerMutation();
+
+
 
   if (isLoading) return <div className="loader">Loading followers...</div>;
   if (isError) return <div>Error loading followers: {error.message}</div>;
@@ -40,7 +42,7 @@ const FollowersList = () => {
       ) : (
         <ul className="followers-list">
           {followers?.map((follower) => (
-            <li key={follower.id}>
+            <li key={parseId(follower.id)}>
               {follower.profilePicture && (
                 <img
                   src={follower.profilePicture}
@@ -49,13 +51,13 @@ const FollowersList = () => {
                 />
               )}
               <div className="follower-info">
-                <Link to={`/${follower.id}`} className="follower-name">
+                <Link to={`/${parseId(follower.id)}`} className="follower-name">
                   {follower.username}
                 </Link>
               </div>
               {currentUser && currentUser.id === userId && (
                 <button
-                  onClick={() => handleRemoveFollower(follower.id)}
+                  onClick={() => handleRemoveFollower(parseId(follower.id))}
                   className="remove-button"
                 >
                   Remove

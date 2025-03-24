@@ -3,7 +3,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 export const api = createApi({
   reducerPath: "api",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://127.0.0.1:8000/", // Common base URL
+    baseUrl: process.env.REACT_APP_API_BASE_URL || "http://127.0.0.1:8000/", // Fallback to localhost if not set
     prepareHeaders: (headers) => {
       const token = localStorage.getItem("token"); // Get the token from local storage
       if (token) {
@@ -13,9 +13,6 @@ export const api = createApi({
     },
   }),
   endpoints: (builder) => ({
-    getPosts: builder.query({
-      query: () => `api/public-posts/`, // Endpoint for fetching public posts
-    }),
     getFriendsPosts: builder.query({
       query: (userId) => `api/authors/${userId}/friends-posts/`, // Endpoint for fetching friends posts
     }),
@@ -137,7 +134,7 @@ export const api = createApi({
     getFollowing: builder.query({
       query: (userId) => `api/authors/${userId}/following/`,
     }),
-    createFollowRequest: builder.mutation({
+  createFollowRequest: builder.mutation({
       query: ({ actorId, objectId }) => ({
         url: `api/authors/${actorId}/follow/authors/${objectId}/`,
         method: "POST",
@@ -185,15 +182,29 @@ export const api = createApi({
     getPost: builder.query({
       query: (postId) => `api/posts/${postId}/`, //endpoint for fetching a single post
     }),
-    getUserFeed: builder.query({
+    getPublicFeed: builder.query({
       query: () => `api/authors/feed/`, //endpoint for user feed
     }),    
+    getFriendsFeed: builder.query({
+      query: () => `api/authors/friends-feed/`, //endpoint for user feed
+    }),  
+    getFollowersFeed: builder.query({
+      query: () => `api/authors/followers-feed/`, //endpoint for user feed
+    }),
+    searchUsers: builder.query({
+      query: (query) => `api/search-users/?q=${query}`,
+    }),
+    createRemoteFollowRequest: builder.mutation({
+      query: ({ actorId, objectFQID }) => ({
+        url: `api/authors/${actorId}/follow/authors/${objectFQID}/`,
+        method: "POST",
+      }),
+    }),
   }),
 });
 
 // Export hooks for each endpoint
 export const {
-  useGetPostsQuery,
   useGetFriendsPostsQuery,
   useCreatePostMutation,
   useDeletePostMutation,
@@ -224,5 +235,9 @@ export const {
   usePostToInboxMutation,
   useGetFollowRequestsQuery,
   useGetPostQuery,
-  useGetUserFeedQuery,
+  useGetPublicFeedQuery,
+  useGetFriendsFeedQuery,
+  useGetFollowersFeedQuery,
+  useSearchUsersQuery,
+  useCreateRemoteFollowRequestMutation
 } = api;

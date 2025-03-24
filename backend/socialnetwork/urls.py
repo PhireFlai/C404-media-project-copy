@@ -43,7 +43,6 @@ urlpatterns = [
     path("api/authors/<uuid:userId>/posts/<uuid:pk>/comments/<uuid:commentId>/", GetComment.as_view(), name="get-comment"),  # Endpoint to get a specific comment on a specific post
     path("api/authors/<uuid:userId>/commented/", GetCommented.as_view(), name='commented'),  # Endpoint to get all comments made by a specific author
     path("api/authors/<uuid:userId>/commented/<uuid:commentId>/", GetCommentFromCommented.as_view(), name='get-commented-comment'),  # Endpoint to get a specific comment made by a specific author
-    path("api/public-posts/", PublicPostsView.as_view(), name="public-posts"),  # Endpoint to list public posts
     path("api/authors/<uuid:userId>/friends-posts/", FriendsPostsView.as_view(), name="friends-posts"),
     path("api/authors/<uuid:userId>/followers/", FollowersList.as_view(), name="user-followers"), # Endpoint to list followers of a specific user
     path("api/authors/<uuid:userId>/following/", FollowingList.as_view(), name="user-follows"), # Endpoint to list users that a specific user follows
@@ -53,16 +52,22 @@ urlpatterns = [
     path("api/authors/<uuid:objectId>/accept-follow-request/authors/<uuid:actorId>/", AcceptFollowRequest, name='accept-follow-request'),
     path("api/authors/<uuid:followerId>/unfollow/authors/<uuid:followedId>/", Unfollow, name='unfollow'),
     path("api/authors/<uuid:followedId>/remove-follower/authors/<uuid:followerId>/", RemoveFollower, name='remove-follower'),
-    path("api/authors/<uuid:userId>/posts/<uuid:pk>/like/", AddLike, name='add-like'),
-    path("api/authors/<uuid:userId>/posts/<uuid:pk>/likes/", LikesList.as_view(), name="likes-list"),
+    path("api/authors/<uuid:userId>/posts/<uuid:object_id>/like/", AddLikeOnPost, name='add-like'),
+    path("api/authors/<uuid:userId>/posts/<uuid:object_id>/likes/", LikesList.as_view(), name="likes-list"),
     path("api/authors/<uuid:userId>/posts/<uuid:pk>/comments/<uuid:ck>/like/", AddCommentLike, name='add-like'),
     path("api/authors/<uuid:userId>/posts/<uuid:pk>/comments/<uuid:ck>/likes/", CommentLikesList.as_view(), name="likes-list"),
     path("api/posts/<uuid:pk>/", PostDetailView.as_view(), name="post-detail"),
-    path("api/authors/feed/", UserFeedView.as_view(), name="user-feed"),
+    path("api/authors/feed/", PublicFeedView.as_view(), name="public-feed"),
     path("api/authors/<uuid:authorId>/liked/", GetLikesByAuthor.as_view(), name="likes-by-author"),
     path("api/authors/<uuid:authorId>/liked/<uuid:id>/", GetSingleLike.as_view(), name="single-like"),
     path("api/liked/<uuid:id>/", GetSingleLike.as_view(), name="single-like"),
     path("api/posts/<uuid:postId>/likes/", GetPostLikes.as_view(), name="post-likes"),
+    path("api/authors/friends-feed/", FriendsFeedView.as_view(), name="friends-feed"),
+    path("api/authors/followers-feed/", FollowersFeedView.as_view(), name="followers-feed"),
+    path("api/search-users/", SearchUsersView.as_view(), name="search-users"),
+    path('api/forward/<path:encoded_url>/', ForwardGetView.as_view(), name='forward'),
+    path("api/authors/<uuid:actorId>/follow/authors/<path:objectFQID>/", createForeignFollowRequest, name='create-foreign=follow-request'),
+    path('api/fetch-authors/', fetch_authors, name='fetch-authors'),
 ]
 
 # Serve media files during development

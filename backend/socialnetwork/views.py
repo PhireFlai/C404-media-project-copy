@@ -1,13 +1,11 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import get_object_or_404
 from django.contrib.auth import authenticate
-from django.core.files.base import ContentFile
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework import status, generics  
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated, AllowAny, IsAdminUser, BasePermission
-from django.contrib.auth import get_user_model
+from rest_framework.permissions import AllowAny, BasePermission, IsAuthenticated
 from django.core.exceptions import PermissionDenied
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.authentication import TokenAuthentication
@@ -17,9 +15,14 @@ from rest_framework.generics import ListAPIView
 from .models import *
 from .serializers import *
 import requests
-import logging
-from rest_framework.exceptions import ValidationError
 from django.db.models import Q
+from django.http import JsonResponse
+from socialnetwork.permissions import IPLockPermission, MultiAuthPermission, ConditionalMultiAuthPermission
+from .utils import forward_get_request
+from requests.auth import HTTPBasicAuth
+from urllib.parse import urlparse
+from django.test import RequestFactory
+
 
 @swagger_auto_schema(
     method="post",
@@ -66,7 +69,7 @@ from django.db.models import Q
 
 # Creates a new user
 @api_view(['POST'])
-@permission_classes([AllowAny])  # Allows anyone to sign up
+@permission_classes([AllowAny])  # Allows anyone to sign up locally
 def createUser(request):
     username = request.data.get('username')
     password = request.data.get('password')
@@ -115,24 +118,15 @@ def loginUser(request):
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
 
 # Lists all users
-@permission_classes([AllowAny])         
 class UsersList(generics.ListCreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-
-
-# Gets all public posts
-class PublicPostsView(ListAPIView):
-    serializer_class = PostSerializer
-    permission_classes = [AllowAny]
-
-    def get_queryset(self):
-        return Post.objects.filter(visibility=Post.PUBLIC).order_by("-created_at") 
+    permission_classes = [MultiAuthPermission]
     
 # Get all friends posts
 class FriendsPostsView(ListAPIView):
     serializer_class = PostSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [MultiAuthPermission]
 
     def get_queryset(self):
         # Get the userID from the URL parameter
@@ -150,7 +144,7 @@ class PostListCreateView(generics.ListCreateAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
     parser_classes = (MultiPartParser, FormParser)
-    permission_classes = [AllowAny]  
+    permission_classes = [ConditionalMultiAuthPermission]  
 
     def get_queryset(self):
         user_id = self.kwargs.get('userId')  # Extract userId from URL
@@ -187,7 +181,44 @@ class PostListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         if not self.request.user.is_authenticated:
             raise PermissionDenied("You must be logged in to create a post.")
-        serializer.save(author=self.request.user)
+        post = serializer.save(author=self.request.user)
+        
+        # Fetch followers with remote_fqid
+        followers_with_remote_fqid = self.request.user.followers.filter(remote_fqid__isnull=False)
+        # print(followers_with_remote_fqid)
+        # Send the post to each follower's inbox
+        for follower in followers_with_remote_fqid:
+            
+            parsed_url = follower.remote_fqid.split('/')
+            remote_domain_base = parsed_url[2]
+
+            # Remove the port from the remote domain
+            parsed_remote_url = urlparse(f"http://{remote_domain_base}")
+            remote_domain_without_brackets = parsed_remote_url.hostname  # Extract the hostname without the port
+            remote_domain = f"[{remote_domain_without_brackets}]"  # Add brackets for IPv6 format
+
+            
+            try:
+                remote_node = RemoteNode.objects.get(url=f"http://{remote_domain}/")
+                auth = HTTPBasicAuth(remote_node.username, remote_node.password)
+            except RemoteNode.DoesNotExist:
+                return Response({'error': 'Remote node not configured'}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+            
+            inbox_url = f"{follower.remote_fqid}inbox/"
+            post_data = PostSerializer(post).data
+            post_data.update({'remote_fqid' : post_data['id']})
+            print(post_data)
+            headers = {"Content-Type": "application/json"}
+            
+            try:
+                print(inbox_url)
+                response = requests.post(inbox_url, auth = auth, json=post_data, headers=headers)
+                print(response.json())
+                response.raise_for_status()
+            except requests.exceptions.RequestException as e:
+                print(f"Failed to send post to {follower.username}'s inbox: {e}")
+
 
 # Gets, updates, or deletes a specific post
 class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -196,8 +227,8 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_permissions(self):
         """Allow any user to GET but require authentication for updates/deletes."""
         if self.request.method == 'GET':
-            return [AllowAny()]
-        return [IsAuthenticated()]
+            return [AllowAny()]  # Instantiate the AllowAny class
+        return [MultiAuthPermission()]  # Instantiate the MultiAuthPermission class
 
     def get_queryset(self):
         """Filters posts based on visibility and user authentication."""
@@ -233,29 +264,103 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
         if self.request.user != instance.author:
             raise PermissionDenied("You can only delete your own posts.")  
         instance.visibility = Post.DELETED
+        post = instance
         instance.save()
+        
+                
+        # Fetch followers with remote_fqid
+        followers_with_remote_fqid = self.request.user.followers.filter(remote_fqid__isnull=False)
+        # print(followers_with_remote_fqid)
+        # Send the post to each follower's inbox
+        for follower in followers_with_remote_fqid:
+            
+            parsed_url = follower.remote_fqid.split('/')
+            remote_domain_base = parsed_url[2]
+
+            # Remove the port from the remote domain
+            parsed_remote_url = urlparse(f"http://{remote_domain_base}")
+            remote_domain_without_brackets = parsed_remote_url.hostname  # Extract the hostname without the port
+            remote_domain = f"[{remote_domain_without_brackets}]"  # Add brackets for IPv6 format
+
+            
+            try:
+                remote_node = RemoteNode.objects.get(url=f"http://{remote_domain}/")
+                auth = HTTPBasicAuth(remote_node.username, remote_node.password)
+            except RemoteNode.DoesNotExist:
+                return Response({'error': 'Remote node not configured'}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+            
+            inbox_url = f"{follower.remote_fqid}inbox/"
+            post_data = PostSerializer(post).data
+            print(post_data)
+            post_data.update({'remote_fqid' : post_data['id']})
+            print(post_data)
+            headers = {"Content-Type": "application/json"}
+            
+            try:
+                print(inbox_url)
+                response = requests.post(inbox_url, auth = auth, json=post_data, headers=headers)
+                print(response.json())
+                response.raise_for_status()
+            except requests.exceptions.RequestException as e:
+                print(f"Failed to send post to {follower.username}'s inbox: {e}")
 
     def perform_update(self, serializer):
         """Only the author can update their post."""
         if self.request.user != serializer.instance.author:
             raise PermissionDenied("You can only edit your own posts.")
         
+        
         # Handle image updates
         image = self.request.FILES.get('image')
         if image:
-            serializer.save(image=image)
+            post = serializer.save(image=image)
         else:
-            serializer.save()
+            post = serializer.save()
         
+        # Fetch followers with remote_fqid
+        followers_with_remote_fqid = self.request.user.followers.filter(remote_fqid__isnull=False)
+        # print(followers_with_remote_fqid)
+        # Send the post to each follower's inbox
+        for follower in followers_with_remote_fqid:
+            
+            parsed_url = follower.remote_fqid.split('/')
+            remote_domain_base = parsed_url[2]
 
+            # Remove the port from the remote domain
+            parsed_remote_url = urlparse(f"http://{remote_domain_base}")
+            remote_domain_without_brackets = parsed_remote_url.hostname  # Extract the hostname without the port
+            remote_domain = f"[{remote_domain_without_brackets}]"  # Add brackets for IPv6 format
+
+            
+            try:
+                remote_node = RemoteNode.objects.get(url=f"http://{remote_domain}/")
+                auth = HTTPBasicAuth(remote_node.username, remote_node.password)
+            except RemoteNode.DoesNotExist:
+                return Response({'error': 'Remote node not configured'}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+            
+            inbox_url = f"{follower.remote_fqid}inbox/"
+            post_data = PostSerializer(post).data
+            post_data.update({'remote_fqid' : post_data['id']})
+            print(post_data)
+            headers = {"Content-Type": "application/json"}
+            
+            try:
+                print(inbox_url)
+                response = requests.post(inbox_url, auth = auth, json=post_data, headers=headers)
+                print(response.json())
+                response.raise_for_status()
+            except requests.exceptions.RequestException as e:
+                print(f"Failed to send post to {follower.username}'s inbox: {e}")
 
 # Gets a user's profile or updates it
 class UserProfileView(APIView):
     def get_permissions(self):
         if self.request.method == 'PUT':
-            self.permission_classes = [IsAuthenticated]
+            self.permission_classes = [MultiAuthPermission]
         else:
-            self.permission_classes = [AllowAny]
+            self.permission_classes = [ConditionalMultiAuthPermission]
         return super().get_permissions()
 
     def get(self, request, userId):
@@ -291,7 +396,7 @@ class UserProfileView(APIView):
 # Updates a user's profile picture
 @api_view(['PUT'])
 @authentication_classes([TokenAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([MultiAuthPermission])
 def updateUserProfile(request, userId):
     try:
         user = User.objects.get(id=userId)
@@ -311,7 +416,7 @@ def updateUserProfile(request, userId):
     
 # Creates a comment on a post
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([MultiAuthPermission])
 def CreateComment(request, userId, pk):
     post = get_object_or_404(Post, id=pk)
     author = request.user
@@ -321,17 +426,206 @@ def CreateComment(request, userId, pk):
     
     if serializer.is_valid():
         serializer.save(author=author)
-        comment = Comment.objects.get(id=serializer.data['id'])
-        response = requests.post(f'http://localhost:8000/api/authors/{userId}/inbox/', data=CommentSerializer(comment).data)
+        comment_id = serializer.data['id'].strip('/').split('/')[-1]
+        comment = Comment.objects.get(id=comment_id)
+        factory = RequestFactory()
+        inbox_request = factory.post(f'/api/authors/{userId}/inbox/', data=CommentSerializer(comment).data)
+        inbox_request.user = request.user  # Set the user for the mock request
+        
+        # Call the PostToInbox view directly
+        response = PostToInbox(inbox_request, userId)
+        print("Response from PostToInbox:", response.data)
+
         return Response(serializer.data, status=response.status_code)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 # Post to an author's inbox
-@api_view(['POST'])
+@api_view(["POST"])
 @permission_classes([AllowAny])
 def PostToInbox(request, receiver):
-    return Response({"message": "Request received"}, status=status.HTTP_200_OK)
+    try:
+        type = request.data.get("type")
+
+        if type == "follow":
+            summary = request.data.get("summary")
+            actor = request.data.get("actor")
+            object = request.data.get("object")
+            actor_id = actor['id'].split('/')[-2]
+            object_id = object['id'].split('/')[-2]
+
+
+            # Get or create the actor and object users
+            actor_obj, created_actor = User.objects.get_or_create(
+                id=actor_id,
+                defaults={
+                    "remote_fqid": actor['id'],
+                    "username": actor.get('username'),
+                }
+            )
+            object_obj, created_object = User.objects.get_or_create(
+                id=object_id,
+                defaults={
+                    "remote_fqid": object['id'],
+                    "username": object.get('username'),
+                }
+            )
+
+            # Check if the follow request already exists
+            if FollowRequest.objects.filter(actor=actor_obj, object=object_obj).exists():
+                return Response({"message": "Follow request has already been sent"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Check if the actor is already following the object
+            if actor_obj.following.filter(id=object_obj.id).exists():
+                return Response({"message": "You are already following this user"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Manually create the FollowRequest object
+            follow_request = FollowRequest.objects.create(
+                summary=summary,
+                actor=actor_obj,
+                object=object_obj
+            )
+
+            # Return the created FollowRequest data
+            return Response({
+                "id": follow_request.id,
+                "type": follow_request.type,
+                "summary": follow_request.summary,
+                "actor": {
+                    "id": actor_obj.id,
+                    "username": actor_obj.username,
+                },
+                "object": {
+                    "id": object_obj.id,
+                    "username": object_obj.username,
+                }
+            }, status=status.HTTP_201_CREATED)
+
+        elif type == "comment":
+            author = request.data.get("author")
+            author_id = author['id'].rstrip('/').split('/')[-1]
+            comment = request.data.get("comment")
+            published = request.data.get("published")
+            id = request.data.get("id")
+            post = request.data.get("post")
+            like_count = request.data.get("like_count")
+            print(author)
+            author_obj, created_author = User.objects.get_or_create(id=author_id, remote_fqid=author['id'])
+
+            data = {"comment": comment, "post": post, "published": published, "id": id, "like_count": like_count}
+            serializer = CommentSerializer(data=data)
+
+            if serializer.is_valid():
+                serializer.save(author=author_obj)
+                comment = Comment.objects.get(id=serializer.data["id"])
+
+                likes = request.data.get("likes", [])
+                for like in likes:
+                    like_author = like['author']
+                    like_author_id = like_author['id'].rstrip('/').split('/')[-1]
+                    like_author_obj, created_like_auth = User.objects.get_or_create(id=like_author_id, remote_fqid=like_author['id'])
+                    published = like["published"]
+                    like_id = like["id"]
+
+                    like_data = {"published": published, "id": like_id, "object": comment.id}
+                    comment_like_serializer = LikeSerializer(data=like_data)
+
+                    if comment_like_serializer.is_valid():
+                        comment_like_serializer.save(author=like_author_obj)
+
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        elif type == "post":
+            print("POST")
+            print(request.data)
+            # Extract post data
+            post_data = request.data
+            post_id = post_data.get("id").rstrip('/').split('/')[-1]
+            author_data = post_data.get("author")
+            author_id = author_data.get("id").rstrip('/').split('/')[-1]
+            title = post_data.get("title")
+            content = post_data.get("content")
+            visibility = post_data.get("visibility")
+            image = post_data.get("image")
+            like_count = post_data.get("like_count", 0)
+
+            author_obj, created_author = User.objects.get_or_create(id=author_id, remote_fqid=author_data.get('id'))
+
+            # Use update_or_create for the post
+            post, created_post = Post.objects.update_or_create(
+                id=post_id,
+                defaults={
+                    "remote_fqid": post_data.get("id"),
+                    "title": title,
+                    "content": content,
+                    "visibility": visibility,
+                    "author": author_obj,
+                    "updated_at": timezone.now(),
+                    "image": image,
+                }
+            )
+
+            # Handle likes
+            likes = post_data.get("likes", [])
+            for like in likes:
+                like_author_data = like.get("author")
+                like_author_id = like_author_data.get("id").rstrip('/').split('/')[-1]
+
+                # Get or create the like author
+                like_author_obj, _ = User.objects.get_or_create(
+                    id=like_author_id,
+                    defaults={
+                        "remote_fqid": like_author_data.get("id"),
+                        "username": like_author_data.get("username"),
+                    }
+                )
+
+                # Create the like directly
+                Like.objects.create(
+                    id=like.get("id"),
+                    published=like.get("published"),
+                    object=post,
+                    author=like_author_obj
+                )
+
+            return Response({
+                "id": post.id,
+                "title": post.title,
+                "content": post.content,
+                "visibility": post.visibility,
+                "created_at": post.created_at,
+                "updated_at": post.updated_at,
+                "like_count": post.like_count,
+                "image": post.image.url if post.image else None,
+                "author": {
+                    "id": post.author.id,
+                    "username": post.author.username,
+                }
+            }, status=status.HTTP_201_CREATED)
+        
+        elif type == "like":
+            author = request.data.get("author")
+            author_id = author['id'].rstrip('/').split('/')[-1]
+            created_at = request.data.get("created_at")
+            id = request.data.get("id")
+            post = request.data.get("post")
+            author_obj, created_author = User.objects.get_or_create(id=author_id, remote_fqid=author['id'])
+            data={
+                "created_at": created_at,
+                "id": id,
+                "post": post,
+            }
+            serializer = LikeSerializer(data=data)
+            if serializer.is_valid():
+                serializer.save(user=author_obj)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
+
+    except Exception as e:
+        return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    return Response({"error": "Unsupported message type"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class IsFriendOrAuthor(BasePermission):
@@ -382,10 +676,10 @@ class GetComment(generics.ListCreateAPIView):
         id = self.kwargs['commentId']
         return Comment.objects.filter(id=id)
 
-@permission_classes([AllowAny])
 class GetCommented(generics.ListCreateAPIView):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
+    permission_classes = [ConditionalMultiAuthPermission]
 
     def get_queryset(self):
         authorID = self.kwargs['userId']
@@ -412,31 +706,32 @@ class GetCommented(generics.ListCreateAPIView):
 
     def forward_to_inbox(self, comment, author):
         comment_data = CommentSerializer(comment).data
-        
-        response = requests.post(f'http://localhost:8000/api/authors/{author}/inbox/', data=comment_data)
+        factory = RequestFactory()
+        request = factory.post(f'http://backend:8000/api/authors/{author}/inbox/', data=comment_data)
+        response = PostToInbox(request, author)
         return response
 
-@permission_classes([AllowAny])
 class GetCommentFromCommented(generics.ListCreateAPIView):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
+    permission_classes = [ConditionalMultiAuthPermission]
 
     def get_queryset(self):
         authorID = self.kwargs['userId']
         commentID = self.kwargs['commentId']
         return Comment.objects.filter(id=commentID, author=authorID)
     
-@permission_classes([AllowAny])
 class FollowRequestListView(generics.ListCreateAPIView):
     queryset = FollowRequest.objects.all()
     serializer_class = FollowRequestSerializer
+    permission_classes = [ConditionalMultiAuthPermission]
 
     def get_queryset(self):
         objectId = self.kwargs['objectId']
         return FollowRequest.objects.filter(object=objectId)
     
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([ConditionalMultiAuthPermission])
 def CreateFollowRequest(request, actorId, objectId):
     actor = User.objects.get(id=actorId)
     object = User.objects.get(id=objectId)
@@ -451,14 +746,119 @@ def CreateFollowRequest(request, actorId, objectId):
         serializer.save(actor=actor, object=object)
         request = FollowRequest.objects.get(actor=actor, object=object)
         request_data = FollowRequestSerializer(request).data
-        response = requests.post(f'http://localhost:8000/api/authors/{object.id}/inbox/', data=request_data)
+        factory = RequestFactory()
+        request = factory.post(f'http://localhost:8000/api/authors/{object.id}/inbox/', data=request_data)
+        response = PostToInbox(request, object.id)
         return Response(serializer.data, status=response.status_code)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
+
+    #     user_serializer = UserSerializer(object)
+    #     object_fqid = user_serializer.get_id(object)
+    #     parsed_url = urlparse(object_fqid)
+    #     host = parsed_url.netloc
+    #     if host != "localhost:8000" and host != "127.0.0.1:8000":
+    #         inbox_url = f'http://{host}/api/authors/{object.id}/inbox/'
+
+    #         response = SendInboxPost(inbox_url, data=request_data)
+    #         return Response(follow_serializer.data, status=response.status_code)
+    #     return Response(follow_serializer.data, status=status.HTTP_201_CREATED)
+    # return Response(follow_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET', 'POST'])
+@permission_classes([AllowAny])
+def createForeignFollowRequest(request, actorId, objectFQID):
+    actor = User.objects.get(id=actorId)
+        
+    # Parse the foreign author's FQID (Fully Qualified ID)
+    parsed_url = objectFQID.strip('/').split('/')
+    remote_domain_base = parsed_url[1]
+    print(parsed_url)
+    author_path_with_port = '/'.join(parsed_url[2:])
+    print("author path with port ", author_path_with_port)
+    port_removed_path = author_path_with_port
+    print("port removed path ", port_removed_path)
+
+    # Remove the port from the remote domain
+    parsed_remote_url = urlparse(f"http://{remote_domain_base}")
+    remote_domain_without_brackets = parsed_remote_url.hostname  # Extract the hostname without the port
+    remote_domain = f"[{remote_domain_without_brackets}]"  # Add brackets for IPv6 format
+
+    author_path =  f"http://{remote_domain}/{port_removed_path}"
+
+    print("remote domain ", remote_domain)
+    print("author path ", author_path)
+    
+    try:
+        remote_node = RemoteNode.objects.get(url=f"http://{remote_domain}/")
+        auth = HTTPBasicAuth(remote_node.username, remote_node.password)
+    except RemoteNode.DoesNotExist:
+        return Response({'error': 'Remote node not configured'}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+    try:
+        response = requests.get(
+                author_path,  # Use IPv6 format
+                auth=auth,
+                timeout=5
+        )
+        response.raise_for_status()
+        remote_author = response.json()
+        # return response
+    except requests.exceptions.RequestException as e:
+        return Response({'error': f'Failed to fetch remote author: {str(e)}'}, 
+                        status=status.HTTP_400_BAD_REQUEST)
+        # Create local follow request
+    if FollowRequest.objects.filter(actor=actor, object__remote_fqid=objectFQID).exists():
+        return Response({"message": "Follow request already sent"},
+                        status=status.HTTP_400_BAD_REQUEST)
+    
+    remote_fqid = remote_author.get('id')
+    remote_id = remote_fqid.split('/')[-2]
+    user_data = {
+        "id": remote_id,  # Assuming 'id' is the key for the unique identifier
+        "remote_fqid": objectFQID,
+        "username": remote_author.get('username'),
+        "profile_picture": remote_author.get('profile_picture'),  # Assuming 'profile_picture' is the key for the profile picture URL
+        "github": remote_author.get('github'),  # Assuming 'github' is the key for the GitHub URL
+    }
+
+    print(remote_id)
+    print("user data ", user_data)
+    print(remote_author)
+    summary = f'{actor.username} wants to follow {remote_author.get("username")}'
+    if (User.objects.filter(id=remote_id).exists()):
+        copy_remote = User.objects.get(id=remote_id)
+    else:
+        copy_remote = User.objects.create(**user_data)
+    data = {"summary": summary}
+    
+    serializer = FollowRequestSerializer(data=data)
+    
+    if serializer.is_valid():
+        serializer.save(actor=actor, object=copy_remote)
+        request = FollowRequest.objects.get(actor=actor, object=copy_remote)
+        request_data = FollowRequestSerializer(request).data
+        print(request_data)
+        headers = {"Content-Type": "application/json"}
+        response = requests.post(f'http://{remote_domain}/api/authors/{remote_id}/inbox/', json=request_data, headers=headers, auth=auth)
+         # Return the response content and status code
+        try:
+            response.raise_for_status()  # Raise an exception for HTTP errors
+            return Response(response.json(), status=response.status_code)
+        except requests.exceptions.RequestException as e:
+            # Handle errors and return the error message
+            return Response(
+                {"error": str(e), "details": response.text},
+                status=response.status_code
+            )
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
+
+
 
 
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([MultiAuthPermission])
 def AcceptFollowRequest(request, objectId, actorId ):
     try:
         follow_request = FollowRequest.objects.get(actor=actorId, object=objectId)
@@ -496,7 +896,7 @@ def AcceptFollowRequest(request, objectId, actorId ):
     
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([MultiAuthPermission])
 def Unfollow(request, followedId, followerId):
     try:
         followed = User.objects.get(id=followedId)
@@ -521,7 +921,7 @@ def Unfollow(request, followedId, followerId):
 
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([MultiAuthPermission])
 def RemoveFollower(request, followerId, followedId):
     try:
         followed = User.objects.get(id=followedId)
@@ -543,18 +943,18 @@ def RemoveFollower(request, followerId, followedId):
     
     return Response({'message': 'Follower removed successfully'}, status=status.HTTP_200_OK)    
     
-@permission_classes([AllowAny])
 class FollowersList(generics.ListCreateAPIView):
     serializer_class = UserSerializer
+    permission_classes = [ConditionalMultiAuthPermission]
 
     def get_queryset(self):
         userId = self.kwargs['userId']
         user = get_object_or_404(User, id=userId)
         return user.followers.all()
     
-@permission_classes([AllowAny])
 class FollowingList(generics.ListCreateAPIView):
     serializer_class = UserSerializer
+    permission_classes = [ConditionalMultiAuthPermission]
 
     def get_queryset(self):
         userId = self.kwargs['userId']
@@ -562,42 +962,60 @@ class FollowingList(generics.ListCreateAPIView):
         return user.following.all()
 
 
-@permission_classes([AllowAny])
 class FriendsList(generics.ListCreateAPIView):
     serializer_class = UserSerializer
+    permission_classes = [ConditionalMultiAuthPermission]
 
     def get_queryset(self):
         userId = self.kwargs['userId']
         user = get_object_or_404(User, id=userId)
         return user.friends.all()
+    
+
 # Add a like on a post
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def AddLike(request, userId, pk):
-    post = get_object_or_404(Post, id=pk)
+def AddLikeOnPost(request, userId, object_id):
     user = request.user
-    data = {'post': post.id}
+    post = get_object_or_404(Post, id=object_id)
+
+    # Check if the user has already liked the post
+    if Like.objects.filter(user=user, object_id=post.id, content_type=ContentType.objects.get_for_model(Post)).exists():
+        return Response({'error': 'You have already liked this post.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Create the Like object
+    content_type = ContentType.objects.get_for_model(Post)
+    data = {'user': user.id, 'content_type': content_type.id, 'object_id': post.id}
+    like = Like.objects.create(user=user, content_type=content_type, object_id=post.id)
+
+    # Forward the like to the inbox (if this functionality exists)
+    inbox_url = f"http://backend:8000/api/authors/{userId}/inbox/"
+
     serializer = LikeSerializer(data=data)
 
     if serializer.is_valid():
         serializer.save(user=user)
-        like = Like.objects.get(id=serializer.data['id'])
-        response = requests.post(f'http://localhost:8000/api/authors/{userId}/inbox/', data=LikeSerializer(like).data)
-        return Response(serializer.data, status=response.status_code)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        like_id = serializer.data['id'].strip('/').split('/')[-1]
+        like = Like.objects.get(id=like_id)
+    
+    factory = RequestFactory()
+    request = factory.post(inbox_url, data=LikeSerializer(like).data)
+    PostToInbox(request, userId)
+    return Response(LikeSerializer(like).data, status=status.HTTP_200_OK)
 
 class LikesList(generics.ListCreateAPIView):
     queryset = Like.objects.all()
     serializer_class = LikeSerializer
+    permission_classes = [ConditionalMultiAuthPermission]
 
     def get_queryset(self):
-        post_id = self.kwargs['pk']
-        return Like.objects.filter(post_id=post_id)
+        object_id = self.kwargs['object_id']
+        return Like.objects.filter(object_id=object_id)
     
-@permission_classes([AllowAny])
 class GetLiked(generics.ListCreateAPIView):
     queryset = Like.objects.all()
     serializer_class = LikeSerializer
+    permission_classes = [ConditionalMultiAuthPermission]
 
     def get_queryset(self):
         authorID = self.kwargs['userId']
@@ -624,14 +1042,17 @@ class GetLiked(generics.ListCreateAPIView):
     def forward_to_inbox(self, like, author):
         like_data = LikeSerializer(like).data
         
-        response = requests.post(f'http://localhost:8000/api/authors/{author}/inbox/', data=like_data)
+        # response = requests.post(f'http://backend:8000/api/authors/{author}/inbox/', data=like_data)
+        factory = RequestFactory()
+        request = factory.post(f'http://backend:8000/api/authors/{author}/inbox/', data=like_data)
+        response = PostToInbox(request, author)
         return response
 
 # Get a single like by id
-@permission_classes([AllowAny])
 class GetSingleLike(generics.RetrieveAPIView):
     queryset = Like.objects.all()
     serializer_class = LikeSerializer
+    permission_classes = [ConditionalMultiAuthPermission]
     lookup_field = 'id'
 
     def get_queryset(self):
@@ -639,76 +1060,221 @@ class GetSingleLike(generics.RetrieveAPIView):
         return Like.objects.filter(id=likeID)
 
 # Get likes by author
-@permission_classes([AllowAny])
 class GetLikesByAuthor(generics.ListAPIView):
     serializer_class = LikeSerializer
+    permission_classes = [ConditionalMultiAuthPermission]
 
     def get_queryset(self):
         authorID = self.kwargs['authorId']
         return Like.objects.filter(user=authorID)
 
 # Get likes by post
-@permission_classes([AllowAny])
+@permission_classes([ConditionalMultiAuthPermission])
 class GetPostLikes(generics.ListAPIView):
     serializer_class = LikeSerializer
+    permission_classes = [ConditionalMultiAuthPermission]
 
     def get_queryset(self):
         postID = self.kwargs['postId']
-        return Like.objects.filter(post=postID)
+        return Like.objects.filter(object_id=postID)
 
 # Add a like on a comment
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def AddCommentLike(request, userId, pk, ck):
-    comment = get_object_or_404(Comment, id=ck)
     user = request.user
-    data = {'comment': comment.id}
-    serializer = CommentLikeSerializer(data=data)
+
+    # Fetch the comment based on the comment ID (ck)
+    comment = get_object_or_404(Comment, id=ck)
+
+    # Check if the user has already liked the comment
+    if Like.objects.filter(user=user, object_id=comment.id, content_type=ContentType.objects.get_for_model(Comment)).exists():
+        return Response({'error': 'You have already liked this comment.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Create the Like object
+    content_type = ContentType.objects.get_for_model(Comment)
+    data = {'user': user.id, 'content_type': content_type.id, 'object_id': comment.id}
+    like = Like.objects.create(user=user, content_type=content_type, object_id=comment.id)
+
+    # Forward the like to the inbox (if this functionality exists)
+    inbox_url = f"http://backend:8000/api/authors/{userId}/inbox/"
+    serializer = LikeSerializer(data=data)
 
     if serializer.is_valid():
         serializer.save(user=user)
-        like = CommentLike.objects.get(id=serializer.data['id'])
-        response = requests.post(f'http://localhost:8000/api/authors/{userId}/inbox/', data=CommentLikeSerializer(like).data)
-        return Response(serializer.data, status=response.status_code)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        like_id = serializer.data['id'].strip('/').split('/')[-1]
+        like = Like.objects.get(id=like_id)
+    factory = RequestFactory()
+    request = factory.post(inbox_url, data=LikeSerializer(like).data)
+    PostToInbox(request, userId)
+    # requests.post(inbox_url, data=LikeSerializer(like).data)
+
+    return Response(LikeSerializer(like).data, status=status.HTTP_200_OK)
 
 class CommentLikesList(generics.ListCreateAPIView):
-    queryset = CommentLike.objects.all()
-    serializer_class = CommentLikeSerializer
+    serializer_class = LikeSerializer
 
     def get_queryset(self):
+        # Fetch likes for the specific comment based on the comment ID (ck)
         comment_id = self.kwargs['ck']
-        return CommentLike.objects.filter(comment_id=comment_id)
+        return Like.objects.filter(object_id=comment_id)
     
-class UserFeedView(ListAPIView):
+class PublicFeedView(ListAPIView):
+    serializer_class = PostSerializer
+    permission_classes = [ConditionalMultiAuthPermission]
+
+    def get_queryset(self):
+        """
+        Fetches the public feed, ensuring the user sees:
+        - Their own posts (excluding deleted ones).
+        - Public posts from any author.
+        """
+        
+        user = self.request.user
+        
+        if not user.is_authenticated:
+            # Return only public posts if the user is not authenticated
+            return Post.objects.filter(visibility=Post.PUBLIC).exclude(visibility=Post.DELETED).order_by("-updated_at")
+
+        return Post.objects.filter(
+            Q(author=user) |  # Show ALL posts by the user
+            Q(visibility=Post.PUBLIC) # Show all public posts from all authors
+        ).exclude(
+            visibility=Post.DELETED # excluding deleted
+        ).order_by("-updated_at")  # Show latest posts first
+
+class FriendsFeedView(ListAPIView):
+
     serializer_class = PostSerializer
     permission_classes = [AllowAny]
 
     def get_queryset(self):
         """
-        Fetches the feed, ensuring the user sees:
-        - Their own posts (excluding deleted ones).
-        - Public posts from any author.
+        Fetches the Friends feed, ensuring the user sees:
+        - Public posts from friends.
         - Friends-only posts if the author is a friend.
-        - Unlisted posts if the author is a friend or follower.
+        - Unlisted posts if the author is a friend.
         """
-        
+
         user = self.request.user
 
-        if not user.is_authenticated:
-            # Return only public posts if the user is not authenticated
-            return Post.objects.filter(visibility=Post.PUBLIC).exclude(visibility=Post.DELETED).order_by("-updated_at")
-
-        # Extract only the IDs of friends and followers
+        # Extract only the IDs of friends
         friend_ids = user.friends.values_list('id', flat=True)  # Extract only the 'id' field
+
+        return Post.objects.filter(
+            Q(visibility=Post.FRIENDS_ONLY, author__in=friend_ids) | # Friends-only posts
+            Q(visibility=Post.UNLISTED, author__in=friend_ids) # Unlisted for friends
+        ).exclude(
+            visibility=Post.DELETED
+        ).order_by("-updated_at")  # Show latest posts first
+
+class FollowersFeedView(ListAPIView):
+    serializer_class = PostSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        """
+        Fetches the Followers feed, ensuring the user sees:
+        - Public posts from authors followed.
+        - Unlisted posts if the author is a follower.
+        """
+
+        user = self.request.user
+
+        # Extract only the IDs of followers
         following_ids = user.following.values_list('id', flat=True) # Changed follower to following
 
         return Post.objects.filter(
-            Q(author=user) |  # Show ALL posts by the user (excluding deleted)
-            Q(visibility=Post.PUBLIC) |
-            Q(visibility=Post.FRIENDS_ONLY, author__in=friend_ids) |
-            Q(visibility=Post.UNLISTED, author__in=friend_ids) |  # Unlisted for friends
             Q(visibility=Post.UNLISTED, author__in=following_ids)  # Unlisted for followers
         ).exclude(
             visibility=Post.DELETED
         ).order_by("-updated_at")  # Show latest posts first
+
+
+class SearchUsersView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        query = request.GET.get("q", "")
+        local_users = []
+        remote_authors = []
+
+        # Fetch the current user's UUID from the request (if authenticated)
+        current_user = request.user if request.user.is_authenticated else None
+        current_user_uuid = str(current_user.id) if current_user else None
+
+        # Fetch local users
+        if query:
+            local_users = User.objects.filter(Q(username__icontains=query), remote_fqid__isnull=True)
+        else:
+            local_users = User.objects.all()
+
+        # Serialize local users
+        local_user_list = UserSerializer(local_users, many=True).data
+
+        # Fetch authors from all remote nodes
+        remote_nodes = RemoteNode.objects.filter(is_active=True, is_my_node=False)
+        for node in remote_nodes:
+            try:
+                url = f"{node.url.rstrip('/')}/api/authors/"
+                response = requests.get(url, auth=HTTPBasicAuth(node.username, node.password))
+                response.raise_for_status()  # Raise an error for bad status codes
+                authors = response.json()  # Get the response JSON
+
+                # Check if the response is a dictionary with an "items" key
+                if isinstance(authors, dict) and "items" in authors:
+                    authors = authors["items"]
+
+                # Handle cases where the response is a list
+                if isinstance(authors, list):
+                    for author in authors:
+                        # Extract the UUID from the author's ID
+                        author_uuid = author.get("id", "").rstrip('/').split('/')[-1]
+
+                        # Exclude the current user from the remote authors
+                        if current_user_uuid and author_uuid == current_user_uuid:
+                            continue
+
+                        if query.lower() in author.get("username", "").lower():  # Filter by query
+                            remote_authors.append(author)
+            except requests.exceptions.RequestException as e:
+                print(f"Error fetching authors from {node.url}: {e}")
+
+        # Combine local users and remote authors
+        combined_results = local_user_list + remote_authors
+
+        return Response({"users": combined_results})
+
+@permission_classes([AllowAny])        
+class ForwardGetView(APIView):
+    def get(self, request, encoded_url):
+        return forward_get_request(request, encoded_url)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def fetch_authors(request):
+    url = 'http://[2605:fd00:4:1001:f816:3eff:fe38:3824]/api/authors/'
+    username = 'canoe'
+    password = 'eonac'
+
+    try:
+        response = requests.get(url, auth=HTTPBasicAuth(username, password))
+        print(response)
+        print(response.json())
+        response.raise_for_status()  # Raise an error for bad status codes
+        data = response.json()
+        return Response(data, status=response.status_code)
+    except requests.exceptions.RequestException as e:
+        return Response({'error': str(e)}, status=500)
+
+def SendInboxPost(url_source, data):
+    parse_url = url_source.split('/')
+    url = "http://" + parse_url[2] + "/"
+    print(url)
+    # fetch authentication details from remotenode model
+    remote_node = RemoteNode.objects.get(url=url)
+    username = remote_node.username
+    password = remote_node.password
+    # send post request to remote node
+    response = requests.post(url_source, data=data, auth=HTTPBasicAuth(username, password))
+    return response

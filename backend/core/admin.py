@@ -28,11 +28,24 @@ class CustomUserAdmin(UserAdmin):
         
     )
 
+@admin.register(RemoteNode)
+class RemoteNodeAdmin(admin.ModelAdmin):
+    list_display = ("url", "username", "is_active")
+    actions = ["disable_node", "enable_node"]
+
+    def disable_node(self, request, queryset):
+        queryset.update(is_active=False)
+    disable_node.short_description = "Disable selected nodes"
+
+    def enable_node(self, request, queryset):
+        queryset.update(is_active=True)
+    enable_node.short_description = "Enable selected nodes"
+
 admin.site.register(User, CustomUserAdmin)
 # admin.site.register(User)
 admin.site.register(Post)
 admin.site.register(Comment)
 admin.site.register(FollowRequest)
 admin.site.register(Like)
-admin.site.register(CommentLike)
+# admin.site.register(CommentLike)
 admin.site.register(EnvironmentSetting)
