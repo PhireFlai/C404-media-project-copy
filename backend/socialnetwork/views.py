@@ -922,7 +922,7 @@ class PublicFeedView(ListAPIView):
         """
         
         user = self.request.user
-
+        
         if not user.is_authenticated:
             # Return only public posts if the user is not authenticated
             return Post.objects.filter(visibility=Post.PUBLIC).exclude(visibility=Post.DELETED).order_by("-updated_at")
@@ -949,15 +949,10 @@ class FriendsFeedView(ListAPIView):
 
         user = self.request.user
 
-        if not user.is_authenticated:
-            # Return only public posts if the user is not authenticated
-            return Post.objects.filter(visibility=Post.PUBLIC).exclude(visibility=Post.DELETED).order_by("-updated_at")
-
         # Extract only the IDs of friends
         friend_ids = user.friends.values_list('id', flat=True)  # Extract only the 'id' field
 
         return Post.objects.filter(
-            Q(visibility=Post.PUBLIC, author__in=friend_ids) | # Friends Public posts
             Q(visibility=Post.FRIENDS_ONLY, author__in=friend_ids) | # Friends-only posts
             Q(visibility=Post.UNLISTED, author__in=friend_ids) # Unlisted for friends
         ).exclude(
@@ -977,15 +972,10 @@ class FollowersFeedView(ListAPIView):
 
         user = self.request.user
 
-        if not user.is_authenticated:
-            # Return only public posts if the user is not authenticated
-            return Post.objects.filter(visibility=Post.PUBLIC).exclude(visibility=Post.DELETED).order_by("-updated_at")
-
         # Extract only the IDs of followers
         following_ids = user.following.values_list('id', flat=True) # Changed follower to following
 
         return Post.objects.filter(
-            Q(visibility=Post.PUBLIC, author__in=following_ids) |
             Q(visibility=Post.UNLISTED, author__in=following_ids)  # Unlisted for followers
         ).exclude(
             visibility=Post.DELETED

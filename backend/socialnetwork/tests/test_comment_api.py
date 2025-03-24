@@ -17,7 +17,9 @@ class CommentAPITestCase(APITestCase):
         cls.post = Post.objects.create(title="Test Post", content="Content here", author=cls.user)
         cls.post2 = Post.objects.create(title="Test Post 2", content="Content", author=cls.other_user)
         cls.comment = Comment.objects.create(content="Test Comment", author=cls.user, post=cls.post)
+        cls.comment.remote_fqid = None
         cls.comment2 = Comment.objects.create(content="Test Comment 2", author=cls.other_user, post=cls.post2)
+        cls.comment2.remote_fqid = None 
         cls.token = Token.objects.create(user=cls.user)
         cls.other_token = Token.objects.create(user=cls.other_user)
         
@@ -56,6 +58,10 @@ class CommentAPITestCase(APITestCase):
         data = {"content": "New comment", "author": self.user.id, "post": self.post.id}
         response = self.client.post(f'/api/authors/{self.user.id}/commented/', data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        comment_id = response.data.get("id").rstrip('/').split('/')[-1]
+        comment = Comment.objects.get(id=comment_id)
+        comment.remote_fqid = None
         self.assertEqual(response.data['content'], data['content'])
 
     def test_get_comment_from_commented(self):
