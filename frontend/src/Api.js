@@ -190,6 +190,9 @@ export const api = createApi({
     }),  
     getFollowersFeed: builder.query({
       query: () => `api/authors/followers-feed/`, //endpoint for user feed
+    }),
+    searchUsers: builder.query({
+      query: (query) => `api/search-users/?q=${query}`,
     }),  
   }),
 });
@@ -229,4 +232,5 @@ export const {
   useGetPublicFeedQuery,
   useGetFriendsFeedQuery,
   useGetFollowersFeedQuery,
+  useSearchUsersQuery,
 } = api;

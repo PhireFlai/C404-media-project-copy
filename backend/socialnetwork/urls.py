@@ -64,7 +64,7 @@ urlpatterns = [
     path("api/posts/<uuid:postId>/likes/", GetPostLikes.as_view(), name="post-likes"),
     path("api/authors/friends-feed/", FriendsFeedView.as_view(), name="user-feed"),
     path("api/authors/followers-feed/", FollowersFeedView.as_view(), name="user-feed"),
-    path("api/search-users/", search_users, name="search_users"),
+    path("api/search-users/", SearchUsersView.as_view(), name="search-users"),
     path('api/forward/<path:encoded_url>/', ForwardGetView.as_view(), name='forward'),
     path('api/fetch-authors/', fetch_authors, name='fetch-authors'),
 ]

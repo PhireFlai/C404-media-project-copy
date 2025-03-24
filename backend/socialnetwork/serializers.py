@@ -6,6 +6,7 @@ import markdown
 from django.contrib.contenttypes.models import ContentType
 from .utils import get_local_ip
 my_ip = get_local_ip()
+print(my_ip)
 
 
 # Serializer for the User model
@@ -26,16 +27,16 @@ class UserSerializer(serializers.ModelSerializer):
         
         
     def get_id(self, obj) -> str:
-        return f"http://{my_ip}:8000/api/authors/{obj.id}/"
+        return f"http://[{my_ip}]:8000/api/authors/{obj.id}/"
     
     def get_friends(self, obj):
-        return [f"http://{my_ip}/api/authors/{friend.id}/" for friend in obj.friends.all()]
+        return [f"http://[{my_ip}]/api/authors/{friend.id}/" for friend in obj.friends.all()]
    
     def get_followers(self, obj):
-        return [f"http://{my_ip}/api/authors/{follower.id}/" for follower in obj.followers.all()]
+        return [f"http://[{my_ip}]/api/authors/{follower.id}/" for follower in obj.followers.all()]
     
     def get_following(self, obj):
-        return [f"http://{my_ip}/api/authors/{following.id}/" for following in obj.following.all()]
+        return [f"http://[{my_ip}]/api/authors/{following.id}/" for following in obj.following.all()]
     
     def validate_password(self, value):
         # Validate the password using Django's password validation
@@ -73,7 +74,7 @@ class CommentSerializer(serializers.ModelSerializer):
         fields = ["id", "author", "content", "post", "created_at", "like_count", "type"]
         
     def get_id(self, obj) -> str:
-        return f"http://{my_ip}:8000/api/authors/{obj.post.author.id}/posts/{obj.post.id}/comments/{obj.id}/"
+        return f"http://[{my_ip}]:8000/api/authors/{obj.post.author.id}/posts/{obj.post.id}/comments/{obj.id}/"
     
     def validate(self, data):
         content = data.get('content')
@@ -102,7 +103,7 @@ class PostSerializer(serializers.ModelSerializer):
         fields = ["id", "author", "title", "content", "image", "formatted_content", "created_at", "updated_at", "visibility", "like_count", "type"]
         
     def get_id(self, obj) -> str:
-        return f"http://{my_ip}:8000/api/authors/{obj.author.id}/posts/{obj.id}/"
+        return f"http://[{my_ip}]:8000/api/authors/{obj.author.id}/posts/{obj.id}/"
     
     def get_formatted_content(self, obj):
         # Convert the content to formatted markdown
@@ -143,7 +144,7 @@ class LikeSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'content_type', 'object_id', 'created_at', 'type']        
             
     def get_id(self, obj) -> str:
-        return f"http://{my_ip}:8000/api/liked/{obj.id}/"
+        return f"http://[{my_ip}]:8000/api/liked/{obj.id}/"
 
     def validate(self, data):
         # Ensure the object_id corresponds to the content_type
