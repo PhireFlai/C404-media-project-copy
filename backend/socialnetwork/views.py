@@ -16,8 +16,10 @@ from .models import *
 from .serializers import *
 import requests
 from django.db.models import Q
+from django.http import JsonResponse
 from socialnetwork.permissions import IPLockPermission, MultiAuthPermission, ConditionalMultiAuthPermission
 from .utils import forward_get_request
+from requests.auth import HTTPBasicAuth
 
 @swagger_auto_schema(
     method="post",
@@ -838,17 +840,15 @@ class CommentLikesList(generics.ListCreateAPIView):
         comment_id = self.kwargs['ck']
         return Like.objects.filter(object_id=comment_id)
     
-class UserFeedView(ListAPIView):
+class PublicFeedView(ListAPIView):
     serializer_class = PostSerializer
     permission_classes = [ConditionalMultiAuthPermission]
 
     def get_queryset(self):
         """
-        Fetches the feed, ensuring the user sees:
+        Fetches the public feed, ensuring the user sees:
         - Their own posts (excluding deleted ones).
         - Public posts from any author.
-        - Friends-only posts if the author is a friend.
-        - Unlisted posts if the author is a friend or follower.
         """
         
         user = self.request.user
@@ -857,26 +857,84 @@ class UserFeedView(ListAPIView):
             # Return only public posts if the user is not authenticated
             return Post.objects.filter(visibility=Post.PUBLIC).exclude(visibility=Post.DELETED).order_by("-updated_at")
 
-        # Extract only the IDs of friends and followers
+        return Post.objects.filter(
+            Q(author=user) |  # Show ALL posts by the user
+            Q(visibility=Post.PUBLIC) # Show all public posts from all authors
+        ).exclude(
+            visibility=Post.DELETED # excluding deleted
+        ).order_by("-updated_at")  # Show latest posts first
+
+class FriendsFeedView(ListAPIView):
+
+    serializer_class = PostSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        """
+        Fetches the Friends feed, ensuring the user sees:
+        - Public posts from friends.
+        - Friends-only posts if the author is a friend.
+        - Unlisted posts if the author is a friend.
+        """
+
+        user = self.request.user
+
+        if not user.is_authenticated:
+            # Return only public posts if the user is not authenticated
+            return Post.objects.filter(visibility=Post.PUBLIC).exclude(visibility=Post.DELETED).order_by("-updated_at")
+
+        # Extract only the IDs of friends
         friend_ids = user.friends.values_list('id', flat=True)  # Extract only the 'id' field
+
+        return Post.objects.filter(
+            Q(visibility=Post.PUBLIC, author__in=friend_ids) | # Friends Public posts
+            Q(visibility=Post.FRIENDS_ONLY, author__in=friend_ids) | # Friends-only posts
+            Q(visibility=Post.UNLISTED, author__in=friend_ids) # Unlisted for friends
+        ).exclude(
+            visibility=Post.DELETED
+        ).order_by("-updated_at")  # Show latest posts first
+
+class FollowersFeedView(ListAPIView):
+    serializer_class = PostSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        """
+        Fetches the Followers feed, ensuring the user sees:
+        - Public posts from authors followed.
+        - Unlisted posts if the author is a follower.
+        """
+
+        user = self.request.user
+
+        if not user.is_authenticated:
+            # Return only public posts if the user is not authenticated
+            return Post.objects.filter(visibility=Post.PUBLIC).exclude(visibility=Post.DELETED).order_by("-updated_at")
+
+        # Extract only the IDs of followers
         following_ids = user.following.values_list('id', flat=True) # Changed follower to following
 
         return Post.objects.filter(
-            Q(author=user) |  # Show ALL posts by the user (excluding deleted)
-            Q(visibility=Post.PUBLIC) |
-            Q(visibility=Post.FRIENDS_ONLY, author__in=friend_ids) |
-            Q(visibility=Post.UNLISTED, author__in=friend_ids) |  # Unlisted for friends
+            Q(visibility=Post.PUBLIC, author__in=following_ids) |
             Q(visibility=Post.UNLISTED, author__in=following_ids)  # Unlisted for followers
         ).exclude(
             visibility=Post.DELETED
         ).order_by("-updated_at")  # Show latest posts first
 
+def search_users(request):
+    query = request.GET.get("q", "")
+    if not query:
+        return JsonResponse({"users": []})  # Return empty if no query
+
+    users = User.objects.filter(Q(username__icontains=query))
+    user_list = [{"id": user.id, "username": user.username} for user in users]
+
+    return JsonResponse({"users": user_list})
+
 @permission_classes([AllowAny])        
 class ForwardGetView(APIView):
     def get(self, request, encoded_url):
         return forward_get_request(request, encoded_url)
-
-from requests.auth import HTTPBasicAuth
 
 @api_view(['GET'])
 @permission_classes([AllowAny])

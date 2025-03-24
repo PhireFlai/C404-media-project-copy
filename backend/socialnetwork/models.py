@@ -21,7 +21,9 @@ class User(AbstractUser):
     # password = models.CharField(max_length=128)
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     type = models.TextField(default="author", editable=False)
-    profile_picture = models.ImageField(upload_to=user_profile_picture_path, null=True, blank=True)
+    #profile_picture = models.ImageField(upload_to=user_profile_picture_path, null=True, blank=True)
+    profile_picture = models.ImageField(upload_to=user_profile_picture_path, default="profile_pictures/default.png", null=True, blank=True)
+    
     followers = models.ManyToManyField(
         'self', symmetrical=False, related_name='following', blank=True
     )

@@ -59,3 +59,6 @@ python3 manage.py migrate
 
 # Launch the Django development server
 python3 manage.py runserver
+#pkill -f manage.py # kill previous run
+#nohup python3 manage.py runserver [::]:8000 > backend.log 2>&1 &
+#disown
