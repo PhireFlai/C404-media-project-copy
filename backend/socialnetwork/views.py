@@ -590,7 +590,7 @@ def PostToInbox(request, receiver):
                     author=like_author_obj
                 )
 
-            return Response({
+                return Response({
                 "id": post.id,
                 "title": post.title,
                 "content": post.content,
