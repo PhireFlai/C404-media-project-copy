@@ -914,13 +914,47 @@ class FollowersFeedView(ListAPIView):
 
 def search_users(request):
     query = request.GET.get("q", "")
-    if not query:
-        return JsonResponse({"users": []})  # Return empty if no query
+    local_users = []
+    remote_authors = []
 
-    users = User.objects.filter(Q(username__icontains=query))
-    user_list = [{"id": user.id, "username": user.username} for user in users]
+    # Fetch local users
+    if query:
+        local_users = User.objects.filter(Q(username__icontains=query))
+    else:
+        local_users = User.objects.all()
 
-    return JsonResponse({"users": user_list})
+    local_user_list = [{"id": user.id, "username": user.username, "url": f"/authors/{user.id}"} for user in local_users]
+
+    # Fetch authors from all remote nodes
+    remote_nodes = RemoteNode.objects.filter(is_active=True, is_my_node=False)
+    for node in remote_nodes:
+        try:
+            url = f"{node.url.rstrip('/')}/api/authors/"
+            response = requests.get(url, auth=HTTPBasicAuth(node.username, node.password))
+            response.raise_for_status()  # Raise an error for bad status codes
+            authors = response.json()  # Get the response JSON
+            print(authors)
+            # Check if the response is a dictionary with an "items" key
+            if isinstance(authors, dict) and "items" in authors:
+                authors = authors["items"]
+
+             # Handle cases where the response is a list
+            if isinstance(authors, list):
+                for author in authors:
+                    if query.lower() in author.get("username", "").lower():  # Filter by query
+                        remote_authors.append({
+                            "id": author.get("id"),
+                            "username": author.get("username"),
+                            "url": author.get("id"),  # Assuming "id" is the full URL
+                            "profile_picture": author.get("profile_picture", ""),
+                        })
+        except requests.exceptions.RequestException as e:
+            print(f"Error fetching authors from {node.url}: {e}")
+
+    # Combine local users and remote authors
+    combined_results = local_user_list + remote_authors
+
+    return JsonResponse({"users": combined_results})
 
 @permission_classes([AllowAny])        
 class ForwardGetView(APIView):
