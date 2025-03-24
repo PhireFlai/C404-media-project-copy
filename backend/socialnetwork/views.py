@@ -266,7 +266,8 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
         instance.visibility = Post.DELETED
         post = instance.save()
         
-                # Fetch followers with remote_fqid
+                
+        # Fetch followers with remote_fqid
         followers_with_remote_fqid = self.request.user.followers.filter(remote_fqid__isnull=False)
         # print(followers_with_remote_fqid)
         # Send the post to each follower's inbox
@@ -307,42 +308,7 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
         if self.request.user != serializer.instance.author:
             raise PermissionDenied("You can only edit your own posts.")
         
-                # Fetch followers with remote_fqid
-        followers_with_remote_fqid = self.request.user.followers.filter(remote_fqid__isnull=False)
-        # print(followers_with_remote_fqid)
-        # Send the post to each follower's inbox
-        for follower in followers_with_remote_fqid:
-            
-            parsed_url = follower.remote_fqid.split('/')
-            remote_domain_base = parsed_url[2]
-
-            # Remove the port from the remote domain
-            parsed_remote_url = urlparse(f"http://{remote_domain_base}")
-            remote_domain_without_brackets = parsed_remote_url.hostname  # Extract the hostname without the port
-            remote_domain = f"[{remote_domain_without_brackets}]"  # Add brackets for IPv6 format
-
-            
-            try:
-                remote_node = RemoteNode.objects.get(url=f"http://{remote_domain}/")
-                auth = HTTPBasicAuth(remote_node.username, remote_node.password)
-            except RemoteNode.DoesNotExist:
-                return Response({'error': 'Remote node not configured'}, 
-                          status=status.HTTP_400_BAD_REQUEST)
-            
-            inbox_url = f"{follower.remote_fqid}inbox/"
-            post_data = PostSerializer(post).data
-            post_data.update({'remote_fqid' : post_data['id']})
-            print(post_data)
-            headers = {"Content-Type": "application/json"}
-            
-            try:
-                print(inbox_url)
-                response = requests.post(inbox_url, auth = auth, json=post_data, headers=headers)
-                print(response.json())
-                response.raise_for_status()
-            except requests.exceptions.RequestException as e:
-                print(f"Failed to send post to {follower.username}'s inbox: {e}")
-                
+        
         # Handle image updates
         image = self.request.FILES.get('image')
         if image:
