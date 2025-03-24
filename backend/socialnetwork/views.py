@@ -21,6 +21,8 @@ from socialnetwork.permissions import IPLockPermission, MultiAuthPermission, Con
 from .utils import forward_get_request
 from requests.auth import HTTPBasicAuth
 from urllib.parse import urlparse
+from django.test import RequestFactory
+
 
 @swagger_auto_schema(
     method="post",
@@ -315,7 +317,14 @@ def CreateComment(request, userId, pk):
         serializer.save(author=author)
         comment_id = serializer.data['id'].strip('/').split('/')[-1]
         comment = Comment.objects.get(id=comment_id)
-        response = requests.post(f'http://backend:8000/api/authors/{userId}/inbox/', data=CommentSerializer(comment).data)
+        factory = RequestFactory()
+        inbox_request = factory.post(f'/api/authors/{userId}/inbox/', data=CommentSerializer(comment).data)
+        inbox_request.user = request.user  # Set the user for the mock request
+        
+        # Call the PostToInbox view directly
+        response = PostToInbox(inbox_request, userId)
+        print("Response from PostToInbox:", response.data)
+
         return Response(serializer.data, status=response.status_code)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -359,7 +368,7 @@ def PostToInbox(request, receiver):
             id = request.data.get("id")
             post = request.data.get("post")
             like_count = request.data.get("like_count")
-
+            print(author)
             author_obj, created_author = User.objects.get_or_create(id=author_id, remote_fqid=author['id'])
 
             data = {"comment": comment, "post": post, "published": published, "id": id, "like_count": like_count}
@@ -534,8 +543,9 @@ class GetCommented(generics.ListCreateAPIView):
 
     def forward_to_inbox(self, comment, author):
         comment_data = CommentSerializer(comment).data
-        
-        response = requests.post(f'http://backend:8000/api/authors/{author}/inbox/', data=comment_data)
+        factory = RequestFactory()
+        request = factory.post(f'http://backend:8000/api/authors/{author}/inbox/', data=comment_data)
+        response = PostToInbox(request, author)
         return response
 
 class GetCommentFromCommented(generics.ListCreateAPIView):
@@ -573,7 +583,9 @@ def CreateFollowRequest(request, actorId, objectId):
         serializer.save(actor=actor, object=object)
         request = FollowRequest.objects.get(actor=actor, object=object)
         request_data = FollowRequestSerializer(request).data
-        response = requests.post(f'http://localhost:8000/api/authors/{object.id}/inbox/', data=request_data)
+        factory = RequestFactory()
+        request = factory.post(f'http://localhost:8000/api/authors/{object.id}/inbox/', data=request_data)
+        response = PostToInbox(request, object.id)
         return Response(serializer.data, status=response.status_code)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
 
@@ -802,6 +814,7 @@ def AddLikeOnPost(request, userId, object_id):
 
     # Forward the like to the inbox (if this functionality exists)
     inbox_url = f"http://backend:8000/api/authors/{userId}/inbox/"
+
     serializer = LikeSerializer(data=data)
 
     if serializer.is_valid():
@@ -809,7 +822,9 @@ def AddLikeOnPost(request, userId, object_id):
         like_id = serializer.data['id'].strip('/').split('/')[-1]
         like = Like.objects.get(id=like_id)
     
-    requests.post(inbox_url, data=LikeSerializer(like).data)
+    factory = RequestFactory()
+    request = factory.post(inbox_url, data=LikeSerializer(like).data)
+    PostToInbox(request, userId)
     return Response(LikeSerializer(like).data, status=status.HTTP_200_OK)
 
 class LikesList(generics.ListCreateAPIView):
@@ -851,7 +866,10 @@ class GetLiked(generics.ListCreateAPIView):
     def forward_to_inbox(self, like, author):
         like_data = LikeSerializer(like).data
         
-        response = requests.post(f'http://backend:8000/api/authors/{author}/inbox/', data=like_data)
+        # response = requests.post(f'http://backend:8000/api/authors/{author}/inbox/', data=like_data)
+        factory = RequestFactory()
+        request = factory.post(f'http://backend:8000/api/authors/{author}/inbox/', data=like_data)
+        response = PostToInbox(request, author)
         return response
 
 # Get a single like by id
@@ -910,7 +928,10 @@ def AddCommentLike(request, userId, pk, ck):
         serializer.save(user=user)
         like_id = serializer.data['id'].strip('/').split('/')[-1]
         like = Like.objects.get(id=like_id)
-    requests.post(inbox_url, data=LikeSerializer(like).data)
+    factory = RequestFactory()
+    request = factory.post(inbox_url, data=LikeSerializer(like).data)
+    PostToInbox(request, userId)
+    # requests.post(inbox_url, data=LikeSerializer(like).data)
 
     return Response(LikeSerializer(like).data, status=status.HTTP_200_OK)
 
