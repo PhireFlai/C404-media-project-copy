@@ -4,7 +4,6 @@ from rest_framework.test import APIClient
 from rest_framework.authtoken.models import Token
 from socialnetwork.models import User, Post
 from django.db.models import Q
-from urllib.parse import urlparse
 
 class FeedStreamTests(TestCase):
     def setUp(self):

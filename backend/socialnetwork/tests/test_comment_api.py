@@ -3,6 +3,7 @@ from rest_framework.test import APITestCase
 from rest_framework import status
 from ..models import Post, Comment
 from rest_framework.authtoken.models import Token
+import uuid
 
 User = get_user_model()
 
@@ -39,10 +40,26 @@ class CommentAPITestCase(APITestCase):
         self.assertGreaterEqual(len(response.data), 1)
 
     def test_create_comment(self):
-        data = {"content": "New comment", "author": self.user.id, "post": self.post.id}
-        response = self.client.post(f'/api/authors/{self.user.id}/inbox/', data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-    
+        data = {
+            "type": "comment",
+            "content": "New comment",
+            "author": str(self.user.id),
+            "post": str(self.post.id)
+        }
+
+        response = self.client.post(f'/api/authors/{self.user.id}/inbox/', data, format='json')
+        print("RESPONSE:", response.status_code, response.data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # Extract the UUID from response['id']
+        full_id_url = response.data.get("id")
+        comment_uuid = full_id_url.rstrip('/').split('/')[-1]
+
+        # Validate by fetching the comment
+        comment = Comment.objects.get(id=comment_uuid)
+        self.assertEqual(comment.content, data["content"])
+
     def test_get_comment_on_post(self):
         response = self.client.get(f'/api/authors/{self.user.id}/posts/{self.post.id}/comments/{self.comment.id}/')
         # print(response.data)
@@ -55,14 +72,36 @@ class CommentAPITestCase(APITestCase):
         self.assertGreaterEqual(len(response.data), 1)
 
     def test_post_commented(self):
-        data = {"content": "New comment", "author": self.user.id, "post": self.post.id}
-        response = self.client.post(f'/api/authors/{self.user.id}/commented/', data)
+        # Use fully qualified URL for author
+        author_url = f"http://testserver/api/authors/{self.user.id}/"
+
+        data = {
+            "type": "comment",
+            "content": "New test comment",
+            "author": {
+                "id": author_url
+            },
+            "post": str(self.post.id)
+        }
+
+        response = self.client.post(f'/api/authors/{self.user.id}/commented/', data, format='json')
+        print("RESPONSE:", response.status_code, response.data)
+
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        comment_id = response.data.get("id").rstrip('/').split('/')[-1]
-        comment = Comment.objects.get(id=comment_id)
-        comment.remote_fqid = None
-        self.assertEqual(response.data['content'], data['content'])
+        # Extract full ID URL from response
+        full_id = response.data.get("id", "")
+        
+        try:
+            # Extract UUID from full URL
+            comment_uuid_str = full_id.rstrip("/").split("/")[-1]
+            comment_uuid = uuid.UUID(comment_uuid_str)
+        except Exception as e:
+            self.fail(f"Invalid UUID extracted from comment id URL: {full_id} - {e}")
+
+        # Check the comment was saved correctly
+        comment = Comment.objects.get(id=comment_uuid)
+        self.assertEqual(comment.content, data["content"])
 
     def test_get_comment_from_commented(self):
         response = self.client.get(f'/api/authors/{self.user.id}/commented/{self.comment.id}/')
