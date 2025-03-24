@@ -3,7 +3,7 @@
 # filepath: /home/ubuntu/w25-project-cyan/dev_scripts/upload_default_pic.sh
 
 # Define the file to upload and the target path inside the container
-DEFAULT_PIC_PATH="/home/ubuntu/w25-project-cyan/backend/socialnetwork/media/profile_pictures/default.png"
+DEFAULT_PIC_PATH="backend/socialnetwork/media/profile_pictures/default.png"
 TARGET_PATH="/app/socialnetwork/media/profile_pictures/"
 
 # Check if the default picture exists
