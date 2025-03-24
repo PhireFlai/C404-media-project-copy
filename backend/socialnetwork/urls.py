@@ -66,6 +66,7 @@ urlpatterns = [
     path("api/authors/followers-feed/", FollowersFeedView.as_view(), name="user-feed"),
     path("api/search-users/", SearchUsersView.as_view(), name="search-users"),
     path('api/forward/<path:encoded_url>/', ForwardGetView.as_view(), name='forward'),
+    path("api/authors/<uuid:actorId>/follow/authors/<path:objectFQID>/", createForeignFollowRequest, name='create-foreign=follow-request'),
     path('api/fetch-authors/', fetch_authors, name='fetch-authors'),
 ]
 

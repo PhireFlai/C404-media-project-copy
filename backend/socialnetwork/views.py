@@ -568,23 +568,83 @@ def CreateFollowRequest(request, actorId, objectId):
         return Response({"message": "You are already following this user"}, status=status.HTTP_400_BAD_REQUEST)
     summary = f'{actor.username} wants to follow {object.username}'
     data = {"summary": summary}
-    follow_serializer = FollowRequestSerializer(data=data)
-    if follow_serializer.is_valid():
-        follow_serializer.save(actor=actor, object=object)
+    serializer = FollowRequestSerializer(data=data)
+    if serializer.is_valid():
+        serializer.save(actor=actor, object=object)
         request = FollowRequest.objects.get(actor=actor, object=object)
         request_data = FollowRequestSerializer(request).data
+        response = requests.post(f'http://localhost:8000/api/authors/{object.id}/inbox/', data=request_data)
+        return Response(serializer.data, status=response.status_code)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
 
-        user_serializer = UserSerializer(object)
-        object_fqid = user_serializer.get_id(object)
-        parsed_url = urlparse(object_fqid)
-        host = parsed_url.netloc
-        if host != "localhost:8000" and host != "127.0.0.1:8000":
-            inbox_url = f'http://{host}/api/authors/{object.id}/inbox/'
+    #     user_serializer = UserSerializer(object)
+    #     object_fqid = user_serializer.get_id(object)
+    #     parsed_url = urlparse(object_fqid)
+    #     host = parsed_url.netloc
+    #     if host != "localhost:8000" and host != "127.0.0.1:8000":
+    #         inbox_url = f'http://{host}/api/authors/{object.id}/inbox/'
 
-            response = SendInboxPost(inbox_url, data=request_data)
-            return Response(follow_serializer.data, status=response.status_code)
-        return Response(follow_serializer.data, status=status.HTTP_201_CREATED)
-    return Response(follow_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    #         response = SendInboxPost(inbox_url, data=request_data)
+    #         return Response(follow_serializer.data, status=response.status_code)
+    #     return Response(follow_serializer.data, status=status.HTTP_201_CREATED)
+    # return Response(follow_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def createForeignFollowRequest(request, actorId, objectFQID):
+    actor = User.objects.get(id=actorId)
+        
+    # Parse the foreign author's FQID (Fully Qualified ID)
+    parsed_url = objectFQID.strip('/').split('/')
+    remote_domain = parsed_url[1]
+    author_path = '/'.join(parsed_url[1:])
+    print(remote_domain)
+    print(author_path)
+    
+    try:
+        remote_node = RemoteNode.objects.get(url=f"http://{remote_domain}/")
+        auth = HTTPBasicAuth(remote_node.username, remote_node.password)
+    except RemoteNode.DoesNotExist:
+        return Response({'error': 'Remote node not configured'}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+    try:
+        response = requests.get(
+        f"http://{author_path}",  # Use IPv6 format
+                auth=auth,
+                timeout=5
+        )
+        response.raise_for_status()
+        remote_author = response.json()
+        # return response
+    except requests.exceptions.RequestException as e:
+        return Response({'error': f'Failed to fetch remote author: {str(e)}'}, 
+                        status=status.HTTP_400_BAD_REQUEST)
+        # Create local follow request
+    if FollowRequest.objects.filter(actor=actor, object_url=objectFQID).exists():
+        return Response({"message": "Follow request already sent"},
+                        status=status.HTTP_400_BAD_REQUEST)
+        
+    user_data = {
+    'username': remote_author.get('username'),
+    'email': remote_author.get('email', ''),
+    'first_name': remote_author.get('first_name', ''),
+    'last_name': remote_author.get('last_name', ''),
+    # Save the remote author's unique id into remote_fqid.
+    'remote_fqid': remote_author.get('id')
+    }
+    summary = f'{actor.username} wants to follow {remote_author.username}'
+    copy_remote = User.objects.create(**user_data)
+    data = {"summary": summary}
+    serializer = FollowRequestSerializer(data=data)
+    if serializer.is_valid():
+        serializer.save(actor=actor, object=copy_remote)
+        request = FollowRequest.objects.get(actor=actor, object=copy_remote)
+        request_data = FollowRequestSerializer(request).data
+        response = requests.post(f'http://{remote_domain}/api/authors/{remote_author.id}/inbox/', data=request_data)
+        return Response(serializer.data, status=response.status_code)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
+
+
 
 
 @api_view(['POST'])
