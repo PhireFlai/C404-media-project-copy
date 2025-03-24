@@ -589,17 +589,23 @@ def CreateFollowRequest(request, actorId, objectId):
     #     return Response(follow_serializer.data, status=status.HTTP_201_CREATED)
     # return Response(follow_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['GET'])
+@api_view(['GET', 'POST'])
 @permission_classes([AllowAny])
 def createForeignFollowRequest(request, actorId, objectFQID):
     actor = User.objects.get(id=actorId)
         
     # Parse the foreign author's FQID (Fully Qualified ID)
     parsed_url = objectFQID.strip('/').split('/')
-    remote_domain = parsed_url[1]
+    remote_domain_base = parsed_url[1]
     author_path = '/'.join(parsed_url[1:])
-    print(remote_domain)
-    print(author_path)
+
+    # Remove the port from the remote domain
+    parsed_remote_url = urlparse(f"http://{remote_domain_base}")
+    remote_domain_without_brackets = parsed_remote_url.hostname  # Extract the hostname without the port
+    remote_domain = f"[{remote_domain_without_brackets}]"  # Add brackets for IPv6 format
+
+    print("remote domain ", remote_domain)
+    print("author path ", author_path)
     
     try:
         remote_node = RemoteNode.objects.get(url=f"http://{remote_domain}/")

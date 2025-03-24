@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSearchUsersQuery, useCreateRemoteFollowRequestMutation } from "../Api";
+import parseId from "../utils/parseId";
 
-const parseFQId = (id) => {
+const isLocal = (id) => {
     try {
         // Extract the domain from the FQID
         const url = new URL(id);
@@ -33,10 +34,13 @@ const SearchUsers = () => {
 
     const handleFollow = async (remoteUserId) => {
         try {
-            const actorId = localStorage.getItem("userId"); // Assuming the current user's ID is stored in localStorage
-            if (!actorId) {
-                throw new Error("User ID not found in local storage");
+            // Assuming the user object is available in the component
+            const user = JSON.parse(localStorage.getItem("user")); // Retrieve the user object from localStorage
+            if (!user || !user.id) {
+                throw new Error("User object not found in local storage");
             }
+
+            const actorId = user.id; // Get the actorId from the user object
 
             // Send the follow request using the new API format
             await createRemoteFollowRequest({ actorId, objectFQID: remoteUserId }).unwrap();
@@ -60,9 +64,9 @@ const SearchUsers = () => {
                 <ul className="search-dropdown">
                     {searchResults.users.map((user) => (
                         <li key={user.id}>
-                            {parseFQId(user.id) ? (
-                                // If the user is local, redirect to their profile
-                                <span onClick={() => navigate(`${user.id}`)}>
+                            {isLocal(user.id) ? (
+                                // Local, so extract UUID and redirect to the profile
+                                <span onClick={() => navigate(parseId(user.id))}>
                                     {user.username}
                                 </span>
                             ) : (
