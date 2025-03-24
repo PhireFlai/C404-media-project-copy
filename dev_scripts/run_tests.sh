@@ -26,5 +26,5 @@ fi
 cd backend || { echo "Failed to navigate to the backend directory"; echo "Make sure you're running from repo root"; exit 1; }
 
 # Run tests
-python manage.py test socialnetwork.tests.test_follow
-#python manage.py test
+#python manage.py test socialnetwork.tests.test_post_api
+python manage.py test

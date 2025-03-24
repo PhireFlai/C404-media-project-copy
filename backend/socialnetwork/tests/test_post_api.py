@@ -96,7 +96,8 @@ class PostAPITestCase(APITestCase):
             self.assertEqual(post['visibility'], Post.PUBLIC)
     
         # Ensure the private, unlisted, and deleted posts are not in the response
-        post_ids = [post['id'] for post in response.data]
+        #post_ids = [post['id'] for post in response.data]
+        post_ids = [post['id'].split('/')[-2] for post in response.data]
         self.assertNotIn(private_post.id, post_ids)
         self.assertNotIn(unlisted_post.id, post_ids)
         self.assertNotIn(deleted_post.id, post_ids)
@@ -144,7 +145,8 @@ class PostAPITestCase(APITestCase):
             self.assertNotEqual(post['visibility'], Post.DELETED)
     
         # Ensure the deleted post is not in the response
-        post_ids = [str(post['id']) for post in response.data]
+        #post_ids = [str(post['id']) for post in response.data]
+        post_ids = [post['id'].split('/')[-2] for post in response.data]
         self.assertNotIn(str(deleted_post.id), post_ids)
     
         # Ensure the private, unlisted, and public posts are in the response
@@ -177,7 +179,7 @@ class PostAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         # Check that the deleted post is not in the response
-        post_ids = [str(post['id']) for post in response.data]
+        post_ids = [post['id'].split('/')[-2] for post in response.data]
         self.assertNotIn(str(post1.id), post_ids)
 
         # Ensure the non-deleted post is in the response
@@ -198,7 +200,8 @@ class PostAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         # Check that the public post by other_user is in the response
-        post_ids = [str(post['id']) for post in response.data]
+        #post_ids = [str(post['id']) for post in response.data]
+        post_ids = [post['id'].split('/')[-2] for post in response.data]
         self.assertIn(str(public_post.id), post_ids)
     
 
@@ -219,7 +222,8 @@ class PostAPITestCase(APITestCase):
         response = self.client.get(f'/api/authors/{self.user.id}/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['username'], self.user.username)
-        self.assertEqual(response.data['id'], str(self.user.id))
+        #self.assertEqual(response.data['id'], str(self.user.id))
+        self.assertEqual(response.data['id'].rstrip('/').split('/')[-1], str(self.user.id))
 
     def test_get_public_posts_for_user_profile(self):
         """Test retrieving public posts for a user profile."""
@@ -272,7 +276,8 @@ class PostAPITestCase(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.other_token.key)
         response = self.client.get(f'/api/authors/{self.user.id}/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['id'], str(self.user.id))
+        #self.assertEqual(response.data['id'], str(self.user.id))
+        self.assertEqual(response.data['id'].rstrip('/').split('/')[-1], str(self.user.id))
         
 
     # These don't pass, probably because the token isn't being setup/torn properly
