@@ -673,7 +673,7 @@ def createForeignFollowRequest(request, actorId, objectFQID):
         serializer.save(actor=actor, object=copy_remote)
         request = FollowRequest.objects.get(actor=actor, object=copy_remote)
         request_data = FollowRequestSerializer(request).data
-        response = requests.post(f'http://{remote_domain}/api/authors/{remote_author.id}/inbox/', data=request_data)
+        response = requests.post(f'http://{remote_domain}/api/authors/{remote_id}/inbox/', data=request_data)
         return Response(serializer.data, status=response.status_code)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
 
