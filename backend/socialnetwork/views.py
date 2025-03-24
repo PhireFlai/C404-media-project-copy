@@ -181,7 +181,41 @@ class PostListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         if not self.request.user.is_authenticated:
             raise PermissionDenied("You must be logged in to create a post.")
-        serializer.save(author=self.request.user)
+        post = serializer.save(author=self.request.user)
+        
+        # Fetch followers with remote_fqid
+        followers_with_remote_fqid = self.request.user.followers.filter(remote_fqid__isnull=False)
+        
+        # Send the post to each follower's inbox
+        for follower in followers_with_remote_fqid:
+            
+             # Parse the foreign author's FQID (Fully Qualified ID)
+            parsed_url = follower.remote_fqid.strip('/').split('/')
+            remote_domain_base = parsed_url[1]
+
+            # Remove the port from the remote domain
+            parsed_remote_url = urlparse(f"http://{remote_domain_base}")
+            remote_domain_without_brackets = parsed_remote_url.hostname  # Extract the hostname without the port
+            remote_domain = f"[{remote_domain_without_brackets}]"  # Add brackets for IPv6 format
+            
+            try:
+                remote_node = RemoteNode.objects.get(url=f"http://{remote_domain}/")
+                auth = HTTPBasicAuth(remote_node.username, remote_node.password)
+            except RemoteNode.DoesNotExist:
+                return Response({'error': 'Remote node not configured'}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+            
+            inbox_url = f"{follower.remote_fqid}/inbox/"
+            post_data = PostSerializer(post).data
+            post_data.update({'remote_fqid' : post_data['id']})
+            headers = {"Content-Type": "application/json"}
+            
+            try:
+                response = requests.post(inbox_url, auth = auth, json=post_data, headers=headers)
+                response.raise_for_status()
+            except requests.exceptions.RequestException as e:
+                print(f"Failed to send post to {follower.username}'s inbox: {e}")
+
 
 # Gets, updates, or deletes a specific post
 class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
