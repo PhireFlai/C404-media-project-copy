@@ -123,7 +123,7 @@ const Profile = () => {
       <div className="profile-header">
         {user.profile_picture && (
           <img
-            src={`http://localhost:8000${user.profile_picture}`}
+            src={`${process.env.REACT_APP_API_BASE_URL || "http://localhost"}${":8000"}${user.profile_picture}`}
             alt={`${user.username}'s avatar`}
             className="profile-avatar"
           />
