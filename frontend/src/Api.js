@@ -193,7 +193,13 @@ export const api = createApi({
     }),
     searchUsers: builder.query({
       query: (query) => `api/search-users/?q=${query}`,
-    }),  
+    }),
+    createRemoteFollowRequest: builder.mutation({
+      query: ({ actorId, objectFQID }) => ({
+        url: `api/authors/${actorId}/follow/authors/${objectFQID}/`,
+        method: "POST",
+      }),
+    }),
   }),
 });
 
@@ -233,4 +239,5 @@ export const {
   useGetFriendsFeedQuery,
   useGetFollowersFeedQuery,
   useSearchUsersQuery,
+  useCreateRemoteFollowRequestMutation
 } = api;
