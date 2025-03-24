@@ -39,6 +39,8 @@ class User(AbstractUser):
 
     github = models.URLField(max_length=200, blank=True, null=True)
     github_etag = models.CharField(max_length=250, blank=True, null=True)
+
+    remote_fqid = models.CharField(max_length=250, blank=True, null=True)
     
     def __str__(self):
         return self.username  # Display the username in the admin panel

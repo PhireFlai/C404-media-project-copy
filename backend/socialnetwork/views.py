@@ -331,9 +331,10 @@ def PostToInbox(request, receiver):
             summary = request.data.get("summary")
             actor = request.data.get("actor")
             object = request.data.get("object")
+            actor_id = actor['id'].rstrip('/').split('/')[-1]
 
-            actor_obj = get_object_or_404(User, id=actor["id"])
-            object_obj = get_object_or_404(User, id=object["id"])
+            actor_obj, created_actor = User.objects.get_or_create(id=actor_id, remote_fqid=actor['id'])
+            object_obj = get_object_or_404(User, id=actor["id"])
 
             if FollowRequest.objects.filter(actor=actor_obj, object=object_obj).exists():
                 return Response({"message": "Follow request has already been sent"}, status=status.HTTP_400_BAD_REQUEST)
@@ -352,16 +353,16 @@ def PostToInbox(request, receiver):
 
         elif type == "comment":
             author = request.data.get("author")
+            author_id = author['id'].rstrip('/').split('/')[-1]
             comment = request.data.get("comment")
             published = request.data.get("published")
             id = request.data.get("id")
             post = request.data.get("post")
             like_count = request.data.get("like_count")
 
-            author_obj = get_object_or_404(User, id=author["id"])
-            post_obj = get_object_or_404(Post, id=post)
+            author_obj, created_author = User.objects.get_or_create(id=author_id, remote_fqid=author['id'])
 
-            data = {"comment": comment, "post": post_obj.id, "published": published, "id": id, "like_count": like_count}
+            data = {"comment": comment, "post": post, "published": published, "id": id, "like_count": like_count}
             serializer = CommentSerializer(data=data)
 
             if serializer.is_valid():
@@ -370,7 +371,9 @@ def PostToInbox(request, receiver):
 
                 likes = request.data.get("likes", [])
                 for like in likes:
-                    comment_author = get_object_or_404(User, id=like["author"]["id"])
+                    like_author = like['author']
+                    like_author_id = like_author['id'].rstrip('/').split('/')[-1]
+                    like_author_obj, created_like_auth = User.objects.get_or_create(id=like_author_id, remote_fqid=like_author['id'])
                     published = like["published"]
                     like_id = like["id"]
 
@@ -378,7 +381,7 @@ def PostToInbox(request, receiver):
                     comment_like_serializer = LikeSerializer(data=like_data)
 
                     if comment_like_serializer.is_valid():
-                        comment_like_serializer.save(author=comment_author)
+                        comment_like_serializer.save(author=like_author_obj)
 
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -387,17 +390,17 @@ def PostToInbox(request, receiver):
         elif type == "post":
             id = request.data.get("id")
             author = request.data.get("author")
+            author_id = author['id'].rstrip('/').split('/')[-1]
             title = request.data.get("title")
             content = request.data.get("content")
             visibility = request.data.get("visibility")
             created_at = request.data.get("published")
             like_count = request.data.get("like_count")
 
-            author_obj = get_object_or_404(User, id=author["id"])
+            author_obj, created_author = User.objects.get_or_create(id=author_id, remote_fqid=author['id'])
 
             data = {
                 "id": id,
-                "author": author_obj.id,
                 "title": title,
                 "content": content,
                 "visibility": visibility,
@@ -412,7 +415,9 @@ def PostToInbox(request, receiver):
 
                 likes = request.data.get("likes", [])
                 for like in likes:
-                    author = get_object_or_404(User, id=like["user"]["id"])
+                    like_author = like['author']
+                    like_author_id = like_author['id'].rstrip('/').split('/')[-1]
+                    like_author_obj, created_like_auth = User.objects.get_or_create(id=like_author_id, remote_fqid=like_author['id'])
                     published = like["published"]
                     like_id = like["id"]
 
@@ -420,7 +425,7 @@ def PostToInbox(request, receiver):
                     like_serializer = LikeSerializer(data=like_data)
 
                     if like_serializer.is_valid():
-                        like_serializer.save(author=author)
+                        like_serializer.save(author=like_author_obj)
 
                 return Response(post_serializer.data, status=status.HTTP_201_CREATED)
 
@@ -428,10 +433,11 @@ def PostToInbox(request, receiver):
         
         elif type == "like":
             author = request.data.get("author")
+            author_id = author['id'].rstrip('/').split('/')[-1]
             created_at = request.data.get("created_at")
             id = request.data.get("id")
             post = request.data.get("post")
-            author_obj = get_object_or_404(User, id=author["id"])
+            author_obj, created_author = User.objects.get_or_create(id=author_id, remote_fqid=author['id'])
             data={
                 "created_at": created_at,
                 "id": id,
@@ -570,10 +576,12 @@ def CreateFollowRequest(request, actorId, objectId):
         object_fqid = user_serializer.get_id(object)
         parsed_url = urlparse(object_fqid)
         host = parsed_url.netloc
-        inbox_url = f'http://{host}/api/authors/{object.id}/inbox/'
+        if host != "localhost:8000" and host != "127.0.0.1:8000":
+            inbox_url = f'http://{host}/api/authors/{object.id}/inbox/'
 
-        response = SendInboxPost(inbox_url, data=request_data)
-        return Response(follow_serializer.data, status=response.status_code)
+            response = SendInboxPost(inbox_url, data=request_data)
+            return Response(follow_serializer.data, status=response.status_code)
+        return Response(follow_serializer.data, status=status.HTTP_201_CREATED)
     return Response(follow_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
