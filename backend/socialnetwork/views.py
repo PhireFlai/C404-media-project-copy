@@ -597,12 +597,18 @@ def createForeignFollowRequest(request, actorId, objectFQID):
     # Parse the foreign author's FQID (Fully Qualified ID)
     parsed_url = objectFQID.strip('/').split('/')
     remote_domain_base = parsed_url[1]
-    author_path = '/'.join(parsed_url[1:])
+    print(parsed_url)
+    author_path_with_port = '/'.join(parsed_url[2:])
+    print("author path with port ", author_path_with_port)
+    port_removed_path = author_path_with_port
+    print("port removed path ", port_removed_path)
 
     # Remove the port from the remote domain
     parsed_remote_url = urlparse(f"http://{remote_domain_base}")
     remote_domain_without_brackets = parsed_remote_url.hostname  # Extract the hostname without the port
     remote_domain = f"[{remote_domain_without_brackets}]"  # Add brackets for IPv6 format
+
+    author_path =  f"http://{remote_domain}/{port_removed_path}"
 
     print("remote domain ", remote_domain)
     print("author path ", author_path)
@@ -615,7 +621,7 @@ def createForeignFollowRequest(request, actorId, objectFQID):
                           status=status.HTTP_400_BAD_REQUEST)
     try:
         response = requests.get(
-        f"http://{author_path}",  # Use IPv6 format
+                author_path,  # Use IPv6 format
                 auth=auth,
                 timeout=5
         )
@@ -626,20 +632,26 @@ def createForeignFollowRequest(request, actorId, objectFQID):
         return Response({'error': f'Failed to fetch remote author: {str(e)}'}, 
                         status=status.HTTP_400_BAD_REQUEST)
         # Create local follow request
-    if FollowRequest.objects.filter(actor=actor, object_url=objectFQID).exists():
+    if FollowRequest.objects.filter(actor=actor, object__remote_fqid=objectFQID).exists():
         return Response({"message": "Follow request already sent"},
                         status=status.HTTP_400_BAD_REQUEST)
-        
+    
+    remote_fqid = remote_author.get('id')
+    remote_id = remote_fqid.split('/')[-2]
     user_data = {
-        "id": remote_author.get('id'),  # Assuming 'id' is the key for the unique identifier
+        "id": remote_id,  # Assuming 'id' is the key for the unique identifier
         "remote_fqid": objectFQID,
         "username": remote_author.get('username'),
         "profile_picture": remote_author.get('profile_picture'),  # Assuming 'profile_picture' is the key for the profile picture URL
         "github": remote_author.get('github'),  # Assuming 'github' is the key for the GitHub URL
     }
-    summary = f'{actor.name} wants to follow {remote_author.name}'
-    if (User.objects.filter(id=remote_author.get('id')).exists()):
-        copy_remote = User.objects.get(id=remote_author.get('id'))
+
+    print(remote_id)
+    print("user data ", user_data)
+    print(remote_author)
+    summary = f'{actor.username} wants to follow {remote_author.get("username")}'
+    if (User.objects.filter(id=remote_id).exists()):
+        copy_remote = User.objects.get(id=remote_id)
     else:
         copy_remote = User.objects.create(**user_data)
     data = {"summary": summary}
