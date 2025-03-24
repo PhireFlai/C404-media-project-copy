@@ -927,7 +927,8 @@ class SearchUsersView(APIView):
         else:
             local_users = User.objects.all()
 
-        local_user_list = [{"id": user.id, "username": user.username, "url": f"/authors/{user.id}"} for user in local_users]
+        # Serialize local users
+        local_user_list = UserSerializer(local_users, many=True).data
 
         # Fetch authors from all remote nodes
         remote_nodes = RemoteNode.objects.filter(is_active=True, is_my_node=False)
@@ -946,12 +947,7 @@ class SearchUsersView(APIView):
                 if isinstance(authors, list):
                     for author in authors:
                         if query.lower() in author.get("username", "").lower():  # Filter by query
-                            remote_authors.append({
-                                "id": author.get("id"),
-                                "username": author.get("username"),
-                                "url": author.get("id"),  # Assuming "id" is the full URL
-                                "profile_picture": author.get("profile_picture", ""),
-                            })
+                            remote_authors.append(author)
             except requests.exceptions.RequestException as e:
                 print(f"Error fetching authors from {node.url}: {e}")
 
