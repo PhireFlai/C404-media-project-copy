@@ -127,9 +127,21 @@ const PostPage = () => {
 
   const handleCopyLink = () => {
     const postLink = `${window.location.origin}/posts/${parseId(post.id)}`;
-    navigator.clipboard.writeText(postLink);
-    alert("Post link copied to clipboard!");
-  };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(postLink)
+            .then(() => {
+                alert("Post link copied to clipboard!");
+            })
+            .catch((err) => {
+                console.error("Failed to copy link: ", err);
+                alert("Failed to copy link. Please try again.");
+            });
+    } else {
+        // Fallback for browsers that don't support Clipboard API
+        alert("Clipboard API not supported. Copy the link manually.");
+        prompt("Copy this link:", postLink);
+    }
+};
 
   const handleCancelClick = () => {
     setIsEditing(false);
