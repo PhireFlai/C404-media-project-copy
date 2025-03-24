@@ -946,10 +946,10 @@ def fetch_authors(request):
 
 def SendInboxPost(url_source, data):
     parse_url = url_source.split('/')
-    url = "http://" + parse_url[2]
+    url = "http://" + parse_url[2] + "/"
     print(url)
     # fetch authentication details from remotenode model
-    remote_node = RemoteNode.objects.get(url=parse_url[:2])
+    remote_node = RemoteNode.objects.get(url=url)
     username = remote_node.username
     password = remote_node.password
     # send post request to remote node
