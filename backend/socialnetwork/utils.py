@@ -116,7 +116,7 @@ def forward_get_request(request, encoded_url):
 def get_local_ip():
     try:
         # Use a third-party service like ipify
-        with urllib.request.urlopen('https://api.ipify.org', timeout=5) as response:
+        with urllib.request.urlopen('https://api6.ipify.org', timeout=5) as response:
             return response.read().decode('utf-8')
     except Exception as e:
         return f"Error: {str(e)}"
