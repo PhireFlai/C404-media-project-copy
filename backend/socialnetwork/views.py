@@ -187,8 +187,8 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_permissions(self):
         """Allow any user to GET but require authentication for updates/deletes."""
         if self.request.method == 'GET':
-            return [IPLockPermission]
-        return [MultiAuthPermission]
+            return [IPLockPermission()]
+        return [MultiAuthPermission()]
 
     def get_queryset(self):
         """Filters posts based on visibility and user authentication."""
@@ -314,7 +314,7 @@ def CreateComment(request, userId, pk):
         serializer.save(author=author)
         comment_id = serializer.data['id'].strip('/').split('/')[-1]
         comment = Comment.objects.get(id=comment_id)
-        response = requests.post(f'http://localhost:8000/api/authors/{userId}/inbox/', data=CommentSerializer(comment).data)
+        response = requests.post(f'http://backend:8000/api/authors/{userId}/inbox/', data=CommentSerializer(comment).data)
         return Response(serializer.data, status=response.status_code)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -543,7 +543,7 @@ class GetCommented(generics.ListCreateAPIView):
     def forward_to_inbox(self, comment, author):
         comment_data = CommentSerializer(comment).data
         
-        response = requests.post(f'http://localhost:8000/api/authors/{author}/inbox/', data=comment_data)
+        response = requests.post(f'http://backend:8000/api/authors/{author}/inbox/', data=comment_data)
         return response
 
 class GetCommentFromCommented(generics.ListCreateAPIView):
@@ -581,7 +581,7 @@ def CreateFollowRequest(request, actorId, objectId):
         serializer.save(actor=actor, object=object)
         request = FollowRequest.objects.get(actor=actor, object=object)
         request_data = FollowRequestSerializer(request).data
-        response = requests.post(f'http://localhost:8000/api/authors/{object.id}/inbox/', data=request_data)
+        response = requests.post(f'http://backend:8000/api/authors/{object.id}/inbox/', data=request_data)
         return Response(serializer.data, status=response.status_code)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -719,7 +719,7 @@ def AddLikeOnPost(request, userId, object_id):
     like = Like.objects.create(user=user, content_type=content_type, object_id=post.id)
 
     # Forward the like to the inbox (if this functionality exists)
-    inbox_url = f"http://localhost:8000/api/authors/{userId}/inbox/"
+    inbox_url = f"http://backend:8000/api/authors/{userId}/inbox/"
     serializer = LikeSerializer(data=data)
 
     if serializer.is_valid():
@@ -769,7 +769,7 @@ class GetLiked(generics.ListCreateAPIView):
     def forward_to_inbox(self, like, author):
         like_data = LikeSerializer(like).data
         
-        response = requests.post(f'http://localhost:8000/api/authors/{author}/inbox/', data=like_data)
+        response = requests.post(f'http://backend:8000/api/authors/{author}/inbox/', data=like_data)
         return response
 
 # Get a single like by id
@@ -821,7 +821,7 @@ def AddCommentLike(request, userId, pk, ck):
     like = Like.objects.create(user=user, content_type=content_type, object_id=comment.id)
 
     # Forward the like to the inbox (if this functionality exists)
-    inbox_url = f"http://localhost:8000/api/authors/{userId}/inbox/"
+    inbox_url = f"http://backend:8000/api/authors/{userId}/inbox/"
     serializer = LikeSerializer(data=data)
 
     if serializer.is_valid():
