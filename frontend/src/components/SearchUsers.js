@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSearchUsersQuery, useCreateRemoteFollowRequestMutation } from "../Api";
 import parseId from "../utils/parseId";
+import "./css/search.css";
 
 const isLocal = (id) => {
     try {
@@ -54,7 +55,9 @@ const SearchUsers = () => {
     const isFollowed = (followers) => {
         const currentUser = JSON.parse(localStorage.getItem("user"));
         if (!currentUser || !currentUser.id) return false;
-        return followers.includes(`http://${window.location.hostname}/api/authors/${currentUser.id}/`);
+        
+        // Check if any follower contains the current user's ID
+        return followers.some((follower) => follower.includes(currentUser.id));
     };
 
     return (
