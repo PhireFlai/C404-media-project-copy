@@ -632,7 +632,10 @@ def createForeignFollowRequest(request, actorId, objectFQID):
         "github": remote_author.get('github'),  # Assuming 'github' is the key for the GitHub URL
     }
     summary = f'{actor.name} wants to follow {remote_author.name}'
-    copy_remote = User.objects.create(**user_data)
+    if (User.objects.filter(id=remote_author.get('id')).exists()):
+        copy_remote = User.objects.get(id=remote_author.get('id'))
+    else:
+        copy_remote = User.objects.create(**user_data)
     data = {"summary": summary}
     
     serializer = FollowRequestSerializer(data=data)
