@@ -17,3 +17,4 @@ socialnetwork/media
 backend/*.log
 
 .env
+frontend/.env
