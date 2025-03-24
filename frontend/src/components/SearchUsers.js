@@ -51,6 +51,12 @@ const SearchUsers = () => {
         }
     };
 
+    const isFollowed = (followers) => {
+        const currentUser = JSON.parse(localStorage.getItem("user"));
+        if (!currentUser || !currentUser.id) return false;
+        return followers.includes(`http://${window.location.hostname}/api/authors/${currentUser.id}/`);
+    };
+
     return (
         <div className="search-users">
             <input
@@ -73,12 +79,16 @@ const SearchUsers = () => {
                                 // If the user is remote, show the follow button or followed indicator
                                 <>
                                     <span>{user.username}</span>
-                                    <button
-                                        className="button-primary"
-                                        onClick={() => handleFollow(user.id)}
-                                    >
-                                        Follow
-                                    </button>
+                                    {isFollowed(user.followers) ? (
+                                        <span className="followed-indicator">Followed</span>
+                                    ) : (
+                                        <button
+                                            className="button-primary"
+                                            onClick={() => handleFollow(user.id)}
+                                        >
+                                            Follow
+                                        </button>
+                                    )}
                                 </>
                             )}
                         </li>

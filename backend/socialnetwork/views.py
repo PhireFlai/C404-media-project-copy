@@ -1106,9 +1106,13 @@ class SearchUsersView(APIView):
         local_users = []
         remote_authors = []
 
+        # Fetch the current user's UUID from the request (if authenticated)
+        current_user = request.user if request.user.is_authenticated else None
+        current_user_uuid = str(current_user.id) if current_user else None
+
         # Fetch local users
         if query:
-            local_users = User.objects.filter(Q(username__icontains=query))
+            local_users = User.objects.filter(Q(username__icontains=query), remote_fqid__isnull=True)
         else:
             local_users = User.objects.all()
 
@@ -1131,6 +1135,13 @@ class SearchUsersView(APIView):
                 # Handle cases where the response is a list
                 if isinstance(authors, list):
                     for author in authors:
+                        # Extract the UUID from the author's ID
+                        author_uuid = author.get("id", "").rstrip('/').split('/')[-1]
+
+                        # Exclude the current user from the remote authors
+                        if current_user_uuid and author_uuid == current_user_uuid:
+                            continue
+
                         if query.lower() in author.get("username", "").lower():  # Filter by query
                             remote_authors.append(author)
             except requests.exceptions.RequestException as e:
