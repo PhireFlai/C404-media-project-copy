@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('socialnetwork', '0002_alter_user_profile_picture'),
+        ('socialnetwork', '0003_remotenode_is_my_node'),
     ]
 
     operations = [
