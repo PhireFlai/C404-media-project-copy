@@ -493,8 +493,6 @@ def PostToInbox(request, receiver):
                 defaults={
                     "remote_fqid": actor['id'],
                     "username": actor.get('username'),
-                    "profile_picture": actor.get('profile_picture'),
-                    "github": actor.get('github'),
                 }
             )
             object_obj, created_object = User.objects.get_or_create(
@@ -502,8 +500,6 @@ def PostToInbox(request, receiver):
                 defaults={
                     "remote_fqid": object['id'],
                     "username": object.get('username'),
-                    "profile_picture": object.get('profile_picture'),
-                    "github": object.get('github'),
                 }
             )
 
@@ -574,50 +570,67 @@ def PostToInbox(request, receiver):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         elif type == "post":
-            post = request.data.get("id")
-            post_id = post['id'].rstrip('/').split('/')[-1]
-            author = request.data.get("author")
-            author_id = author['id'].rstrip('/').split('/')[-1]
-            title = request.data.get("title")
-            content = request.data.get("content")
-            visibility = request.data.get("visibility")
-            created_at = request.data.get("published")
-            like_count = request.data.get("like_count")
+            print("POST")
+            print(request.data)
+            # Extract post data
+            post_data = request.data
+            post_id = post_data.get("id").rstrip('/').split('/')[-1]
+            author_data = post_data.get("author")
+            author_id = author_data.get("id").rstrip('/').split('/')[-1]
+            title = post_data.get("title")
+            content = post_data.get("content")
+            visibility = post_data.get("visibility")
+            created_at = post_data.get("published")
+            like_count = post_data.get("like_count", 0)
 
-            author_obj, created_author = User.objects.get_or_create(id=author_id, remote_fqid=author['id'])
+            author_obj, created_author = User.objects.get_or_create(id=author_id, remote_fqid=author_data.get('id'))
 
-            data = {
-                "id": post_id,
-                "remote_fqid": post, 
-                "title": title,
-                "content": content,
-                "visibility": visibility,
-                "created_at": created_at,
-                "like_count": like_count,
-            }
-            post_serializer = PostSerializer(data=data)
+            # Create the post directly
+            post = Post.objects.create(
+                id=post_id,
+                remote_fqid=post_data.get("id"),
+                title=title,
+                content=content,
+                visibility=visibility,
+                created_at=created_at,
+                author=author_obj
+            )
 
-            if post_serializer.is_valid():
-                post_serializer.save(author=author_obj)
-                post = Post.objects.get(id=post_serializer.data["id"])
+            # Handle likes
+            likes = post_data.get("likes", [])
+            for like in likes:
+                like_author_data = like.get("author")
+                like_author_id = like_author_data.get("id").rstrip('/').split('/')[-1]
 
-                likes = request.data.get("likes", [])
-                for like in likes:
-                    like_author = like['author']
-                    like_author_id = like_author['id'].rstrip('/').split('/')[-1]
-                    like_author_obj, created_like_auth = User.objects.get_or_create(id=like_author_id, remote_fqid=like_author['id'])
-                    published = like["published"]
-                    like_id = like["id"]
+                # Get or create the like author
+                like_author_obj, _ = User.objects.get_or_create(
+                    id=like_author_id,
+                    defaults={
+                        "remote_fqid": like_author_data.get("id"),
+                        "username": like_author_data.get("username"),
+                    }
+                )
 
-                    like_data = {"published": published, "id": like_id, "object": post.id}
-                    like_serializer = LikeSerializer(data=like_data)
+                # Create the like directly
+                Like.objects.create(
+                    id=like.get("id"),
+                    published=like.get("published"),
+                    object=post,
+                    author=like_author_obj
+                )
 
-                    if like_serializer.is_valid():
-                        like_serializer.save(author=like_author_obj)
-
-                return Response(post_serializer.data, status=status.HTTP_201_CREATED)
-
-            return Response(post_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                return Response({
+                "id": post.id,
+                "title": post.title,
+                "content": post.content,
+                "visibility": post.visibility,
+                "created_at": post.created_at,
+                "like_count": post.like_count,
+                "author": {
+                    "id": post.author.id,
+                    "username": post.author.username,
+                }
+            }, status=status.HTTP_201_CREATED)
         
         elif type == "like":
             author = request.data.get("author")
