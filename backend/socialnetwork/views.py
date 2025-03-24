@@ -21,6 +21,8 @@ from socialnetwork.permissions import IPLockPermission, MultiAuthPermission, Con
 from .utils import forward_get_request
 from requests.auth import HTTPBasicAuth
 from urllib.parse import urlparse
+from django.test import RequestFactory
+
 
 @swagger_auto_schema(
     method="post",
@@ -315,7 +317,14 @@ def CreateComment(request, userId, pk):
         serializer.save(author=author)
         comment_id = serializer.data['id'].strip('/').split('/')[-1]
         comment = Comment.objects.get(id=comment_id)
-        response = requests.post(f'http://backend:8000/api/authors/{userId}/inbox/', data=CommentSerializer(comment).data)
+        factory = RequestFactory()
+        inbox_request = factory.post(f'/api/authors/{userId}/inbox/', data=CommentSerializer(comment).data)
+        inbox_request.user = request.user  # Set the user for the mock request
+        
+        # Call the PostToInbox view directly
+        response = PostToInbox(inbox_request, userId)
+        print("Response from PostToInbox:", response.data)
+
         return Response(serializer.data, status=response.status_code)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -331,25 +340,59 @@ def PostToInbox(request, receiver):
             summary = request.data.get("summary")
             actor = request.data.get("actor")
             object = request.data.get("object")
-            actor_id = actor['id'].rstrip('/').split('/')[-1]
+            actor_id = actor['id'].split('/')[-2]
+            object_id = object['id'].split('/')[-2]
 
-            actor_obj, created_actor = User.objects.get_or_create(id=actor_id, remote_fqid=actor['id'])
-            object_obj = get_object_or_404(User, id=actor["id"])
 
+            # Get or create the actor and object users
+            actor_obj, created_actor = User.objects.get_or_create(
+                id=actor_id,
+                defaults={
+                    "remote_fqid": actor['id'],
+                    "username": actor.get('username'),
+                    "profile_picture": actor.get('profile_picture'),
+                    "github": actor.get('github'),
+                }
+            )
+            object_obj, created_object = User.objects.get_or_create(
+                id=object_id,
+                defaults={
+                    "remote_fqid": object['id'],
+                    "username": object.get('username'),
+                    "profile_picture": object.get('profile_picture'),
+                    "github": object.get('github'),
+                }
+            )
+
+            # Check if the follow request already exists
             if FollowRequest.objects.filter(actor=actor_obj, object=object_obj).exists():
                 return Response({"message": "Follow request has already been sent"}, status=status.HTTP_400_BAD_REQUEST)
 
+            # Check if the actor is already following the object
             if actor_obj.following.filter(id=object_obj.id).exists():
                 return Response({"message": "You are already following this user"}, status=status.HTTP_400_BAD_REQUEST)
 
-            data = {"summary": summary}
-            serializer = FollowRequestSerializer(data=data)
+            # Manually create the FollowRequest object
+            follow_request = FollowRequest.objects.create(
+                summary=summary,
+                actor=actor_obj,
+                object=object_obj
+            )
 
-            if serializer.is_valid():
-                serializer.save(actor=actor_obj, object=object_obj)
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            # Return the created FollowRequest data
+            return Response({
+                "id": follow_request.id,
+                "type": follow_request.type,
+                "summary": follow_request.summary,
+                "actor": {
+                    "id": actor_obj.id,
+                    "username": actor_obj.username,
+                },
+                "object": {
+                    "id": object_obj.id,
+                    "username": object_obj.username,
+                }
+            }, status=status.HTTP_201_CREATED)
 
         elif type == "comment":
             author = request.data.get("author")
@@ -359,7 +402,7 @@ def PostToInbox(request, receiver):
             id = request.data.get("id")
             post = request.data.get("post")
             like_count = request.data.get("like_count")
-
+            print(author)
             author_obj, created_author = User.objects.get_or_create(id=author_id, remote_fqid=author['id'])
 
             data = {"comment": comment, "post": post, "published": published, "id": id, "like_count": like_count}
@@ -534,8 +577,9 @@ class GetCommented(generics.ListCreateAPIView):
 
     def forward_to_inbox(self, comment, author):
         comment_data = CommentSerializer(comment).data
-        
-        response = requests.post(f'http://backend:8000/api/authors/{author}/inbox/', data=comment_data)
+        factory = RequestFactory()
+        request = factory.post(f'http://backend:8000/api/authors/{author}/inbox/', data=comment_data)
+        response = PostToInbox(request, author)
         return response
 
 class GetCommentFromCommented(generics.ListCreateAPIView):
@@ -573,7 +617,9 @@ def CreateFollowRequest(request, actorId, objectId):
         serializer.save(actor=actor, object=object)
         request = FollowRequest.objects.get(actor=actor, object=object)
         request_data = FollowRequestSerializer(request).data
-        response = requests.post(f'http://localhost:8000/api/authors/{object.id}/inbox/', data=request_data)
+        factory = RequestFactory()
+        request = factory.post(f'http://localhost:8000/api/authors/{object.id}/inbox/', data=request_data)
+        response = PostToInbox(request, object.id)
         return Response(serializer.data, status=response.status_code)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
 
@@ -597,12 +643,18 @@ def createForeignFollowRequest(request, actorId, objectFQID):
     # Parse the foreign author's FQID (Fully Qualified ID)
     parsed_url = objectFQID.strip('/').split('/')
     remote_domain_base = parsed_url[1]
-    author_path = '/'.join(parsed_url[1:])
+    print(parsed_url)
+    author_path_with_port = '/'.join(parsed_url[2:])
+    print("author path with port ", author_path_with_port)
+    port_removed_path = author_path_with_port
+    print("port removed path ", port_removed_path)
 
     # Remove the port from the remote domain
     parsed_remote_url = urlparse(f"http://{remote_domain_base}")
     remote_domain_without_brackets = parsed_remote_url.hostname  # Extract the hostname without the port
     remote_domain = f"[{remote_domain_without_brackets}]"  # Add brackets for IPv6 format
+
+    author_path =  f"http://{remote_domain}/{port_removed_path}"
 
     print("remote domain ", remote_domain)
     print("author path ", author_path)
@@ -615,7 +667,7 @@ def createForeignFollowRequest(request, actorId, objectFQID):
                           status=status.HTTP_400_BAD_REQUEST)
     try:
         response = requests.get(
-        f"http://{author_path}",  # Use IPv6 format
+                author_path,  # Use IPv6 format
                 auth=auth,
                 timeout=5
         )
@@ -626,31 +678,50 @@ def createForeignFollowRequest(request, actorId, objectFQID):
         return Response({'error': f'Failed to fetch remote author: {str(e)}'}, 
                         status=status.HTTP_400_BAD_REQUEST)
         # Create local follow request
-    if FollowRequest.objects.filter(actor=actor, object_url=objectFQID).exists():
+    if FollowRequest.objects.filter(actor=actor, object__remote_fqid=objectFQID).exists():
         return Response({"message": "Follow request already sent"},
                         status=status.HTTP_400_BAD_REQUEST)
-        
+    
+    remote_fqid = remote_author.get('id')
+    remote_id = remote_fqid.split('/')[-2]
     user_data = {
-        "id": remote_author.get('id'),  # Assuming 'id' is the key for the unique identifier
+        "id": remote_id,  # Assuming 'id' is the key for the unique identifier
         "remote_fqid": objectFQID,
         "username": remote_author.get('username'),
         "profile_picture": remote_author.get('profile_picture'),  # Assuming 'profile_picture' is the key for the profile picture URL
         "github": remote_author.get('github'),  # Assuming 'github' is the key for the GitHub URL
     }
-    summary = f'{actor.name} wants to follow {remote_author.name}'
-    if (User.objects.filter(id=remote_author.get('id')).exists()):
-        copy_remote = User.objects.get(id=remote_author.get('id'))
+
+    print(remote_id)
+    print("user data ", user_data)
+    print(remote_author)
+    summary = f'{actor.username} wants to follow {remote_author.get("username")}'
+    if (User.objects.filter(id=remote_id).exists()):
+        copy_remote = User.objects.get(id=remote_id)
     else:
         copy_remote = User.objects.create(**user_data)
     data = {"summary": summary}
     
     serializer = FollowRequestSerializer(data=data)
+    
     if serializer.is_valid():
         serializer.save(actor=actor, object=copy_remote)
         request = FollowRequest.objects.get(actor=actor, object=copy_remote)
         request_data = FollowRequestSerializer(request).data
-        response = requests.post(f'http://{remote_domain}/api/authors/{remote_author.id}/inbox/', data=request_data)
-        return Response(serializer.data, status=response.status_code)
+        print(request_data)
+        headers = {"Content-Type": "application/json"}
+        response = requests.post(f'http://{remote_domain}/api/authors/{remote_id}/inbox/', json=request_data, headers=headers, auth=auth)
+         # Return the response content and status code
+        try:
+            response.raise_for_status()  # Raise an exception for HTTP errors
+            return Response(response.json(), status=response.status_code)
+        except requests.exceptions.RequestException as e:
+            # Handle errors and return the error message
+            return Response(
+                {"error": str(e), "details": response.text},
+                status=response.status_code
+            )
+    
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
 
 
@@ -790,6 +861,7 @@ def AddLikeOnPost(request, userId, object_id):
 
     # Forward the like to the inbox (if this functionality exists)
     inbox_url = f"http://backend:8000/api/authors/{userId}/inbox/"
+
     serializer = LikeSerializer(data=data)
 
     if serializer.is_valid():
@@ -797,7 +869,9 @@ def AddLikeOnPost(request, userId, object_id):
         like_id = serializer.data['id'].strip('/').split('/')[-1]
         like = Like.objects.get(id=like_id)
     
-    requests.post(inbox_url, data=LikeSerializer(like).data)
+    factory = RequestFactory()
+    request = factory.post(inbox_url, data=LikeSerializer(like).data)
+    PostToInbox(request, userId)
     return Response(LikeSerializer(like).data, status=status.HTTP_200_OK)
 
 class LikesList(generics.ListCreateAPIView):
@@ -839,7 +913,10 @@ class GetLiked(generics.ListCreateAPIView):
     def forward_to_inbox(self, like, author):
         like_data = LikeSerializer(like).data
         
-        response = requests.post(f'http://backend:8000/api/authors/{author}/inbox/', data=like_data)
+        # response = requests.post(f'http://backend:8000/api/authors/{author}/inbox/', data=like_data)
+        factory = RequestFactory()
+        request = factory.post(f'http://backend:8000/api/authors/{author}/inbox/', data=like_data)
+        response = PostToInbox(request, author)
         return response
 
 # Get a single like by id
@@ -898,7 +975,10 @@ def AddCommentLike(request, userId, pk, ck):
         serializer.save(user=user)
         like_id = serializer.data['id'].strip('/').split('/')[-1]
         like = Like.objects.get(id=like_id)
-    requests.post(inbox_url, data=LikeSerializer(like).data)
+    factory = RequestFactory()
+    request = factory.post(inbox_url, data=LikeSerializer(like).data)
+    PostToInbox(request, userId)
+    # requests.post(inbox_url, data=LikeSerializer(like).data)
 
     return Response(LikeSerializer(like).data, status=status.HTTP_200_OK)
 

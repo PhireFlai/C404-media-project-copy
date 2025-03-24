@@ -71,7 +71,7 @@ class CommentSerializer(serializers.ModelSerializer):
     id = serializers.SerializerMethodField()  # Add this field
     class Meta:
         model = Comment
-        fields = ["id", "author", "content", "post", "created_at", "like_count", "type", "remote_fqid"]
+        fields = ["id", "author", "content", "post", "created_at", "like_count", "type", ]
         
     def get_id(self, obj) -> str:
         return f"http://[{my_ip}]:8000/api/authors/{obj.post.author.id}/posts/{obj.post.id}/comments/{obj.id}/"
