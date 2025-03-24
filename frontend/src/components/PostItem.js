@@ -217,7 +217,12 @@ const PostItem = ({ post, refetchPosts }) => {
             </ReactMarkdown>
           </div>
           <div className="post-image">
-            {post.image && <img src={`${post.image}`} alt="Post" />}
+            {post.image && (
+              <img
+                src={`${process.env.REACT_APP_API_BASE_URL || "http://localhost"}${":8000"}/media/${post.image}`}
+                alt="Post"
+              />
+            )}
           </div>
         </>
       )}

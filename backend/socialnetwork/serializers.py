@@ -95,7 +95,7 @@ class CommentSerializer(serializers.ModelSerializer):
 class PostSerializer(serializers.ModelSerializer):
     formatted_content = serializers.SerializerMethodField()  # Add formatted content
     id = serializers.SerializerMethodField()  # Add this field
-    image = serializers.ImageField(required=False)  # Allow image uploads
+    image = serializers.ImageField(required=False, use_url=False)  # Allow image uploads
     author = UserSerializer(read_only=True)
     class Meta:
         model = Post
