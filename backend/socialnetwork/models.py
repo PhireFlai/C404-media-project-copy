@@ -97,6 +97,7 @@ class Post(models.Model):
     visibility = models.CharField(max_length=20, choices=VISIBILITY_CHOICES, default=PUBLIC)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    remote_fqid = models.CharField(max_length=250, blank=True, null=True)
 
     likes = GenericRelation(Like)  # Enable reverse relation
 

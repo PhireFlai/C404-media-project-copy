@@ -388,7 +388,8 @@ def PostToInbox(request, receiver):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         elif type == "post":
-            id = request.data.get("id")
+            post = request.data.get("id")
+            post_id = post['id'].rstrip('/').split('/')[-1]
             author = request.data.get("author")
             author_id = author['id'].rstrip('/').split('/')[-1]
             title = request.data.get("title")
@@ -400,7 +401,8 @@ def PostToInbox(request, receiver):
             author_obj, created_author = User.objects.get_or_create(id=author_id, remote_fqid=author['id'])
 
             data = {
-                "id": id,
+                "id": post_id,
+                "remote_fqid": post, 
                 "title": title,
                 "content": content,
                 "visibility": visibility,
