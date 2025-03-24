@@ -546,7 +546,7 @@ def PostToInbox(request, receiver):
             title = post_data.get("title")
             content = post_data.get("content")
             visibility = post_data.get("visibility")
-            created_at = post_data.get("published")
+            image = post_data.get("image")
             like_count = post_data.get("like_count", 0)
 
             author_obj, created_author = User.objects.get_or_create(id=author_id, remote_fqid=author_data.get('id'))
@@ -559,8 +559,9 @@ def PostToInbox(request, receiver):
                     "title": title,
                     "content": content,
                     "visibility": visibility,
-                    "created_at": created_at,
                     "author": author_obj,
+                    "updated_at": timezone.now(),
+                    "image": image,
                 }
             )
 
@@ -593,7 +594,9 @@ def PostToInbox(request, receiver):
                 "content": post.content,
                 "visibility": post.visibility,
                 "created_at": post.created_at,
+                "updated_at": post.updated_at,
                 "like_count": post.like_count,
+                "image": post.image.url if post.image else None,
                 "author": {
                     "id": post.author.id,
                     "username": post.author.username,

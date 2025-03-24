@@ -221,11 +221,11 @@ const PostItem = ({ post, refetchPosts }) => {
           <div className="post-image">
             {post.image && (
               <img
-                src={`${
-                  post.remote_fqid
-                    ? new URL(post.remote_fqid).origin // Use the origin of the remote_fqid as the base URL
-                    : process.env.REACT_APP_API_BASE_URL || "http://localhost"
-                }:8000/media/${post.image}`}
+              src={`${
+                post.remote_fqid
+                  ? `${new URL(post.remote_fqid).origin}/media/${post.image}` // Use the origin of the remote_fqid as the base URL
+                  : `${process.env.REACT_APP_API_BASE_URL || "http://localhost"}:8000/media/${post.image}` // Append port 8000 for localhost or base URL
+              }`}
                 alt="Post"
               />
             )}
