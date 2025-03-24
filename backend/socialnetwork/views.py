@@ -585,15 +585,17 @@ def PostToInbox(request, receiver):
 
             author_obj, created_author = User.objects.get_or_create(id=author_id, remote_fqid=author_data.get('id'))
 
-            # Create the post directly
-            post = Post.objects.create(
+            # Use update_or_create for the post
+            post, created_post = Post.objects.update_or_create(
                 id=post_id,
-                remote_fqid=post_data.get("id"),
-                title=title,
-                content=content,
-                visibility=visibility,
-                created_at=created_at,
-                author=author_obj
+                defaults={
+                    "remote_fqid": post_data.get("id"),
+                    "title": title,
+                    "content": content,
+                    "visibility": visibility,
+                    "created_at": created_at,
+                    "author": author_obj,
+                }
             )
 
             # Handle likes
