@@ -57,29 +57,29 @@ const Navbar = () => {
           <Link to="/">Home</Link>
         </li>
 
-        <li>
-          <input
-            type="text"
-            placeholder="Search users..."
-            value={searchQuery}
-            onChange={(e) => handleSearch(e.target.value)}
-          />
-          {searchResults.length > 0 && (
-            <ul className="search-dropdown">
-              {searchResults.map((user) => (
-                <li key={user.id} onClick={() => navigate(`/${user.id}`)}>
-                  {user.username}
-                </li>
-              ))}
-            </ul>
-          )}
-        </li>
-
-        {user && (
+        {user && ( //displays feed sections and search bar only on successful authentication
           <>
             {/* <li>
               <Link to="/friends-only">Friends Only</Link>
             </li> */}
+            <li>
+              <input
+                type="text"
+                placeholder="Search users..."
+                value={searchQuery}
+                onChange={(e) => handleSearch(e.target.value)}
+              />
+              {searchResults.length > 0 && (
+                <ul className="search-dropdown">
+                  {searchResults.map((user) => (
+                    <li key={user.id} onClick={() => navigate(`/${user.id}`)}>
+                      {user.username}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+            
             <li>
               <Link to="/friends-feed">Friends Feed</Link>
             </li>
