@@ -625,16 +625,16 @@ def createForeignFollowRequest(request, actorId, objectFQID):
                         status=status.HTTP_400_BAD_REQUEST)
         
     user_data = {
-    'username': remote_author.get('username'),
-    'email': remote_author.get('email', ''),
-    'first_name': remote_author.get('first_name', ''),
-    'last_name': remote_author.get('last_name', ''),
-    # Save the remote author's unique id into remote_fqid.
-    'remote_fqid': remote_author.get('id')
+        "id": remote_author.get('id'),  # Assuming 'id' is the key for the unique identifier
+        "remote_fqid": objectFQID,
+        "username": remote_author.get('username'),
+        "profile_picture": remote_author.get('profile_picture'),  # Assuming 'profile_picture' is the key for the profile picture URL
+        "github": remote_author.get('github'),  # Assuming 'github' is the key for the GitHub URL
     }
-    summary = f'{actor.username} wants to follow {remote_author.username}'
+    summary = f'{actor.name} wants to follow {remote_author.name}'
     copy_remote = User.objects.create(**user_data)
     data = {"summary": summary}
+    
     serializer = FollowRequestSerializer(data=data)
     if serializer.is_valid():
         serializer.save(actor=actor, object=copy_remote)
