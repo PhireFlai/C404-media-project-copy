@@ -341,26 +341,58 @@ def PostToInbox(request, receiver):
             actor = request.data.get("actor")
             object = request.data.get("object")
             actor_id = actor['id'].split('/')[-2]
+            object_id = object['id'].split('/')[-2]
 
-            actor_obj, created_actor = User.objects.get_or_create(id=actor_id, remote_fqid=actor['id'])
-            object_obj = get_object_or_404(User, id=actor["id"])
 
+            # Get or create the actor and object users
+            actor_obj, created_actor = User.objects.get_or_create(
+                id=actor_id,
+                defaults={
+                    "remote_fqid": actor['id'],
+                    "username": actor.get('username'),
+                    "profile_picture": actor.get('profile_picture'),
+                    "github": actor.get('github'),
+                }
+            )
+            object_obj, created_object = User.objects.get_or_create(
+                id=object_id,
+                defaults={
+                    "remote_fqid": object['id'],
+                    "username": object.get('username'),
+                    "profile_picture": object.get('profile_picture'),
+                    "github": object.get('github'),
+                }
+            )
+
+            # Check if the follow request already exists
             if FollowRequest.objects.filter(actor=actor_obj, object=object_obj).exists():
                 return Response({"message": "Follow request has already been sent"}, status=status.HTTP_400_BAD_REQUEST)
 
+            # Check if the actor is already following the object
             if actor_obj.following.filter(id=object_obj.id).exists():
                 return Response({"message": "You are already following this user"}, status=status.HTTP_400_BAD_REQUEST)
 
-            data = {"summary": summary}
-            serializer = FollowRequestSerializer(data=data)
+            # Manually create the FollowRequest object
+            follow_request = FollowRequest.objects.create(
+                summary=summary,
+                actor=actor_obj,
+                object=object_obj
+            )
 
-            if serializer.is_valid():
-                serializer.save(actor=actor_obj, object=object_obj)
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            
-            print(serializer.errors)
-
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            # Return the created FollowRequest data
+            return Response({
+                "id": follow_request.id,
+                "type": follow_request.type,
+                "summary": follow_request.summary,
+                "actor": {
+                    "id": actor_obj.id,
+                    "username": actor_obj.username,
+                },
+                "object": {
+                    "id": object_obj.id,
+                    "username": object_obj.username,
+                }
+            }, status=status.HTTP_201_CREATED)
 
         elif type == "comment":
             author = request.data.get("author")
@@ -679,7 +711,17 @@ def createForeignFollowRequest(request, actorId, objectFQID):
         print(request_data)
         headers = {"Content-Type": "application/json"}
         response = requests.post(f'http://{remote_domain}/api/authors/{remote_id}/inbox/', json=request_data, headers=headers, auth=auth)
-        return Response(request_data, status=response.status_code)
+         # Return the response content and status code
+        try:
+            response.raise_for_status()  # Raise an exception for HTTP errors
+            return Response(response.json(), status=response.status_code)
+        except requests.exceptions.RequestException as e:
+            # Handle errors and return the error message
+            return Response(
+                {"error": str(e), "details": response.text},
+                status=response.status_code
+            )
+    
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
 
 
