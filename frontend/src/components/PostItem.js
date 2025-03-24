@@ -110,8 +110,21 @@ const PostItem = ({ post, refetchPosts }) => {
   };
 
   const handleCopyLink = () => {
-    const postLink = `${window.location.origin}/posts/${parsedPostId}`;
-    navigator.clipboard.writeText(postLink);
+    const postLink = `${window.location.origin}/posts/${parseId(post.id)}`;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(postLink)
+            .then(() => {
+                alert("Post link copied to clipboard!");
+            })
+            .catch((err) => {
+                console.error("Failed to copy link: ", err);
+                alert("Failed to copy link. Please try again.");
+            });
+    } else {
+        // Fallback for browsers that don't support Clipboard API
+        alert("Clipboard API not supported. Copy the link manually.");
+        prompt("Copy this link:", postLink);
+    }
   };
 
   // Handle cancel button click

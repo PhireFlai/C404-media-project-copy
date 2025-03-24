@@ -187,8 +187,8 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_permissions(self):
         """Allow any user to GET but require authentication for updates/deletes."""
         if self.request.method == 'GET':
-            return [IPLockPermission()]
-        return [MultiAuthPermission()]
+            return [AllowAny()]  # Instantiate the AllowAny class
+        return [MultiAuthPermission()]  # Instantiate the MultiAuthPermission class
 
     def get_queryset(self):
         """Filters posts based on visibility and user authentication."""
