@@ -264,7 +264,8 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
         if self.request.user != instance.author:
             raise PermissionDenied("You can only delete your own posts.")  
         instance.visibility = Post.DELETED
-        post = instance.save()
+        post = instance
+        instance.save()
         
                 
         # Fetch followers with remote_fqid
@@ -291,6 +292,7 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
             
             inbox_url = f"{follower.remote_fqid}inbox/"
             post_data = PostSerializer(post).data
+            print(post_data)
             post_data.update({'remote_fqid' : post_data['id']})
             print(post_data)
             headers = {"Content-Type": "application/json"}
