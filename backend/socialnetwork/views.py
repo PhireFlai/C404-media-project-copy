@@ -20,6 +20,7 @@ from django.http import JsonResponse
 from socialnetwork.permissions import IPLockPermission, MultiAuthPermission, ConditionalMultiAuthPermission
 from .utils import forward_get_request
 from requests.auth import HTTPBasicAuth
+from urllib.parse import urlparse
 
 @swagger_auto_schema(
     method="post",
@@ -425,7 +426,7 @@ def PostToInbox(request, receiver):
 
             return Response(post_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
-        elif type == "post_like":
+        elif type == "like":
             author = request.data.get("author")
             created_at = request.data.get("created_at")
             id = request.data.get("id")
@@ -435,23 +436,6 @@ def PostToInbox(request, receiver):
                 "created_at": created_at,
                 "id": id,
                 "post": post,
-            }
-            serializer = LikeSerializer(data=data)
-            if serializer.is_valid():
-                serializer.save(user=author_obj)
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
-        
-        elif type == "comment_like":
-            id = request.data.get("id")
-            author = request.data.get("author")
-            created_at = request.data.get("created_at")
-            comment = request.data.get("comment")
-            author_obj = get_object_or_404(User, id=author["id"])
-            data = {
-                "created_at": created_at,
-                "id": id,
-                "comment": comment,
             }
             serializer = LikeSerializer(data=data)
             if serializer.is_valid():
@@ -576,14 +560,21 @@ def CreateFollowRequest(request, actorId, objectId):
         return Response({"message": "You are already following this user"}, status=status.HTTP_400_BAD_REQUEST)
     summary = f'{actor.username} wants to follow {object.username}'
     data = {"summary": summary}
-    serializer = FollowRequestSerializer(data=data)
-    if serializer.is_valid():
-        serializer.save(actor=actor, object=object)
+    follow_serializer = FollowRequestSerializer(data=data)
+    if follow_serializer.is_valid():
+        follow_serializer.save(actor=actor, object=object)
         request = FollowRequest.objects.get(actor=actor, object=object)
         request_data = FollowRequestSerializer(request).data
-        response = requests.post(f'http://localhost:8000/api/authors/{object.id}/inbox/', data=request_data)
-        return Response(serializer.data, status=response.status_code)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        user_serializer = UserSerializer(object)
+        object_fqid = user_serializer.get_id(object)
+        parsed_url = urlparse(object_fqid)
+        host = parsed_url.netloc
+        inbox_url = f'http://{host}/api/authors/{object.id}/inbox/'
+
+        response = SendInboxPost(inbox_url, data=request_data)
+        return Response(follow_serializer.data, status=response.status_code)
+    return Response(follow_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
@@ -952,3 +943,15 @@ def fetch_authors(request):
         return Response(data, status=response.status_code)
     except requests.exceptions.RequestException as e:
         return Response({'error': str(e)}, status=500)
+
+def SendInboxPost(url_source, data):
+    parse_url = url_source.split('/')
+    url = "http://" + parse_url[2]
+    print(url)
+    # fetch authentication details from remotenode model
+    remote_node = RemoteNode.objects.get(url=parse_url[:2])
+    username = remote_node.username
+    password = remote_node.password
+    # send post request to remote node
+    response = requests.post(url_source, data=data, auth=HTTPBasicAuth(username, password))
+    return response
