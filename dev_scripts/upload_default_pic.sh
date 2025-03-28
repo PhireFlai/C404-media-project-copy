@@ -13,7 +13,7 @@ if [ ! -f "$DEFAULT_PIC_PATH" ]; then
 fi
 
 # Identify the backend container
-BACKEND_CONTAINER=$(docker ps --filter "name=w25-project-cyan-backend" --format "{{.ID}}")
+BACKEND_CONTAINER=$(sudo docker ps --filter "name=w25-project-cyan-backend" --format "{{.ID}}")
 
 # Check if the backend container is running
 if [ -z "$BACKEND_CONTAINER" ]; then
@@ -22,12 +22,12 @@ if [ -z "$BACKEND_CONTAINER" ]; then
 fi
 
 # Create the target directory inside the container (if it doesn't exist)
-docker exec "$BACKEND_CONTAINER" mkdir -p "$TARGET_PATH"
+sudo docker exec "$BACKEND_CONTAINER" mkdir -p "$TARGET_PATH"
 
 # Copy the default picture into the container
-docker cp "$DEFAULT_PIC_PATH" "$BACKEND_CONTAINER:$TARGET_PATH"
+sudo docker cp "$DEFAULT_PIC_PATH" "$BACKEND_CONTAINER:$TARGET_PATH"
 
 # Verify the file was copied successfully
-docker exec "$BACKEND_CONTAINER" ls -l "$TARGET_PATH"
+sudo docker exec "$BACKEND_CONTAINER" ls -l "$TARGET_PATH"
 
 echo "Default picture successfully uploaded to $BACKEND_CONTAINER:$TARGET_PATH"

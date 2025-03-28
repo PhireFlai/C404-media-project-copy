@@ -22,10 +22,10 @@ else
 fi
 
 # Start the database container
-docker compose up -d db
+sudo docker compose up -d db
 
 # Wait for the database to be ready
-while ! docker exec db pg_isready -U $DB_USER -d $DB_DATABASE; do
+while ! sudo docker exec db pg_isready -U $DB_USER -d $DB_DATABASE; do
     echo "Database still launching"
     sleep 2
 done
