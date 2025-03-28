@@ -116,7 +116,7 @@ class Comment(models.Model):
     type = models.TextField(default="comment", editable=False)
     author = models.ForeignKey(User, on_delete=models.CASCADE, null=True)  # Author can be null for now
     content = models.TextField()
-    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="comments")
     created_at = models.DateTimeField(default=timezone.now, editable=False)
 
     likes = GenericRelation(Like)  # Enable reverse relation

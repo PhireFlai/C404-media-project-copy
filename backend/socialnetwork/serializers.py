@@ -69,10 +69,14 @@ class UserSerializer(serializers.ModelSerializer):
 class CommentSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
     id = serializers.SerializerMethodField()  # Add this field
+    post = serializers.SerializerMethodField()
     class Meta:
         model = Comment
         fields = ["id", "author", "content", "post", "created_at", "like_count", "type", ]
-        
+    
+    def get_post(self, obj) -> str:
+            return f"http://[{my_ip}]:8000/api/authors/{obj.post.author.id}/posts/{obj.post.id}/"
+
     def get_id(self, obj) -> str:
         return f"http://[{my_ip}]:8000/api/authors/{obj.post.author.id}/posts/{obj.post.id}/comments/{obj.id}/"
     
@@ -98,10 +102,17 @@ class PostSerializer(serializers.ModelSerializer):
     id = serializers.SerializerMethodField()  # Add this field
     image = serializers.ImageField(required=False, use_url=False)  # Allow image uploads
     author = UserSerializer(read_only=True)
+    comments = CommentSerializer(many=True, read_only=True)
     class Meta:
         model = Post
-        fields = ["id", "author", "title", "content", "image", "formatted_content", "created_at", "updated_at", "visibility", "like_count", "type", "remote_fqid"]
-        
+        fields = ["id", "author", "title", "content", "image", "formatted_content", "created_at", "updated_at", "visibility", "like_count", "type", "remote_fqid", "comments"]
+    # def get_comments(self, obj):
+    #     # Use the reverse relation comment_set to get all comments
+    #     comments = obj.comment_set.all().order_by("-created_at")
+    #     serializer = CommentSerializer(comments, many=True, context=self.context)
+    #     print(serializer.data)
+    #     return serializer.data
+    
     def get_id(self, obj) -> str:
         return f"http://[{my_ip}]:8000/api/authors/{obj.author.id}/posts/{obj.id}/"
     
