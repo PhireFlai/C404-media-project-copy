@@ -10,7 +10,7 @@ def approve_users(modeladmin, request, queryset):
 class CustomUserAdmin(UserAdmin):
     list_display = ('username', 'email', 'is_staff', 'profile_picture', 'is_approved')  # Add profile_picture to list view
     search_fields = ('username', 'email')  # Fields to search in the admin panel
-    readonly_fields = ('id', 'github_etag')  # Make the UUID and github Etag field read-only in the admin panel
+    readonly_fields = ('id', 'github_etag', 'remote_fqid')  # Make the UUID and github Etag field read-only in the admin panel
 
     actions = [approve_users]
 

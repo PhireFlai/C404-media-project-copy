@@ -501,7 +501,6 @@ def CreateComment(request, userId, pk):
 @permission_classes([AllowAny])
 def IncomingPostToInbox(request, receiver):
     try:
-        print("Incoming post to inbox", request.data)
         type = request.data.get("type")
 
         if type == "follow":
@@ -561,62 +560,47 @@ def IncomingPostToInbox(request, receiver):
         elif type == "accept_follow":
             print("Accepting follow request")
             print(request.data)
+
             actor = request.data.get("actor")
             object = request.data.get("object")
             actor_id = actor['id'].split('/')[-2]
             object_id = object['id'].split('/')[-2]
 
-            # Get or create the actor and object users
-            actor_obj, _ = User.objects.get_or_create(
-                id=actor_id,
-                defaults={
-                    "remote_fqid": actor['id'],
-                    "username": actor.get('username'),
-                }
-            )
-            object_obj, _ = User.objects.get_or_create(
-                id=object_id,
-                defaults={
-                    "remote_fqid": object['id'],
-                    "username": object.get('username'),
-                }
-            )
+            try:
+                # Fetch the follow request
+                follow_request = FollowRequest.objects.get(actor_id=actor_id, object_id=object_id)
+            except FollowRequest.DoesNotExist:
+                return Response({'error': 'Follow request not found'}, status=status.HTTP_404_NOT_FOUND)
 
             # Add the actor to the object's followers
-            object_obj.followers.add(actor_obj)
+            follow_request.object.followers.add(follow_request.actor)
 
             # If they are mutually following, add each other as friends
-            if actor_obj.followers.filter(id=object_obj.id).exists():
-                actor_obj.friends.add(object_obj)
-                object_obj.friends.add(actor_obj)
+            if follow_request.actor.followers.filter(id=follow_request.object.id).exists():
+                follow_request.actor.friends.add(follow_request.object)
+                follow_request.object.friends.add(follow_request.actor)
+
+            # Delete the follow request after accepting
+            follow_request.delete()
 
             return Response({"message": "Follow request accepted successfully"}, status=status.HTTP_200_OK)
 
-        elif type == "delete_follow":
-            print("Deleting follow relationship")
+        elif type == "delete_follow_request":
+            print("Deleting follow request")
             print(request.data)
+
             actor = request.data.get("actor")
             object = request.data.get("object")
             actor_id = actor['id'].split('/')[-2]
             object_id = object['id'].split('/')[-2]
 
-            # Get the actor and object users
             try:
-                actor_obj = User.objects.get(id=actor_id)
-                object_obj = User.objects.get(id=object_id)
-            except User.DoesNotExist:
-                return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-
-            # Remove the actor from the object's followers
-            object_obj.followers.remove(actor_obj)
-
-            # If they were friends, remove the friendship
-            if object_obj in actor_obj.friends.all():
-                actor_obj.friends.remove(object_obj)
-                object_obj.friends.remove(actor_obj)
-
-            return Response({"message": "Follow relationship deleted successfully"}, status=status.HTTP_200_OK)
-
+                # Fetch the follow request
+                follow_request = FollowRequest.objects.get(actor_id=actor_id, object_id=object_id)
+                follow_request.delete()
+                return Response({"message": "Follow request deleted successfully"}, status=status.HTTP_200_OK)
+            except FollowRequest.DoesNotExist:
+                return Response({'error': 'Follow request not found'}, status=status.HTTP_404_NOT_FOUND)
 
         elif type == "comment":
             comment_data = request.data
@@ -1083,18 +1067,19 @@ def AcceptFollowRequest(request, objectId, actorId ):
             object_remote_fqid_base = RemoteNode.objects.get(is_my_node=True).url
             object_remote_fqid = f"{object_remote_fqid_base}authors/{follow_request.object.id}/"
 
+
             # Determine the action (accept or reject)
             if action == 'accept':
                 follow_data = {
                     "type": "accept_follow",
                     "summary": f"{follow_request.object.username} accepted {follow_request.actor.username}'s follow request",
                     "actor": {
-                        "id": follow_request.object.id,
+                        "id": str(follow_request.object.id),
                         "username": follow_request.object.username,
                         "remote_fqid": follow_request.object.remote_fqid,
                     },
                     "object": {
-                        "id": follow_request.actor.id,
+                        "id": str(follow_request.actor.id),
                         "username": follow_request.actor.username,
                         "remote_fqid": object_remote_fqid,
                     },
@@ -1104,12 +1089,12 @@ def AcceptFollowRequest(request, objectId, actorId ):
                     "type": "decline_follow",
                     "summary": f"{follow_request.object.username} declined {follow_request.actor.username}'s follow request",
                     "actor": {
-                        "id": follow_request.object.id,
+                        "id": str(follow_request.object.id),
                         "username": follow_request.object.username,
                         "remote_fqid": follow_request.object.remote_fqid,
                     },
                     "object": {
-                        "id": follow_request.actor.id,
+                        "id": str(follow_request.actor.id),
                         "username": follow_request.actor.username,
                         "remote_fqid": object_remote_fqid,
                     },
