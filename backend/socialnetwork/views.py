@@ -193,6 +193,8 @@ class PostListCreateView(generics.ListCreateAPIView):
             remote_domain_base = parsed_url[2]
 
             # Remove the port from the remote domain
+            print(parsed_url)
+            print(remote_domain_base)
             parsed_remote_url = urlparse(f"http://{remote_domain_base}")
             remote_domain_without_brackets = parsed_remote_url.hostname  # Extract the hostname without the port
             remote_domain = f"[{remote_domain_without_brackets}]"  # Add brackets for IPv6 format
@@ -421,24 +423,73 @@ def CreateComment(request, userId, pk):
     post = get_object_or_404(Post, id=pk)
     author = request.user
     content = request.data.get('content')
-    data={'content': content, 'post': post.id}
-    serializer = CommentSerializer(data=data)
     
-    if serializer.is_valid():
-        serializer.save(author=author)
-        comment_id = serializer.data['id'].strip('/').split('/')[-1]
-        comment = Comment.objects.get(id=comment_id)
-        factory = RequestFactory()
-        inbox_request = factory.post(f'/api/authors/{userId}/inbox/', data=CommentSerializer(comment).data)
-        inbox_request.user = request.user  # Set the user for the mock request
-        
-        # Call the PostToInbox view directly
-        response = PostToInbox(inbox_request, userId)
-        print("Response from PostToInbox:", response.data)
+    # Create comment and update post timestamp
+    comment = Comment.objects.create(
+        author=author,
+        post=post, 
+        content=content
+    )
+    
+    # Update post's updated_at timestamp
+    post.updated_at = timezone.now()
+    post.save()
+    
+    # Serialize both comment and updated post
+    comment_serializer = CommentSerializer(comment)
+    post_serializer = PostSerializer(post)
+    
+    # Create activities for both comment and post update
+    comment_activity = {
+        "type": "Create",
+        "object": comment_serializer.data,
+        "published": timezone.now().isoformat()
+    }
+    
+    post_activity = {
+        "type": "Update",
+        "object": post_serializer.data,
+        "published": timezone.now().isoformat()
+    }
+    
+    # Send both activities to inbox
+    factory = RequestFactory()
+    
+    # Send comment activity
+    comment_inbox_request = factory.post(
+        f'/api/authors/{userId}/inbox/',
+        data=comment_activity,
+        content_type='application/json'
+    )
+    comment_inbox_request.user = request.user
+    comment_response = PostToInbox(comment_inbox_request, userId)
+    
+    # Send post update activity to post author's followers
+    followers_with_remote_fqid = post.author.followers.filter(remote_fqid__isnull=False)
+    
+    for follower in followers_with_remote_fqid:
+        try:
+            parsed_url = urlparse(follower.remote_fqid)
+            remote_domain = f"[{parsed_url.hostname}]"
+            
+            remote_node = RemoteNode.objects.get(url=f"http://{remote_domain}/")
+            auth = HTTPBasicAuth(remote_node.username, remote_node.password)
+            
+            inbox_url = f"{follower.remote_fqid}inbox/"
+            headers = {"Content-Type": "application/json"}
+            
+            # Send post update activity
+            requests.post(
+                inbox_url,
+                auth=auth,
+                json=post_activity,
+                headers=headers
+            )
+            
+        except (RemoteNode.DoesNotExist, requests.exceptions.RequestException) as e:
+            print(f"Failed to send update to {follower.username}: {e}")
 
-        return Response(serializer.data, status=response.status_code)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+    return Response(comment_serializer.data, status=status.HTTP_201_CREATED)
 
 # Post to an author's inbox
 @api_view(["POST"])
@@ -502,6 +553,7 @@ def PostToInbox(request, receiver):
             }, status=status.HTTP_201_CREATED)
 
         elif type == "comment":
+            print(request.data)
             author = request.data.get("author")
             author_id = author['id'].rstrip('/').split('/')[-1]
             comment = request.data.get("comment")
@@ -540,69 +592,88 @@ def PostToInbox(request, receiver):
         elif type == "post":
             print("POST")
             print(request.data)
-            # Extract post data
             post_data = request.data
+
+            # Extract post ID from URL
             post_id = post_data.get("id").rstrip('/').split('/')[-1]
+            
+            # Extract author data
             author_data = post_data.get("author")
             author_id = author_data.get("id").rstrip('/').split('/')[-1]
-            title = post_data.get("title")
-            content = post_data.get("content")
-            visibility = post_data.get("visibility")
-            image = post_data.get("image")
-            like_count = post_data.get("like_count", 0)
 
-            author_obj, created_author = User.objects.get_or_create(id=author_id, remote_fqid=author_data.get('id'))
-
-            # Use update_or_create for the post
-            post, created_post = Post.objects.update_or_create(
-                id=post_id,
+            # Get or create author
+            author_obj, _ = User.objects.get_or_create(
+                id=author_id,
                 defaults={
-                    "remote_fqid": post_data.get("id"),
-                    "title": title,
-                    "content": content,
-                    "visibility": visibility,
-                    "author": author_obj,
-                    "updated_at": timezone.now(),
-                    "image": image,
+                    "username": author_data.get("username"),
+                    "email": author_data.get("email"),
+                    "profile_picture": author_data.get("profile_picture"),
+                    "remote_fqid": author_data.get("id")
                 }
             )
 
-            # Handle likes
-            likes = post_data.get("likes", [])
-            for like in likes:
-                like_author_data = like.get("author")
-                like_author_id = like_author_data.get("id").rstrip('/').split('/')[-1]
+            # Handle post timestamps
+            created_at = post_data.get("created_at") 
+            updated_at = post_data.get("updated_at") 
 
-                # Get or create the like author
-                like_author_obj, _ = User.objects.get_or_create(
-                    id=like_author_id,
+            # Create/update post
+            post, _ = Post.objects.update_or_create(
+                id=post_id,
+                defaults={
+                    "title": post_data.get("title"),
+                    "content": post_data.get("content"),
+                    "author": author_obj,
+                    "visibility": post_data.get("visibility"),
+                    "created_at": created_at,
+                    "updated_at": updated_at,
+                    "remote_fqid": post_data.get("id")
+                }
+            )
+
+            # Handle comments
+            for comment_data in post_data.get("comments", []):
+                comment_id = comment_data["id"].rstrip('/').split('/')[-1]
+                comment_author_data = comment_data["author"]
+                comment_author_id = comment_author_data["id"].rstrip('/').split('/')[-1]
+
+                # Get or create comment author
+                comment_author, _ = User.objects.get_or_create(
+                    id=comment_author_id,
                     defaults={
-                        "remote_fqid": like_author_data.get("id"),
-                        "username": like_author_data.get("username"),
+                        "username": comment_author_data.get("username"),
+                        "email": comment_author_data.get("email"),
+                        "profile_picture": comment_author_data.get("profile_picture"),
+                        "remote_fqid": comment_author_data.get("id")
                     }
                 )
 
-                # Create the like directly
-                Like.objects.create(
-                    id=like.get("id"),
-                    published=like.get("published"),
-                    object=post,
-                    author=like_author_obj
+                # Create/update comment
+                Comment.objects.update_or_create(
+                    id=comment_id,
+                    defaults={
+                        "author": comment_author,
+                        "content": comment_data["content"],
+                        "post": post,
+                        "created_at": comment_data.get("created_at"),
+                        "type": comment_data.get("type", "comment")
+                    }
                 )
 
-                return Response({
-                "id": post.id,
+            # Return complete post data
+            return Response({
+                "id": f"http://[{my_ip}]:8000/api/authors/{post.author.id}/posts/{post.id}/",
+                "author": UserSerializer(post.author).data,
                 "title": post.title,
                 "content": post.content,
-                "visibility": post.visibility,
+                "image": post.image.url if post.image else None,
+                "formatted_content": markdown.markdown(post.content),
                 "created_at": post.created_at,
                 "updated_at": post.updated_at,
+                "visibility": post.visibility,
                 "like_count": post.like_count,
-                "image": post.image.url if post.image else None,
-                "author": {
-                    "id": post.author.id,
-                    "username": post.author.username,
-                }
+                "type": "post",
+                "remote_fqid": post.remote_fqid,
+                "comments": CommentSerializer(post.comment_set.all(), many=True).data
             }, status=status.HTTP_201_CREATED)
         
         elif type == "like":
