@@ -469,19 +469,9 @@ def CreateComment(request, userId, pk):
         # Send to post author's inbox if they're remote
     if post.author.remote_fqid:
         try:
-            parsed_url = post.author.remote_fqid.split('/')
-            print("Parsed URL:", parsed_url)
-            remote_domain_base = parsed_url[2]
-            print("Remote domain base:", remote_domain_base)
+            remote_node_fqid = extract_ipv6_address(post.author.remote_fqid)
 
-            # Remove the port from the remote domain
-            parsed_remote_url = urlparse(f"http://{remote_domain_base}")
-            print("Parsed remote URL:", parsed_remote_url)
-            remote_domain_without_brackets = parsed_remote_url.hostname  # Extract the hostname without the port
-            print("Remote domain without brackets:", remote_domain_without_brackets)
-            remote_domain = f"[{remote_domain_without_brackets}]"  # Add brackets for IPv6 format
-            print(remote_domain)
-            remote_node = RemoteNode.objects.get(url=f"http://{remote_domain}/")
+            remote_node = RemoteNode.objects.get(url=remote_node_fqid)
             auth = HTTPBasicAuth(remote_node.username, remote_node.password)
             
             comment_data = CommentSerializer(comment).data
@@ -1477,3 +1467,22 @@ class SearchUsersView(APIView):
 class ForwardGetView(APIView):
     def get(self, request, encoded_url):
         return forward_get_request(request, encoded_url)
+
+def extract_ipv6_address(fqid):
+    """
+    Extracts the base URL with the IPv6 address (enclosed in square brackets) from a Fully Qualified ID (FQID).
+    
+    Args:
+        fqid (str): The Fully Qualified ID (FQID) to parse.
+    
+    Returns:
+        str: The base URL containing the IPv6 address.
+    """
+    parsed_url = urlparse(fqid)
+    ipv6_address = parsed_url.netloc  # Extract the network location (host)
+    if ipv6_address.startswith('[') and ipv6_address.endswith(']'):
+        # If the address is already enclosed in brackets, return it
+        return f"{parsed_url.scheme}://{ipv6_address}"
+    else:
+        # Handle cases where the IPv6 address is not enclosed in brackets
+        return f"{parsed_url.scheme}://[{ipv6_address}]"
