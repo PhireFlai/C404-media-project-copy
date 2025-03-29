@@ -865,40 +865,6 @@ def CreateFollowRequest(request, actorId, objectId):
     #     return Response(follow_serializer.data, status=status.HTTP_201_CREATED)
     # return Response(follow_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def CreateForeignComment(request, userId, pk):        
-
-    # Parse the foreign author's FQID (Fully Qualified ID)
-    parsed_url = userId.strip('/').split('/')
-    remote_domain_base = parsed_url[1]
-    print(parsed_url)
-    author_path_with_port = '/'.join(parsed_url[2:])
-    print("author path with port ", author_path_with_port)
-    port_removed_path = author_path_with_port
-    print("port removed path ", port_removed_path)
-
-    # Remove the port from the remote domain
-    parsed_remote_url = urlparse(f"http://{remote_domain_base}")
-    remote_domain_without_brackets = parsed_remote_url.hostname  # Extract the hostname without the port
-    remote_domain = f"[{remote_domain_without_brackets}]"  # Add brackets for IPv6 format
-
-    author_path =  f"http://{remote_domain}/{port_removed_path}"
-
-    print("remote domain ", remote_domain)
-    print("author path ", author_path)
-    
-    parsed_post = pk.strip("/").split("/")
-    post_id = parsed_post[-1]
-    print(post_id)
-    
-    try:
-        remote_node = RemoteNode.objects.get(url=f"http://{remote_domain}/")
-        auth = HTTPBasicAuth(remote_node.username, remote_node.password)
-    except RemoteNode.DoesNotExist:
-        return Response({'error': 'Remote node not configured'}, 
-                          status=status.HTTP_400_BAD_REQUEST)
-
 
     #     author = request.user
     # content = request.data.get('content')
