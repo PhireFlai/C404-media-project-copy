@@ -499,7 +499,7 @@ def CreateComment(request, userId, pk):
 # Post to an author's inbox
 @api_view(["POST"])
 @permission_classes([AllowAny])
-def PostToInbox(request, receiver):
+def IncomingPostToInbox(request, receiver):
     try:
         type = request.data.get("type")
 
@@ -835,7 +835,7 @@ class GetCommented(generics.ListCreateAPIView):
         comment_data = CommentSerializer(comment).data
         factory = RequestFactory()
         request = factory.post(f'http://backend:8000/api/authors/{author}/inbox/', data=comment_data)
-        response = PostToInbox(request, author)
+        response = IncomingPostToInbox(request, author)
         return response
 
 class GetCommentFromCommented(generics.ListCreateAPIView):
@@ -875,7 +875,7 @@ def CreateFollowRequest(request, actorId, objectId):
         request_data = FollowRequestSerializer(request).data
         factory = RequestFactory()
         request = factory.post(f'http://localhost:8000/api/authors/{object.id}/inbox/', data=request_data)
-        response = PostToInbox(request, object.id)
+        response = IncomingPostToInbox(request, object.id)
         return Response(serializer.data, status=response.status_code)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
 
@@ -1114,7 +1114,7 @@ def AddLikeOnPost(request, userId, object_id):
     
     factory = RequestFactory()
     request = factory.post(inbox_url, data=LikeSerializer(like).data)
-    PostToInbox(request, userId)
+    IncomingPostToInbox(request, userId)
     return Response(LikeSerializer(like).data, status=status.HTTP_200_OK)
 
 class LikesList(generics.ListCreateAPIView):
@@ -1159,7 +1159,7 @@ class GetLiked(generics.ListCreateAPIView):
         # response = requests.post(f'http://backend:8000/api/authors/{author}/inbox/', data=like_data)
         factory = RequestFactory()
         request = factory.post(f'http://backend:8000/api/authors/{author}/inbox/', data=like_data)
-        response = PostToInbox(request, author)
+        response = IncomingPostToInbox(request, author)
         return response
 
 # Get a single like by id
@@ -1220,7 +1220,7 @@ def AddCommentLike(request, userId, pk, ck):
         like = Like.objects.get(id=like_id)
     factory = RequestFactory()
     request = factory.post(inbox_url, data=LikeSerializer(like).data)
-    PostToInbox(request, userId)
+    IncomingPostToInbox(request, userId)
     # requests.post(inbox_url, data=LikeSerializer(like).data)
 
     return Response(LikeSerializer(like).data, status=status.HTTP_200_OK)
