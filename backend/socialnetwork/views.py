@@ -563,12 +563,15 @@ def IncomingPostToInbox(request, receiver):
 
             actor = request.data.get("actor")
             object = request.data.get("object")
-            actor_id = actor['id'].split('/')[-2]
-            object_id = object['id'].split('/')[-2]
+            actor_id = actor['id']
+            object_id = object['id']
+
+            print(f"Actor: {actor}\n Object: {object}\n Actor_Id: {actor_id}\nObject_Id: {object_id}")
 
             try:
                 # Fetch the follow request
                 follow_request = FollowRequest.objects.get(actor_id=actor_id, object_id=object_id)
+                print(f"Got the follow request from the database")
             except FollowRequest.DoesNotExist:
                 return Response({'error': 'Follow request not found'}, status=status.HTTP_404_NOT_FOUND)
 
