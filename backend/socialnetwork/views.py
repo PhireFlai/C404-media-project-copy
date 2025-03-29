@@ -445,7 +445,6 @@ def CreateComment(request, userId, pk):
         parsed_remote_url = urlparse(f"http://{remote_domain_base}")
         remote_domain_without_brackets = parsed_remote_url.hostname  # Extract the hostname without the port
         remote_domain = f"[{remote_domain_without_brackets}]"  # Add brackets for IPv6 format
-
         
         try:
             remote_node = RemoteNode.objects.get(url=f"http://{remote_domain}/")
@@ -471,11 +470,15 @@ def CreateComment(request, userId, pk):
     if post.author.remote_fqid:
         try:
             parsed_url = post.author.remote_fqid.split('/')
+            print("Parsed URL:", parsed_url)
             remote_domain_base = parsed_url[2]
+            print("Remote domain base:", remote_domain_base)
 
             # Remove the port from the remote domain
             parsed_remote_url = urlparse(f"http://{remote_domain_base}")
+            print("Parsed remote URL:", parsed_remote_url)
             remote_domain_without_brackets = parsed_remote_url.hostname  # Extract the hostname without the port
+            print("Remote domain without brackets:", remote_domain_without_brackets)
             remote_domain = f"[{remote_domain_without_brackets}]"  # Add brackets for IPv6 format
             print(remote_domain)
             remote_node = RemoteNode.objects.get(url=f"http://{remote_domain}/")
