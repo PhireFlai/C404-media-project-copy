@@ -294,9 +294,8 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
             
             inbox_url = f"{follower.remote_fqid}inbox/"
             post_data = PostSerializer(post).data
-            print(post_data)
             post_data.update({'remote_fqid' : post_data['id']})
-            print(post_data)
+
             headers = {"Content-Type": "application/json"}
             
             try:
@@ -431,64 +430,43 @@ def CreateComment(request, userId, pk):
         content=content
     )
     
-    # Update post's updated_at timestamp
-    post.updated_at = timezone.now()
-    post.save()
-    
     # Serialize both comment and updated post
     comment_serializer = CommentSerializer(comment)
-    post_serializer = PostSerializer(post)
-    
-    # Create activities for both comment and post update
-    comment_activity = {
-        "type": "Create",
-        "object": comment_serializer.data,
-        "published": timezone.now().isoformat()
-    }
-    
-    post_activity = {
-        "type": "Update",
-        "object": post_serializer.data,
-        "published": timezone.now().isoformat()
-    }
-    
-    # Send both activities to inbox
-    factory = RequestFactory()
-    
-    # Send comment activity
-    comment_inbox_request = factory.post(
-        f'/api/authors/{userId}/inbox/',
-        data=comment_activity,
-        content_type='application/json'
-    )
-    print(comment_activity)
-    comment_inbox_request.user = request.user
-    comment_response = PostToInbox(comment_inbox_request, userId)
-    
-    # Send post update activity to post author's followers
+
+    # Get followers with remote_fqid - identical to perform_update
     followers_with_remote_fqid = post.author.followers.filter(remote_fqid__isnull=False)
     
     for follower in followers_with_remote_fqid:
-        try:
-            parsed_url = urlparse(follower.remote_fqid)
-            remote_domain = f"[{parsed_url.hostname}]"
             
+        parsed_url = follower.remote_fqid.split('/')
+        remote_domain_base = parsed_url[2]
+
+        # Remove the port from the remote domain
+        parsed_remote_url = urlparse(f"http://{remote_domain_base}")
+        remote_domain_without_brackets = parsed_remote_url.hostname  # Extract the hostname without the port
+        remote_domain = f"[{remote_domain_without_brackets}]"  # Add brackets for IPv6 format
+
+        
+        try:
             remote_node = RemoteNode.objects.get(url=f"http://{remote_domain}/")
             auth = HTTPBasicAuth(remote_node.username, remote_node.password)
-            
-            inbox_url = f"{follower.remote_fqid}inbox/"
-            headers = {"Content-Type": "application/json"}
-            
-            # Send post update activity
-            requests.post(
-                inbox_url,
-                auth=auth,
-                json=post_activity,
-                headers=headers
-            )
-            
-        except (RemoteNode.DoesNotExist, requests.exceptions.RequestException) as e:
-            print(f"Failed to send update to {follower.username}: {e}")
+        except RemoteNode.DoesNotExist:
+            return Response({'error': 'Remote node not configured'}, 
+                      status=status.HTTP_400_BAD_REQUEST)
+        
+        inbox_url = f"{follower.remote_fqid}inbox/"
+        comment_data = CommentSerializer(comment).data
+        comment_data.update({'remote_fqid' : comment_data['id']})
+        print(comment_data)
+        headers = {"Content-Type": "application/json"}
+        
+        try:
+            print(inbox_url)
+            response = requests.post(inbox_url, auth = auth, json=comment_data, headers=headers)
+            print(response.json())
+            response.raise_for_status()
+        except requests.exceptions.RequestException as e:
+            print(f"Failed to send post to {follower.username}'s inbox: {e}")
 
     return Response(comment_serializer.data, status=status.HTTP_201_CREATED)
 
@@ -566,8 +544,23 @@ def PostToInbox(request, receiver):
 
             # Extract post data from comment's post field
             post_url = comment_data.get("post")
-            post_id = post_url.rstrip('/').split('/')[-1]
+            url_parts = post_url.rstrip('/').split('/')
             
+            try:
+                # Find the index of 'posts' in the URL path
+                posts_index = url_parts.index('posts')
+                post_id = url_parts[posts_index + 1]
+                
+                # Find the index of 'authors' to get post author ID
+                authors_index = url_parts.index('authors')
+                post_author_id = url_parts[authors_index + 1]
+                
+            except (ValueError, IndexError) as e:
+                return Response(
+                    {"error": f"Invalid post URL structure: {str(e)}"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
             # Get or create comment author
             author_obj, _ = User.objects.get_or_create(
                 id=author_id,
@@ -580,10 +573,9 @@ def PostToInbox(request, receiver):
             )
 
             # Get or create parent post
-            post_author_id = post_url.split('/')[-3]  # Extract post author ID from URL
             post_author, _ = User.objects.get_or_create(
                 id=post_author_id,
-                defaults={"remote_fqid": "/".join(post_url.split('/')[:-2])}
+                defaults={"remote_fqid": f"{url_parts[0]}//{url_parts[2]}/api/authors/{post_author_id}/"}
             )
             
             post, _ = Post.objects.update_or_create(
@@ -591,19 +583,20 @@ def PostToInbox(request, receiver):
                 defaults={
                     "author": post_author,
                     "remote_fqid": post_url,
-                    "title": "Auto-created post",  # Default title if not exists
+                    "title": "Auto-created post",
                     "content": "Auto-created post content",
                     "visibility": "public"
                 }
             )
 
+            # Rest of the code remains the same...
             # Create/update comment
             comment, created = Comment.objects.update_or_create(
                 id=comment_id,
                 defaults={
                     "author": author_obj,
                     "content": comment_data.get("content"),
-                    "post": post,
+                    "post": post,  # Now properly linked to valid post
                     "created_at": comment_data.get("created_at") or timezone.now(),
                     "type": comment_data.get("type", "comment")
                 }
@@ -632,7 +625,7 @@ def PostToInbox(request, receiver):
                 )
 
             return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)
-
+        
         elif type == "post":
             print("POST")
             print(request.data)
