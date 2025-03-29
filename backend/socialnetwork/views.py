@@ -1482,7 +1482,9 @@ def extract_ipv6_address(fqid):
     ipv6_address = parsed_url.netloc  # Extract the network location (host)
     if ipv6_address.startswith('[') and ipv6_address.endswith(']'):
         # If the address is already enclosed in brackets, return it
+        print(f"{parsed_url.scheme}://{ipv6_address}")
         return f"{parsed_url.scheme}://{ipv6_address}"
     else:
         # Handle cases where the IPv6 address is not enclosed in brackets
+        print(f"{parsed_url.scheme}://{ipv6_address}")
         return f"{parsed_url.scheme}://[{ipv6_address}]"
