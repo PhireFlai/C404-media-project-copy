@@ -144,7 +144,7 @@ class PostListCreateView(generics.ListCreateAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
     parser_classes = (MultiPartParser, FormParser)
-    permission_classes = [ConditionalMultiAuthPermission]  
+    permission_classes = [AllowAny]  
 
     def get_queryset(self):
         user_id = self.kwargs.get('userId')  # Extract userId from URL
@@ -361,7 +361,7 @@ class UserProfileView(APIView):
         if self.request.method == 'PUT':
             self.permission_classes = [MultiAuthPermission]
         else:
-            self.permission_classes = [ConditionalMultiAuthPermission]
+            self.permission_classes = [AllowAny]
         return super().get_permissions()
 
     def get(self, request, userId):
@@ -879,28 +879,6 @@ def CreateFollowRequest(request, actorId, objectId):
         return Response(serializer.data, status=response.status_code)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
 
-    #     user_serializer = UserSerializer(object)
-    #     object_fqid = user_serializer.get_id(object)
-    #     parsed_url = urlparse(object_fqid)
-    #     host = parsed_url.netloc
-    #     if host != "localhost:8000" and host != "127.0.0.1:8000":
-    #         inbox_url = f'http://{host}/api/authors/{object.id}/inbox/'
-
-    #         response = SendInboxPost(inbox_url, data=request_data)
-    #         return Response(follow_serializer.data, status=response.status_code)
-    #     return Response(follow_serializer.data, status=status.HTTP_201_CREATED)
-    # return Response(follow_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-    #     author = request.user
-    # content = request.data.get('content')
-    # data={'content': content, 'post': post.id}
-    # serializer = CommentSerializer(data=data)
-    
-    # if serializer.is_valid():
-    #     serializer.save(author=author)
-    #     comment_id = serializer.data['id'].strip('/').split('/')[-1]
-    #     comment = Comment.objects.get(id=comment_id)
 
 @api_view(['GET', 'POST'])
 @permission_classes([AllowAny])
@@ -955,8 +933,6 @@ def createForeignFollowRequest(request, actorId, objectFQID):
         "id": remote_id,  # Assuming 'id' is the key for the unique identifier
         "remote_fqid": objectFQID,
         "username": remote_author.get('username'),
-        "profile_picture": remote_author.get('profile_picture'),  # Assuming 'profile_picture' is the key for the profile picture URL
-        "github": remote_author.get('github'),  # Assuming 'github' is the key for the GitHub URL
     }
 
     print(remote_id)
@@ -1387,32 +1363,3 @@ class SearchUsersView(APIView):
 class ForwardGetView(APIView):
     def get(self, request, encoded_url):
         return forward_get_request(request, encoded_url)
-
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def fetch_authors(request):
-    url = 'http://[2605:fd00:4:1001:f816:3eff:fe38:3824]/api/authors/'
-    username = 'canoe'
-    password = 'eonac'
-
-    try:
-        response = requests.get(url, auth=HTTPBasicAuth(username, password))
-        print(response)
-        print(response.json())
-        response.raise_for_status()  # Raise an error for bad status codes
-        data = response.json()
-        return Response(data, status=response.status_code)
-    except requests.exceptions.RequestException as e:
-        return Response({'error': str(e)}, status=500)
-
-def SendInboxPost(url_source, data):
-    parse_url = url_source.split('/')
-    url = "http://" + parse_url[2] + "/"
-    print(url)
-    # fetch authentication details from remotenode model
-    remote_node = RemoteNode.objects.get(url=url)
-    username = remote_node.username
-    password = remote_node.password
-    # send post request to remote node
-    response = requests.post(url_source, data=data, auth=HTTPBasicAuth(username, password))
-    return response
