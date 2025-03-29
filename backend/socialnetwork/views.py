@@ -461,6 +461,7 @@ def CreateComment(request, userId, pk):
         data=comment_activity,
         content_type='application/json'
     )
+    print(comment_activity)
     comment_inbox_request.user = request.user
     comment_response = PostToInbox(comment_inbox_request, userId)
     
@@ -553,41 +554,84 @@ def PostToInbox(request, receiver):
             }, status=status.HTTP_201_CREATED)
 
         elif type == "comment":
-            print(request.data)
-            author = request.data.get("author")
-            author_id = author['id'].rstrip('/').split('/')[-1]
-            comment = request.data.get("comment")
-            published = request.data.get("published")
-            id = request.data.get("id")
-            post = request.data.get("post")
-            like_count = request.data.get("like_count")
-            print(author)
-            author_obj, created_author = User.objects.get_or_create(id=author_id, remote_fqid=author['id'])
+            comment_data = request.data
+            print("Processing comment:", comment_data)
 
-            data = {"comment": comment, "post": post, "published": published, "id": id, "like_count": like_count}
-            serializer = CommentSerializer(data=data)
+            # Extract comment ID from URL
+            comment_id = comment_data.get("id").rstrip('/').split('/')[-1]
+            
+            # Extract author data
+            author_data = comment_data.get("author")
+            author_id = author_data.get("id").rstrip('/').split('/')[-1]
 
-            if serializer.is_valid():
-                serializer.save(author=author_obj)
-                comment = Comment.objects.get(id=serializer.data["id"])
+            # Extract post data from comment's post field
+            post_url = comment_data.get("post")
+            post_id = post_url.rstrip('/').split('/')[-1]
+            
+            # Get or create comment author
+            author_obj, _ = User.objects.get_or_create(
+                id=author_id,
+                defaults={
+                    "username": author_data.get("username"),
+                    "email": author_data.get("email"),
+                    "profile_picture": author_data.get("profile_picture"),
+                    "remote_fqid": author_data.get("id")
+                }
+            )
 
-                likes = request.data.get("likes", [])
-                for like in likes:
-                    like_author = like['author']
-                    like_author_id = like_author['id'].rstrip('/').split('/')[-1]
-                    like_author_obj, created_like_auth = User.objects.get_or_create(id=like_author_id, remote_fqid=like_author['id'])
-                    published = like["published"]
-                    like_id = like["id"]
+            # Get or create parent post
+            post_author_id = post_url.split('/')[-3]  # Extract post author ID from URL
+            post_author, _ = User.objects.get_or_create(
+                id=post_author_id,
+                defaults={"remote_fqid": "/".join(post_url.split('/')[:-2])}
+            )
+            
+            post, _ = Post.objects.update_or_create(
+                id=post_id,
+                defaults={
+                    "author": post_author,
+                    "remote_fqid": post_url,
+                    "title": "Auto-created post",  # Default title if not exists
+                    "content": "Auto-created post content",
+                    "visibility": "public"
+                }
+            )
 
-                    like_data = {"published": published, "id": like_id, "object": comment.id}
-                    comment_like_serializer = LikeSerializer(data=like_data)
+            # Create/update comment
+            comment, created = Comment.objects.update_or_create(
+                id=comment_id,
+                defaults={
+                    "author": author_obj,
+                    "content": comment_data.get("content"),
+                    "post": post,
+                    "created_at": comment_data.get("created_at") or timezone.now(),
+                    "type": comment_data.get("type", "comment")
+                }
+            )
 
-                    if comment_like_serializer.is_valid():
-                        comment_like_serializer.save(author=like_author_obj)
+            # Process likes
+            for like_data in comment_data.get("likes", []):
+                like_author_data = like_data.get("author")
+                like_author_id = like_author_data.get("id").rstrip('/').split('/')[-1]
 
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
+                like_author, _ = User.objects.get_or_create(
+                    id=like_author_id,
+                    defaults={
+                        "username": like_author_data.get("username"),
+                        "remote_fqid": like_author_data.get("id")
+                    }
+                )
 
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                Like.objects.update_or_create(
+                    id=like_data.get("id"),
+                    defaults={
+                        "author": like_author,
+                        "content_object": comment,
+                        "created_at": like_data.get("published") or timezone.now()
+                    }
+                )
+
+            return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)
 
         elif type == "post":
             print("POST")
