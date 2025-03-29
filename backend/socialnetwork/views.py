@@ -470,13 +470,20 @@ def CreateComment(request, userId, pk):
         # Send to post author's inbox if they're remote
     if post.author.remote_fqid:
         try:
-            parsed_author_url = urlparse(post.author.remote_fqid)
-            author_remote_domain = f"http://{parsed_author_url.hostname}/"
-            
-            remote_node = RemoteNode.objects.get(url=author_remote_domain)
+            parsed_url = post.author.remote_fqid.split('/')
+            remote_domain_base = parsed_url[2]
+
+            # Remove the port from the remote domain
+            parsed_remote_url = urlparse(f"http://{remote_domain_base}")
+            remote_domain_without_brackets = parsed_remote_url.hostname  # Extract the hostname without the port
+            remote_domain = f"[{remote_domain_without_brackets}]"  # Add brackets for IPv6 format
+            print(remote_domain)
+            remote_node = RemoteNode.objects.get(url=f"http://{remote_domain}/")
             auth = HTTPBasicAuth(remote_node.username, remote_node.password)
             
-            author_inbox_url = f"{post.author.remote_fqid.rstrip('/')}/inbox/"
+            comment_data = CommentSerializer(comment).data
+            print(post.author.remote_fqid)
+            author_inbox_url = f"{post.author.remote_fqid}inbox/"
             response = requests.post(
                 author_inbox_url,
                 auth=auth,

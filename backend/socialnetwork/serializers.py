@@ -27,7 +27,7 @@ class UserSerializer(serializers.ModelSerializer):
         
         
     def get_id(self, obj) -> str:
-        return f"http://[{my_ip}]:8000/api/authors/{obj.id}/"
+        return f"http://[{my_ip}]/api/authors/{obj.id}/"
     
     def get_friends(self, obj):
         return [f"http://[{my_ip}]/api/authors/{friend.id}/" for friend in obj.friends.all()]
