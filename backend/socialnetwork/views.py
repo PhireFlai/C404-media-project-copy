@@ -573,22 +573,15 @@ def PostToInbox(request, receiver):
             )
 
             # Get or create parent post
-            post_author, _ = User.objects.get_or_create(
-                id=post_author_id,
-                defaults={"remote_fqid": f"{url_parts[0]}//{url_parts[2]}/api/authors/{post_author_id}/"}
-            )
+    # Get existing post (DO NOT CREATE NEW ONE)
+            try:
+                post = Post.objects.get(id=post_id)
+            except Post.DoesNotExist:
+                return Response(
+                    {"error": f"Linked post {post_id} does not exist locally"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
             
-            post, _ = Post.objects.update_or_create(
-                id=post_id,
-                defaults={
-                    "author": post_author,
-                    "remote_fqid": post_url,
-                    "title": "Auto-created post",
-                    "content": "Auto-created post content",
-                    "visibility": "public"
-                }
-            )
-
             # Rest of the code remains the same...
             # Create/update comment
             comment, created = Comment.objects.update_or_create(
