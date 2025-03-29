@@ -210,7 +210,7 @@ class PostListCreateView(generics.ListCreateAPIView):
             inbox_url = f"{follower.remote_fqid}inbox/"
             post_data = PostSerializer(post).data
             post_data.update({'remote_fqid' : post_data['id']})
-            print(post_data)
+            print("Creating new post with: ", post_data)
             headers = {"Content-Type": "application/json"}
             
             try:
@@ -734,7 +734,8 @@ def IncomingPostToInbox(request, receiver):
                     "visibility": post_data.get("visibility"),
                     "created_at": created_at,
                     "updated_at": updated_at,
-                    "remote_fqid": post_data.get("id")
+                    "remote_fqid": post_data.get("id"),
+                    "image": post_data.get("image"),
                 }
             )
 
