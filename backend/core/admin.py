@@ -41,9 +41,15 @@ class RemoteNodeAdmin(admin.ModelAdmin):
         queryset.update(is_active=True)
     enable_node.short_description = "Enable selected nodes"
 
+@admin.register(Post)
+class PostAdmin(admin.ModelAdmin):
+    list_display = ('id', 'title', 'author', 'created_at', 'remote_fqid')  # Customize the list view
+    readonly_fields = ('remote_fqid',)  # Make remote_fqid read-only in the admin panel
+
+
+
 admin.site.register(User, CustomUserAdmin)
 # admin.site.register(User)
-admin.site.register(Post)
 admin.site.register(Comment)
 admin.site.register(FollowRequest)
 admin.site.register(Like)

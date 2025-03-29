@@ -1050,9 +1050,6 @@ def AcceptFollowRequest(request, objectId, actorId ):
         # Reject the request
         message = 'Follow request rejected successfully'
 
-        # Delete the follow request
-        follow_request.delete()
-
     # Handle remote side, if applicable
     if follow_request.actor.remote_fqid:
         try:
@@ -1070,36 +1067,35 @@ def AcceptFollowRequest(request, objectId, actorId ):
             object_remote_fqid_base = RemoteNode.objects.get(is_my_node=True).url
             object_remote_fqid = f"{object_remote_fqid_base}authors/{follow_request.object.id}/"
 
-
             # Determine the action (accept or reject)
             if action == 'accept':
                 follow_data = {
                     "type": "accept_follow",
-                    "summary": f"{follow_request.object.username} accepted {follow_request.actor.username}'s follow request",
+                    "summary": f"{follow_request.actor.username}'s follow request to {follow_request.object.username} was accepted",
                     "actor": {
-                        "id": str(follow_request.object.id),
-                        "username": follow_request.object.username,
-                        "remote_fqid": follow_request.object.remote_fqid,
-                    },
-                    "object": {
                         "id": str(follow_request.actor.id),
                         "username": follow_request.actor.username,
                         "remote_fqid": object_remote_fqid,
+                    },
+                    "object": {
+                        "id": str(follow_request.object.id),
+                        "username": follow_request.object.username,
+                        "remote_fqid": follow_request.object.remote_fqid,
                     },
                 }
             elif action == 'reject':
                 follow_data = {
                     "type": "decline_follow",
-                    "summary": f"{follow_request.object.username} declined {follow_request.actor.username}'s follow request",
+                    "summary": f"{follow_request.actor.username}'s follow request to {follow_request.object.username} was rejected",
                     "actor": {
-                        "id": str(follow_request.object.id),
-                        "username": follow_request.object.username,
-                        "remote_fqid": follow_request.object.remote_fqid,
-                    },
-                    "object": {
                         "id": str(follow_request.actor.id),
                         "username": follow_request.actor.username,
                         "remote_fqid": object_remote_fqid,
+                    },
+                    "object": {
+                        "id": str(follow_request.object.id),
+                        "username": follow_request.object.username,
+                        "remote_fqid": follow_request.object.remote_fqid,
                     },
                 }
 
@@ -1114,6 +1110,9 @@ def AcceptFollowRequest(request, objectId, actorId ):
         except Exception as e:
             return Response({'error': f'Failed to send {action}_follow request: {str(e)}'},
                             status=status.HTTP_400_BAD_REQUEST)
+    
+    # Delete the follow request
+    follow_request.delete()
     
     return Response({
         'message': message,
