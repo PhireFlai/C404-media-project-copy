@@ -24,99 +24,107 @@ const isLocal = (id) => {
 };
 
 const SearchUsers = () => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showResults, setShowResults] = useState(false); // State to control visibility of results
-  const navigate = useNavigate();
+    const [searchQuery, setSearchQuery] = useState("");
+    const [showResults, setShowResults] = useState(false); // State to control visibility of results
+    const navigate = useNavigate();
 
-  const { data: searchResults = { users: [] }, isFetching } =
-    useSearchUsersQuery(searchQuery, { skip: searchQuery.length < 2 });
+    const { data: searchResults = { users: [] }, isFetching } =
+        useSearchUsersQuery(searchQuery, { skip: searchQuery.length < 2 });
 
-  // Mutation for creating remote follow requests
-  const [createRemoteFollowRequest] = useCreateRemoteFollowRequestMutation();
+    // Mutation for creating remote follow requests
+    const [createRemoteFollowRequest] = useCreateRemoteFollowRequestMutation();
 
-  const handleFollow = async (remoteUserId) => {
-    try {
-      // Assuming the user object is available in the component
-      const user = JSON.parse(localStorage.getItem("user")); // Retrieve the user object from localStorage
-      if (!user || !user.id) {
-        throw new Error("User object not found in local storage");
-      }
+    const handleFollow = async (remoteUser) => {
+        try {
+            // Assuming the user object is available in the component
+            const user = JSON.parse(localStorage.getItem("user")); // Retrieve the user object from localStorage
+            if (!user || !user.id || !user.username) {
+                throw new Error("User object not found or incomplete in local storage");
+            }
 
-      const actorId = user.id; // Get the actorId from the user object
+            const actorId = user.id; // Get the actorId from the user object
+            const actorUsername = user.username; // Get the actor's username
 
-      // Send the follow request using the new API format
-      await createRemoteFollowRequest({
-        actorId,
-        objectFQID: remoteUserId,
-      }).unwrap();
-      alert("Follow request sent!");
-    } catch (error) {
-      console.error("Error sending follow request:", error);
-      alert("Failed to send follow request.");
-    }
-  };
+            console.log("Sending follow request from:", actorId, "to:", remoteUser.id);
 
-  const isFollowed = (followers) => {
-    const currentUser = JSON.parse(localStorage.getItem("user"));
-    if (!currentUser || !currentUser.id) return false;
+            // Send the follow request using the new API format
+            await createRemoteFollowRequest({
+                actorId,
+                actorUsername,
+                objectFQID: remoteUser.id,
+                objectUsername: remoteUser.username,
+            }).unwrap();
 
-    // Check if any follower contains the current user's ID
-    return followers.some((follower) => follower.includes(currentUser.id));
-  };
+            alert("Follow request sent!");
+        } catch (error) {
+            console.error("Error sending follow request:", error);
+            alert("Failed to send follow request.");
+        }
+    };
 
-  const handleCloseResults = () => {
-    setSearchQuery(""); // Clear the search query
-    setShowResults(false); // Hide the results
-  };
+    const isFollowed = (followers) => {
+        const currentUser = JSON.parse(localStorage.getItem("user"));
+        if (!currentUser || !currentUser.id) return false;
+    
+        // Check if any follower contains the current user's ID
+        return followers.some((follower) => follower.includes(currentUser.id));
+      };
+    
+      const handleCloseResults = () => {
+        setSearchQuery(""); // Clear the search query
+        setShowResults(false); // Hide the results
+      };
 
-  const handleInputChange = (e) => {
-    setSearchQuery(e.target.value);
-    setShowResults(true); // Show results when typing
-  };
+    const handleInputChange = (e) => {
+        setSearchQuery(e.target.value);
+        setShowResults(true); // Show results when typing
+    };
 
-  return (
-    <div className="search-users">
-      <input
-        type="text"
-        placeholder="Search users..."
-        value={searchQuery}
-        onChange={handleInputChange}
-      />
-      {isFetching && <p>Loading...</p>}
-      {showResults && searchResults.users.length > 0 && (
-        <div>
-          <button className="close-button" onClick={handleCloseResults}>
-            X
-          </button>
-          <ul className="search-dropdown">
-            {searchResults.users.map((user) => (
-              <li key={user.id}>
-                {isLocal(user.id) ? (
-                  <span onClick={() => navigate(parseId(user.id))}>
-                    {user.username}
-                  </span>
-                ) : (
-                  <>
-                    <span>{user.username}</span>
-                    {isFollowed(user.followers) ? (
-                      <span className="followed-indicator">Followed</span>
-                    ) : (
-                      <button
-                        className="button-primary"
-                        onClick={() => handleFollow(user.id)}
-                      >
-                        Follow
-                      </button>
-                    )}
-                  </>
-                )}
-              </li>
-            ))}
-          </ul>
+    return (
+        <div className="search-users">
+            <input
+                type="text"
+                placeholder="Search users..."
+                value={searchQuery}
+                onChange={handleInputChange}
+            />
+            {isFetching && <p>Loading...</p>}
+            {showResults && searchResults.users.length > 0 && (
+            <div>
+                <button className="close-button" onClick={handleCloseResults}>
+                  X
+                </button>
+                <ul className="search-dropdown">
+                    {searchResults.users.map((user) => (
+                        <li key={user.id}>
+                            {isLocal(user.id) ? (
+                                // Local, so extract UUID and redirect to the profile
+                                <span onClick={() => navigate(parseId(user.id))}>
+                                    {user.username}
+                                </span>
+                            ) : (
+                                // If the user is remote, show the follow button or followed indicator
+                                <>
+                                    <span>{user.username}</span>
+                                    {isFollowed(user.followers) ? (
+                                        <span className="followed-indicator">Followed</span>
+                                    ) : (
+                                        <button
+                                            className="button-primary"
+                                            onClick={() => handleFollow(user)} // Pass the entire user object
+                                            >
+                                            Follow
+                                        </button>
+                                    )}
+                                </>
+                            )}
+                        </li>
+                    ))}
+                </ul>
+            </div>
+        )}
         </div>
-      )}
-    </div>
-  );
+    );
 };
 
 export default SearchUsers;

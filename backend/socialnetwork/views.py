@@ -469,9 +469,19 @@ def CreateComment(request, userId, pk):
         # Send to post author's inbox if they're remote
     if post.author.remote_fqid:
         try:
-            remote_node_fqid = extract_ipv6_address(post.author.remote_fqid)
+            parsed_url = post.author.remote_fqid.split('/')
+            print("Parsed URL:", parsed_url)
+            remote_domain_base = parsed_url[2]
+            print("Remote domain base:", remote_domain_base)
 
-            remote_node = RemoteNode.objects.get(url=remote_node_fqid)
+            # Remove the port from the remote domain
+            parsed_remote_url = urlparse(f"http://{remote_domain_base}")
+            print("Parsed remote URL:", parsed_remote_url)
+            remote_domain_without_brackets = parsed_remote_url.hostname  # Extract the hostname without the port
+            print("Remote domain without brackets:", remote_domain_without_brackets)
+            remote_domain = f"[{remote_domain_without_brackets}]"  # Add brackets for IPv6 format
+            print(remote_domain)
+            remote_node = RemoteNode.objects.get(url=f"http://{remote_domain}/")
             auth = HTTPBasicAuth(remote_node.username, remote_node.password)
             
             comment_data = CommentSerializer(comment).data
@@ -512,6 +522,7 @@ def IncomingPostToInbox(request, receiver):
                     "username": actor.get('username'),
                 }
             )
+
             object_obj, created_object = User.objects.get_or_create(
                 id=object_id,
                 defaults={
@@ -921,92 +932,63 @@ def CreateFollowRequest(request, actorId, objectId):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
 
 
-@api_view(['GET', 'POST'])
-@permission_classes([AllowAny])
-def createForeignFollowRequest(request, actorId, objectFQID):
-    actor = User.objects.get(id=actorId)
-        
-    # Parse the foreign author's FQID (Fully Qualified ID)
-    parsed_url = objectFQID.strip('/').split('/')
-    remote_domain_base = parsed_url[1]
-    print(parsed_url)
-    author_path_with_port = '/'.join(parsed_url[2:])
-    print("author path with port ", author_path_with_port)
-    port_removed_path = author_path_with_port
-    print("port removed path ", port_removed_path)
-
-    # Remove the port from the remote domain
-    parsed_remote_url = urlparse(f"http://{remote_domain_base}")
-    remote_domain_without_brackets = parsed_remote_url.hostname  # Extract the hostname without the port
-    remote_domain = f"[{remote_domain_without_brackets}]"  # Add brackets for IPv6 format
-
-    author_path =  f"http://{remote_domain}/{port_removed_path}"
-
-    print("remote domain ", remote_domain)
-    print("author path ", author_path)
-    
+@api_view(['POST'])
+@permission_classes([ConditionalMultiAuthPermission])
+def createForeignFollowRequest(request):
     try:
-        remote_node = RemoteNode.objects.get(url=f"http://{remote_domain}/")
-        auth = HTTPBasicAuth(remote_node.username, remote_node.password)
-    except RemoteNode.DoesNotExist:
-        return Response({'error': 'Remote node not configured'}, 
-                          status=status.HTTP_400_BAD_REQUEST)
-    try:
-        response = requests.get(
-                author_path,  # Use IPv6 format
-                auth=auth,
-                timeout=5
-        )
-        response.raise_for_status()
-        remote_author = response.json()
-        # return response
-    except requests.exceptions.RequestException as e:
-        return Response({'error': f'Failed to fetch remote author: {str(e)}'}, 
-                        status=status.HTTP_400_BAD_REQUEST)
-        # Create local follow request
-    if FollowRequest.objects.filter(actor=actor, object__remote_fqid=objectFQID).exists():
-        return Response({"message": "Follow request already sent"},
-                        status=status.HTTP_400_BAD_REQUEST)
-    
-    remote_fqid = remote_author.get('id')
-    remote_id = remote_fqid.split('/')[-2]
-    user_data = {
-        "id": remote_id,  # Assuming 'id' is the key for the unique identifier
-        "remote_fqid": objectFQID,
-        "username": remote_author.get('username'),
-    }
+        actor_id = request.data.get("actorId")
+        actor_username = request.data.get("actorUsername")
+        object_FQID = request.data.get("objectFQID")
+        object_username = request.data.get("objectUsername")
 
-    print(remote_id)
-    print("user data ", user_data)
-    print(remote_author)
-    summary = f'{actor.username} wants to follow {remote_author.get("username")}'
-    if (User.objects.filter(id=remote_id).exists()):
-        copy_remote = User.objects.get(id=remote_id)
-    else:
-        copy_remote = User.objects.create(**user_data)
-    data = {"summary": summary}
-    
-    serializer = FollowRequestSerializer(data=data)
-    
-    if serializer.is_valid():
-        serializer.save(actor=actor, object=copy_remote)
-        request = FollowRequest.objects.get(actor=actor, object=copy_remote)
-        request_data = FollowRequestSerializer(request).data
-        print(request_data)
-        headers = {"Content-Type": "application/json"}
-        response = requests.post(f'http://{remote_domain}/api/authors/{remote_id}/inbox/', json=request_data, headers=headers, auth=auth)
-         # Return the response content and status code
+        current_remote_node = RemoteNode.objects.get(is_my_node=True)
+        actor_FQID = f"http://{current_remote_node.url}authors/{actor_id}/"
+        object_id = object_FQID.split("/")[-2] 
+
+        print(f"Foreign follow request from {actor_username} ({actor_id}) to {object_username} ({object_id}) with id {object_FQID}")
+
+        # Fetch or create the actor and object users
         try:
-            response.raise_for_status()  # Raise an exception for HTTP errors
-            return Response(response.json(), status=response.status_code)
-        except requests.exceptions.RequestException as e:
-            # Handle errors and return the error message
-            return Response(
-                {"error": str(e), "details": response.text},
-                status=response.status_code
-            )
+            actor = User.objects.get(id=actor_id)
+        except User.DoesNotExist:
+            return Response({"error": "Actor not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            object_user = User.objects.get(id=object_id)
+        except User.DoesNotExist:
+            object_user = User.objects.create(id=object_id, username=object_username, remote_fqid=object_FQID)
+
+        # Check if a follow request already exists
+        if FollowRequest.objects.filter(actor=actor, object=object_user).exists():
+            return Response({"message": "Follow request already sent"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Create the follow request
+        summary = f"{actor.username} wants to follow {object_user.username}"
+        data = {"summary": summary}
+        
+        serializer = FollowRequestSerializer(data=data)
     
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
+        if serializer.is_valid():
+            serializer.save(actor=actor, object=object_user)
+
+            request_data = FollowRequestSerializer(serializer.instance).data
+
+
+            # Send to the remote
+            inbox_url = f"{object_FQID}inbox/"
+            headers = {"Content-Type": "application/json"}
+            response = requests.post(
+                inbox_url,
+                json=request_data,
+                headers=headers
+            )
+            response.raise_for_status()
+            return Response({"message": "Follow request sent successfully"}, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST) 
 
 
 
@@ -1048,6 +1030,8 @@ def AcceptFollowRequest(request, objectId, actorId ):
         try:
             parsed_url = follow_request.actor.remote_fqid.split('/')
             remote_domain_base = parsed_url[2]
+
+            print("parsed url ", parsed_url)
 
             # Remove the port from the remote domain
             parsed_remote_url = urlparse(f"http://{remote_domain_base}")
@@ -1479,6 +1463,7 @@ def extract_ipv6_address(fqid):
         str: The base URL containing the IPv6 address.
     """
     parsed_url = urlparse(fqid)
+    print(parsed_url)
     ipv6_address = parsed_url.netloc  # Extract the network location (host)
     if ipv6_address.startswith('[') and ipv6_address.endswith(']'):
         # If the address is already enclosed in brackets, return it

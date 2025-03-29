@@ -66,7 +66,7 @@ urlpatterns = [
     path("api/authors/followers-feed/", FollowersFeedView.as_view(), name="followers-feed"),
     path("api/search-users/", SearchUsersView.as_view(), name="search-users"),
     path('api/forward/<path:encoded_url>/', ForwardGetView.as_view(), name='forward'),
-    path("api/authors/<uuid:actorId>/follow/authors/<path:objectFQID>/", createForeignFollowRequest, name='create-foreign=follow-request'),
+    path("api/authors/follow/", createForeignFollowRequest, name="create-foreign-follow-request"),
 ]
 
 # Serve media files during development
