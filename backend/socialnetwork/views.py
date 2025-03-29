@@ -467,7 +467,26 @@ def CreateComment(request, userId, pk):
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
             print(f"Failed to send post to {follower.username}'s inbox: {e}")
-
+        # Send to post author's inbox if they're remote
+    if post.author.remote_fqid:
+        try:
+            parsed_author_url = urlparse(post.author.remote_fqid)
+            author_remote_domain = f"http://{parsed_author_url.hostname}/"
+            
+            remote_node = RemoteNode.objects.get(url=author_remote_domain)
+            auth = HTTPBasicAuth(remote_node.username, remote_node.password)
+            
+            author_inbox_url = f"{post.author.remote_fqid.rstrip('/')}/inbox/"
+            response = requests.post(
+                author_inbox_url,
+                auth=auth,
+                json=comment_data,
+                headers={"Content-Type": "application/json"}
+            )
+            response.raise_for_status()
+        except Exception as e:
+            print(f"Failed to send to post author: {str(e)}")
+    
     return Response(comment_serializer.data, status=status.HTTP_201_CREATED)
 
 # Post to an author's inbox
