@@ -673,7 +673,7 @@ def PostToInbox(request, receiver):
                 "like_count": post.like_count,
                 "type": "post",
                 "remote_fqid": post.remote_fqid,
-                "comments": CommentSerializer(post.comment_set.all(), many=True).data
+                "comments": CommentSerializer(post.comments.all(), many=True).data
             }, status=status.HTTP_201_CREATED)
         
         elif type == "like":
