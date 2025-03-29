@@ -19,7 +19,7 @@ class CustomUserAdmin(UserAdmin):
 
     # Ensure the admin form works with UUIDField
     fieldsets = (
-        (None, {'fields': ('id', 'username', 'password', 'profile_picture')}),  
+        (None, {'fields': ('id', 'username', 'password', 'profile_picture', 'remote_fqid')}),  
         ('Friends and Followers', {'fields': ('friends', 'followers')}),  # Add friends and followers
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Approval', {'fields': ('is_approved',)}),
