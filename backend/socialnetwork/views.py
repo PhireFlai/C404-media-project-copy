@@ -794,7 +794,7 @@ def IncomingPostToInbox(request, receiver):
             author = request.data.get("author")
             created_at = request.data.get("created_at")
             id = request.data.get("id")
-            post = request.data.get("post")
+            object_id = request.data.get("object_id")
             author_id = author['id'].rstrip('/').split('/')[-1]
 
             author_obj, _ = User.objects.get_or_create(
@@ -812,7 +812,7 @@ def IncomingPostToInbox(request, receiver):
                 defaults={
                     "author": author_obj,
                     "created_at": created_at,
-                    "post": post,
+                    "object_id": object_id,
                 }
             )
 
@@ -824,7 +824,7 @@ def IncomingPostToInbox(request, receiver):
                     "username": author_obj.username,
                 },
                 "published": like.created_at,
-                "object": like.post,
+                "object": like.object_id,
             }, status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -1270,7 +1270,7 @@ def AddLikeOnPost(request, userId, object_id):
             auth = HTTPBasicAuth(remote_node.username, remote_node.password)
             
             like_data = LikeSerializer(like).data
-            print(like_data)
+            print("Like data:",like_data)
             print(post.author.remote_fqid)
             author_inbox_url = f"{post.author.remote_fqid}inbox/"
             response = requests.post(
@@ -1280,6 +1280,7 @@ def AddLikeOnPost(request, userId, object_id):
                 headers={"Content-Type": "application/json"}
             )
             response.raise_for_status()
+            print(response.text)
         except Exception as e:
             print(f"Failed to send to post author: {str(e)}")
     
