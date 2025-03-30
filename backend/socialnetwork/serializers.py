@@ -18,11 +18,12 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User        
-        fields = ['id', 'username', 'password', 'profile_picture', 'followers', 'following', 'friends', 'remote_fqid', 'displayName', 'github']
+        fields = ['id', 'username', 'password', 'profile_picture', 'followers', 'following', 'friends', 'remote_fqid', 'displayName', 'github', 'is_approved', 'host', 'page', 'profileImage', 'type', 'github_etag', 'friends', 'followers']
         extra_kwargs = {
             'password': {'write_only': True},  # Ensure password is write-only
             'followers': {'required': False},  # Make followers optional
             'friends': {'required': False},    # Make friends optional
+            'is_approved': {'write_only': True},  # Ensure is_approved is write-only
         }
         
         
@@ -64,12 +65,15 @@ class UserSerializer(serializers.ModelSerializer):
 
         # Assign values to non-many-to-many fields
         user.displayName = validated_data.get('username', '')
-        if 'authors' in user.id:
+
+        # Convert user.id to a string before checking or splitting
+        user_id_str = str(user.id)
+        if 'authors' in user_id_str:
             # Extract the host from the user ID
-            host_base = user.id.split('authors')[0]
+            host_base = user_id_str.split('authors')[0]
             user.host = host_base
         else:
-            user.host = user.id
+            user.host = user_id_str
 
         current_remote_node = None
         try:
@@ -78,7 +82,7 @@ class UserSerializer(serializers.ModelSerializer):
             print(f"Error fetching remote node: {e}")
 
         if current_remote_node:
-            page_path = current_remote_node.url + user.id
+            page_path = current_remote_node.url + user_id_str
             user.page = page_path
 
         user.profileImage = user.profile_picture.url if user.profile_picture else None
@@ -128,7 +132,7 @@ class PostSerializer(serializers.ModelSerializer):
     comments = CommentSerializer(many=True, read_only=True)
     class Meta:
         model = Post
-        fields = ["id", "author", "title", "content", "image", "formatted_content", "created_at", "published", "visibility", "like_count", "type", "remote_fqid", "comments", "description", "page", "content_type"]
+        fields = ["id", "author", "title", "content", "image", "formatted_content", "created_at", "published", "visibility", "like_count", "type", "remote_fqid", "comments", "description", "page", "contentType"]
 
     
     def get_id(self, obj) -> str:

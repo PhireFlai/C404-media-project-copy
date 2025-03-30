@@ -106,7 +106,7 @@ class Post(models.Model):
     remote_fqid = models.CharField(max_length=250, blank=True, null=True)
     page = models.CharField(max_length=250, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
-    content_type = models.TextField(default="text/plain", editable=False)
+    contentType = models.TextField(default="text/plain", editable=False)
 
     likes = GenericRelation(Like)  # Enable reverse relation
 

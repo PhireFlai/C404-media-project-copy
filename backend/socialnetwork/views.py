@@ -87,15 +87,26 @@ def createUser(request):
     else:
         is_approved = True  # Automatically approve
 
-    user = User.objects.create_user(username=username, password=password, is_approved=is_approved)
-    token = Token.objects.create(user=user)
+    # Prepare data for the serializer
+    user_data = {
+        'username': username,
+        'password': password,
+        'is_approved': is_approved,
+    }
 
-    return Response({
-        'token': token.key,
-        'user_id': user.id,
-        'username': user.username,
-        'is_approved': user.is_approved
-    }, status=status.HTTP_201_CREATED)
+    # Use the serializer to create the user
+    serializer = UserSerializer(data=user_data)
+    if serializer.is_valid():
+        user = serializer.save()
+        token = Token.objects.create(user=user)
+        return Response({
+            'token': token.key,
+            'user_id': user.id,
+            'username': user.username,
+            'is_approved': user.is_approved
+        }, status=status.HTTP_201_CREATED)
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # Logs in a user
 @api_view(['POST'])
@@ -193,8 +204,8 @@ class PostListCreateView(generics.ListCreateAPIView):
             remote_domain_base = parsed_url[2]
 
             # Remove the port from the remote domain
-            print(parsed_url)
-            print(remote_domain_base)
+            # print(parsed_url)
+            # print(remote_domain_base)
             parsed_remote_url = urlparse(f"http://{remote_domain_base}")
             remote_domain_without_brackets = parsed_remote_url.hostname  # Extract the hostname without the port
             remote_domain = f"[{remote_domain_without_brackets}]"  # Add brackets for IPv6 format
@@ -211,13 +222,18 @@ class PostListCreateView(generics.ListCreateAPIView):
             post_data = PostSerializer(post).data
             post_data.update({'remote_fqid' : post_data['id']})
             post_data['id'] = f"{remote_node.url}/posts/{post_data['id']}"  # Update the ID to include the remote node URL
-            print("Creating new post with: ", post_data)
+            # print("Creating new post with: ", post_data)
             headers = {"Content-Type": "application/json"}
+
+            print(f"Sending post")
+            print(f"URL: {inbox_url}")
+            print(f"Headers: {headers}")
+            print(f"Payload: {post_data}")
             
             try:
-                print(inbox_url)
+                # print(inbox_url)
                 response = requests.post(inbox_url, auth = auth, json=post_data, headers=headers)
-                print(response.json())
+                # print(response.json())
                 response.raise_for_status()
             except requests.exceptions.RequestException as e:
                 print(f"Failed to send post to {follower.username}'s inbox: {e}")
@@ -471,23 +487,29 @@ def CreateComment(request, userId, pk):
     if post.author.remote_fqid:
         try:
             parsed_url = post.author.remote_fqid.split('/')
-            print("Parsed URL:", parsed_url)
+            # print("Parsed URL:", parsed_url)
             remote_domain_base = parsed_url[2]
-            print("Remote domain base:", remote_domain_base)
+            # print("Remote domain base:", remote_domain_base)
 
             # Remove the port from the remote domain
             parsed_remote_url = urlparse(f"http://{remote_domain_base}")
-            print("Parsed remote URL:", parsed_remote_url)
+            # print("Parsed remote URL:", parsed_remote_url)
             remote_domain_without_brackets = parsed_remote_url.hostname  # Extract the hostname without the port
-            print("Remote domain without brackets:", remote_domain_without_brackets)
+            # print("Remote domain without brackets:", remote_domain_without_brackets)
             remote_domain = f"[{remote_domain_without_brackets}]"  # Add brackets for IPv6 format
-            print(remote_domain)
+            # print(remote_domain)
             remote_node = RemoteNode.objects.get(url=f"http://{remote_domain}/")
             auth = HTTPBasicAuth(remote_node.username, remote_node.password)
             
             comment_data = CommentSerializer(comment).data
-            print(post.author.remote_fqid)
+            # print(post.author.remote_fqid)
             author_inbox_url = f"{post.author.remote_fqid}inbox/"
+
+            print(f"Sending comment:")
+            print(f"URL: {author_inbox_url}")
+            print(f"Headers: {headers}")
+            print(f"Payload: {comment_data}")
+
             response = requests.post(
                 author_inbox_url,
                 auth=auth,
@@ -506,6 +528,8 @@ def CreateComment(request, userId, pk):
 def IncomingPostToInbox(request, receiver):
     try:
         type = request.data.get("type")
+        print("Incoming post type:", type)
+        print("Incoming post data:", request.data)
 
         if type == "follow":
             summary = request.data.get("summary")
@@ -1079,11 +1103,18 @@ def AcceptFollowRequest(request, objectId, actorId ):
                 }
 
             author_inbox_url = f"{follow_request.actor.remote_fqid}inbox/"
+            headers = {"Content-Type": "application/json"}
+
+            print(f"Sending POST request to {action} follow request:")
+            print(f"URL: {author_inbox_url}")
+            print(f"Headers: {headers}")
+            print(f"Payload: {follow_data}")
+
             response = requests.post(
                 author_inbox_url,
                 auth=auth,
                 json=follow_data,
-                headers={"Content-Type": "application/json"}
+                headers=headers
             )
             response.raise_for_status()
         except Exception as e:
