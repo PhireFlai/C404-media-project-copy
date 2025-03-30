@@ -1270,6 +1270,7 @@ def AddLikeOnPost(request, userId, object_id):
             auth = HTTPBasicAuth(remote_node.username, remote_node.password)
             
             like_data = LikeSerializer(like).data
+            print(like_data)
             print(post.author.remote_fqid)
             author_inbox_url = f"{post.author.remote_fqid}inbox/"
             response = requests.post(
