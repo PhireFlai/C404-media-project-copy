@@ -858,7 +858,6 @@ def IncomingPostToInbox(request, receiver):
                 }
             )
 
-
             return Response({
                  "id": like.id,
                  "type": like.type,
@@ -892,8 +891,6 @@ def IncomingPostToInbox(request, receiver):
                 actor_obj.friends.remove(object_obj)
                 object_obj.friends.remove(actor_obj)
             
-            print("Sending unfollow to:", inbox_url)
-            print("Payload:", unfollow_data)
             return Response({"message": "Unfollow processed successfully"}, status=status.HTTP_200_OK)
 
 

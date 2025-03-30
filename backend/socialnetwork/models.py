@@ -66,7 +66,7 @@ class User(AbstractUser):
 class Like(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
-    type = models.TextField(default="post_like", editable=False)
+    type = models.TextField(default="like", editable=False)
     
     # Fields for Generic Foreign Key
     content_type = models.ForeignKey(
