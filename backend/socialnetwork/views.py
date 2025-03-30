@@ -1448,7 +1448,7 @@ def AddCommentLike(request, userId, pk, ck):
             remote_node = RemoteNode.objects.get(url=f"http://{remote_domain}/")
             auth = HTTPBasicAuth(remote_node.username, remote_node.password)
             
-            like_data = LikeSerializer(comment).data
+            like_data = LikeSerializer(like).data
             print(comment.author.remote_fqid)
             author_inbox_url = f"{comment.author.remote_fqid}inbox/"
             response = requests.post(
