@@ -1256,7 +1256,7 @@ def AddLikeOnPost(request, userId, object_id):
         
         try:
             print(inbox_url)
-            response = requests.post(inbox_url, auth = auth, json=comment_data, headers=headers)
+            response = requests.post(inbox_url, auth = auth, json=like_data, headers=headers)
             print(response.json())
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
@@ -1423,7 +1423,7 @@ def AddCommentLike(request, userId, pk, ck):
         
         try:
             print(inbox_url)
-            response = requests.post(inbox_url, auth = auth, json=comment_data, headers=headers)
+            response = requests.post(inbox_url, auth = auth, json=like_data, headers=headers)
             print(response.json())
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
