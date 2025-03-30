@@ -617,18 +617,29 @@ def IncomingPostToInbox(request, receiver):
 
             return Response({"message": "Follow request accepted successfully"}, status=status.HTTP_200_OK)
 
-        elif type == "delete_follow_request":
+        elif type == "decline_follow":
             print("Deleting follow request")
             print(request.data)
 
             actor = request.data.get("actor")
             object = request.data.get("object")
-            actor_id = actor['id'].split('/')[-2]
-            object_id = object['id'].split('/')[-2]
+            actor_id = actor['id']
+            object_id = object['id']
+
+            # Only split if the ID contains slashes
+            if '/' in actor_id:
+                actor_id = actor_id.rstrip('/').split('/')[-1]
+
+            if '/' in object_id:
+                object_id = object_id.rstrip('/').split('/')[-1]
+
+            print(f"Actor ID: {actor_id}")
+            print(f"Object ID: {object_id}")
 
             try:
                 # Fetch the follow request
                 follow_request = FollowRequest.objects.get(actor_id=actor_id, object_id=object_id)
+                print(follow_request)
                 follow_request.delete()
                 return Response({"message": "Follow request deleted successfully"}, status=status.HTTP_200_OK)
             except FollowRequest.DoesNotExist:
