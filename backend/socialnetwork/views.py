@@ -824,22 +824,16 @@ def IncomingPostToInbox(request, receiver):
                 }
             )
 
-            # Forward the like back to the originating node if necessary
-            if not created and author_obj.remote_fqid:
-                try:
-                    print("Forwarding like back to originating node...")
-                    author_inbox_url = f"{author_obj.remote_fqid}inbox/"
-                    headers = {"Content-Type": "application/json"}
-                    response = requests.post(
-                        author_inbox_url,
-                        json=like_data,
-                        headers=headers
-                    )
-                    response.raise_for_status()
-                except requests.exceptions.RequestException as e:
-                    print(f"Failed to forward like to originating node: {e}")
-
-            return Response({"message": "Like processed successfully"}, status=status.HTTP_201_CREATED)
+            return Response({
+                 "id": like.id,
+                 "type": like.type,
+                 "user": {
+                     "id": author_obj.id,
+                     "username": author_obj.username,
+                 },
+                 "published": like.created_at,
+                 "object": like.object_id,
+             }, status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     return Response({"error": "Unsupported message type"}, status=status.HTTP_400_BAD_REQUEST)
@@ -1454,7 +1448,7 @@ def AddCommentLike(request, userId, pk, ck):
             response = requests.post(
                 author_inbox_url,
                 auth=auth,
-                json=comment_data,
+                json=like_data,
                 headers={"Content-Type": "application/json"}
             )
             response.raise_for_status()
