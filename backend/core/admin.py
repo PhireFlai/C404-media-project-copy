@@ -10,7 +10,7 @@ def approve_users(modeladmin, request, queryset):
 class CustomUserAdmin(UserAdmin):
     list_display = ('username', 'email', 'is_staff', 'profile_picture', 'is_approved')  # Add profile_picture to list view
     search_fields = ('username', 'email')  # Fields to search in the admin panel
-    readonly_fields = ('id', 'github_etag')  # Make the UUID and github Etag field read-only in the admin panel
+    readonly_fields = ('id', 'github_etag', 'remote_fqid')  # Make the UUID and github Etag field read-only in the admin panel
 
     actions = [approve_users]
 
@@ -19,7 +19,7 @@ class CustomUserAdmin(UserAdmin):
 
     # Ensure the admin form works with UUIDField
     fieldsets = (
-        (None, {'fields': ('id', 'username', 'password', 'profile_picture')}),  
+        (None, {'fields': ('id', 'username', 'password', 'profile_picture', 'remote_fqid')}),  
         ('Friends and Followers', {'fields': ('friends', 'followers')}),  # Add friends and followers
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Approval', {'fields': ('is_approved',)}),
@@ -41,9 +41,15 @@ class RemoteNodeAdmin(admin.ModelAdmin):
         queryset.update(is_active=True)
     enable_node.short_description = "Enable selected nodes"
 
+@admin.register(Post)
+class PostAdmin(admin.ModelAdmin):
+    list_display = ('id', 'title', 'author', 'created_at', 'remote_fqid')  # Customize the list view
+    readonly_fields = ('remote_fqid',)  # Make remote_fqid read-only in the admin panel
+
+
+
 admin.site.register(User, CustomUserAdmin)
 # admin.site.register(User)
-admin.site.register(Post)
 admin.site.register(Comment)
 admin.site.register(FollowRequest)
 admin.site.register(Like)
