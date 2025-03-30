@@ -709,6 +709,8 @@ def IncomingPostToInbox(request, receiver):
             author_data = post_data.get("author")
             author_id = author_data.get("id").rstrip('/').split('/')[-1]
 
+            print("Author id:", author_data.get("id"))
+
             # Get or create author
             author_obj, _ = User.objects.get_or_create(
                 id=author_id,
@@ -719,6 +721,8 @@ def IncomingPostToInbox(request, receiver):
                     "remote_fqid": author_data.get("id")
                 }
             )
+
+            print("Author obj:", vars(author_obj))
 
             # Handle post timestamps
             created_at = post_data.get("created_at") 
