@@ -204,7 +204,7 @@ const PostItem = ({ post, refetchPosts }) => {
           <h3 className="sub-title">{post.title}</h3>
           <p className="text-muted">Visibility: {post.visibility}</p>
           <p className="text-muted">
-            Last updated: {format(new Date(post.updated_at), "PPPppp")}
+            Last updated: {format(new Date(post.published), "PPPppp")}
           </p>
 
           <Link to={`/${parsedAuthorId}`}>

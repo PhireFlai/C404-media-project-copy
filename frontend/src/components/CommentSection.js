@@ -21,7 +21,7 @@ const CommentSection = ({ postId, author }) => {
       const createResponse = await createComment({
         userId: user.id,
         postId,
-        commentData: { content: comment },
+        commentData: { comment: comment },
       }).unwrap();
       console.log("Comment created:", createResponse);
 
