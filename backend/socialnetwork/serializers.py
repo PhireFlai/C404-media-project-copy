@@ -62,25 +62,26 @@ class UserSerializer(serializers.ModelSerializer):
         user.followers.set(followers_data)
         user.friends.set(friends_data)
 
-        user.displayName.set(validated_data.get('username', ''))
-        if ('authors' in user.id):
+        # Assign values to non-many-to-many fields
+        user.displayName = validated_data.get('username', '')
+        if 'authors' in user.id:
             # Extract the host from the user ID
             host_base = user.id.split('authors')[0]
-            user.host.set(host_base)
+            user.host = host_base
         else:
-            user.host.set(user.id)
-        
+            user.host = user.id
+
         current_remote_node = None
         try:
             current_remote_node = RemoteNode.objects.get(is_my_node=True)
         except Exception as e:
             print(f"Error fetching remote node: {e}")
-        
+
         if current_remote_node:
             page_path = current_remote_node.url + user.id
-            user.page.set(page_path)
+            user.page = page_path
 
-        user.profileImage.set(user.profile_picture.url if user.profile_picture else None)
+        user.profileImage = user.profile_picture.url if user.profile_picture else None
 
         user.save()
 
@@ -142,9 +143,9 @@ class PostSerializer(serializers.ModelSerializer):
             **validated_data
         )
 
-        post.description.set(post.title)
+        post.description = post.title
         # author page is post page
-        post.page.set(post.author.page if post.author.page else None)
+        post.page = post.author.page if post.author.page else None
 
         post.save()
 
