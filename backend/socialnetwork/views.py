@@ -824,7 +824,9 @@ def IncomingPostToInbox(request, receiver):
             if object_obj in actor_obj.friends.all():
                 actor_obj.friends.remove(object_obj)
                 object_obj.friends.remove(actor_obj)
-
+            
+            print("Sending unfollow to:", inbox_url)
+            print("Payload:", unfollow_data)
             return Response({"message": "Unfollow processed successfully"}, status=status.HTTP_200_OK)
 
     except Exception as e:
@@ -1133,59 +1135,60 @@ def Unfollow(request, followedId, followerId):
 
     if follower.id != request.user.id:
         return Response({'error': 'You are not authorized to unfollow this user'}, 
-                       status=status.HTTP_403_FORBIDDEN)
+                        status=status.HTTP_403_FORBIDDEN)
 
-    
-# Unfollow the user locally
-followed.followers.remove(follower)
 
-# Remove each other as friends if they were
-if follower in followed.friends.all():
-    followed.friends.remove(follower)
-    follower.friends.remove(followed)
+    # Unfollow the user locally
+    followed.followers.remove(follower)
 
-# If the user being unfollowed is remote, notify their server
-if followed.remote_fqid:
-    try:
-        from requests.auth import HTTPBasicAuth
-        from urllib.parse import urlparse
+    # Remove each other as friends if they were
+    if follower in followed.friends.all():
+        followed.friends.remove(follower)
+        follower.friends.remove(followed)
 
-        parsed_url = followed.remote_fqid.split('/')
-        remote_domain_base = parsed_url[2]
+    # If the user being unfollowed is remote, notify their server
+    if followed.remote_fqid:
+        try:
+            from requests.auth import HTTPBasicAuth
+            from urllib.parse import urlparse
 
-        parsed_remote_url = urlparse(f"http://{remote_domain_base}")
-        remote_domain_without_brackets = parsed_remote_url.hostname
-        remote_domain = f"[{remote_domain_without_brackets}]"
+            parsed_url = followed.remote_fqid.split('/')
+            remote_domain_base = parsed_url[2]
 
-        remote_node = RemoteNode.objects.get(url=f"http://{remote_domain}/")
-        auth = HTTPBasicAuth(remote_node.username, remote_node.password)
+            parsed_remote_url = urlparse(f"http://{remote_domain_base}")
+            remote_domain_without_brackets = parsed_remote_url.hostname
+            remote_domain = f"[{remote_domain_without_brackets}]"
 
-        # Prepare unfollow payload
-        unfollow_data = {
-            "type": "unfollow",
-            "summary": f"{request.user.username} has unfollowed {followed.username}",
-            "actor": {
-                "id": str(request.user.id),
-                "username": request.user.username,
-                "remote_fqid": RemoteNode.objects.get(is_my_node=True).url + f"authors/{request.user.id}/"
-            },
-            "object": {
-                "id": str(followed.id),
-                "username": followed.username,
-                "remote_fqid": followed.remote_fqid
+            remote_node = RemoteNode.objects.get(url=f"http://{remote_domain}/")
+            auth = HTTPBasicAuth(remote_node.username, remote_node.password)
+
+            # Prepare unfollow payload
+            unfollow_data = {
+                "type": "unfollow",
+                "summary": f"{request.user.username} has unfollowed {followed.username}",
+                "actor": {
+                    "id": str(request.user.id),
+                    "username": request.user.username,
+                    "remote_fqid": RemoteNode.objects.get(is_my_node=True).url + f"authors/{request.user.id}/"
+                },
+                "object": {
+                    "id": str(followed.id),
+                    "username": followed.username,
+                    "remote_fqid": followed.remote_fqid
+                }
             }
-        }
 
-        inbox_url = f"{followed.remote_fqid}inbox/"
-        headers = {"Content-Type": "application/json"}
-        response = requests.post(inbox_url, auth=auth, json=unfollow_data, headers=headers)
-        response.raise_for_status()
+            inbox_url = f"{followed.remote_fqid}inbox/"
+            print("Sending unfollow to:", inbox_url)
+            print("Payload:", unfollow_data)
+            headers = {"Content-Type": "application/json"}
+            response = requests.post(inbox_url, auth=auth, json=unfollow_data, headers=headers)
+            response.raise_for_status()
 
-    except Exception as e:
-        print(f"Failed to notify remote user of unfollow: {e}")
+        except Exception as e:
+            print(f"Failed to notify remote user of unfollow: {e}")
 
-
-return Response({'message': 'Unfollowed successfully'}, status=status.HTTP_200_OK)
+    return Response({'message': 'Unfollowed successfully'}, status=status.HTTP_200_OK)
     
 
 @api_view(['POST'])
