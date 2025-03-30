@@ -32,6 +32,13 @@ Payload:
     'comment': 'New comment', 'post': 'http://[2605:fd00:4:1001:f816:3eff:fe50:bc21]:8000/api/authors/0b3cf0a1-f2b1-4e2d-ba13-5071f8fd0e90/posts/e0187a42-fb4e-4c91-bcaa-a91c8d76b3e1/', 
     'created_at': '2025-03-30T21:21:00.822987Z', 'like_count': 0, 'type': 'comment', 'contentType': 'text/markdown', 'published': '2025-03-30T21:21:00.967926Z'
 }
+## Cyan sending a like
+Inbox url: http://[2605:fd00:4:1001:f816:3eff:fe50:bc21]/api/authors/86f5a339-03d3-4ff3-9d26-de924b1ebb2e/inbox/
+Payload:
+{
+    'id': 'http://[2605:fd00:4:1001:f816:3eff:fe50:bc21]:8000/api/liked/d315ad96-e41c-4833-93f4-a9c5e8f77b12/', 'author': {'id': 'http://[2605:fd00:4:1001:f816:3eff:fe50:bc21]/api/authors/86f5a339-03d3-4ff3-9d26-de924b1ebb2e/', 'username': 'cyan_primaryuser', 'profile_picture': '/media/profile_pictures/default.png', 'followers': ['http://[2605:fd00:4:1001:f816:3eff:fe50:bc21]/api/authors/a4c2dfdf-99dc-4b31-ad68-8678ba286f3e/'], 'following': ['http://[2605:fd00:4:1001:f816:3eff:fe50:bc21]/api/authors/0b3cf0a1-f2b1-4e2d-ba13-5071f8fd0e90/'], 'friends': [], 'remote_fqid': None, 'displayName': 'cyan_primaryuser', 'github': None, 'host': '86f5a339-03d3-4ff3-9d26-de924b1ebb2e', 'page': 'http://[2605:fd00:4:1001:f816:3eff:fe50:bc21]/86f5a339-03d3-4ff3-9d26-de924b1ebb2e', 'profileImage': '/media/profile_pictures/default.png', 'type': 'author', 'github_etag': None}, 'content_type': 'post', 'object': 'e0187a42-fb4e-4c91-bcaa-a91c8d76b3e1', 'published': '2025-03-30T22:28:35.975360Z', 'type': 'like'
+}
+
 # Incoming
 ## Cyan getting a request for its authors
 Pass the basic auth
@@ -129,6 +136,13 @@ Incoming post data:
 Same object as what was sent above
 Processing comment: 
 {'id': 'http://[2605:fd00:4:1001:f816:3eff:fe31:b37b]:8000/api/authors/0b3cf0a1-f2b1-4e2d-ba13-5071f8fd0e90/posts/e0187a42-fb4e-4c91-bcaa-a91c8d76b3e1/comments/754b1940-1502-4b38-a7e2-907a69048e6c/', 'author': {'id': 'http://[2605:fd00:4:1001:f816:3eff:fe31:b37b]/api/authors/0b3cf0a1-f2b1-4e2d-ba13-5071f8fd0e90/', 'username': 'cyan2_user1', 'profile_picture': '/media/profile_pictures/default.png', 'followers': ['http://[2605:fd00:4:1001:f816:3eff:fe31:b37b]/api/authors/86f5a339-03d3-4ff3-9d26-de924b1ebb2e/'], 'following': [], 'friends': [], 'remote_fqid': None, 'displayName': 'cyan2_user1', 'github': None, 'host': '0b3cf0a1-f2b1-4e2d-ba13-5071f8fd0e90', 'page': 'http://[2605:fd00:4:1001:f816:3eff:fe31:b37b]/0b3cf0a1-f2b1-4e2d-ba13-5071f8fd0e90', 'profileImage': '/media/profile_pictures/default.png', 'type': 'author', 'github_etag': None}, 'comment': 'New comment', 'post': 'http://[2605:fd00:4:1001:f816:3eff:fe31:b37b]:8000/api/authors/0b3cf0a1-f2b1-4e2d-ba13-5071f8fd0e90/posts/e0187a42-fb4e-4c91-bcaa-a91c8d76b3e1/', 'created_at': '2025-03-30T21:21:00.822987Z', 'like_count': 0, 'type': 'comment', 'contentType': 'text/markdown', 'published': '2025-03-30T21:21:00.823920Z', 'remote_fqid': 'http://[2605:fd00:4:1001:f816:3eff:fe31:b37b]:8000/api/authors/0b3cf0a1-f2b1-4e2d-ba13-5071f8fd0e90/posts/e0187a42-fb4e-4c91-bcaa-a91c8d76b3e1/comments/754b1940-1502-4b38-a7e2-907a69048e6c/'
+}
+
+## Cyan getting likes
+Incoming POST type: like
+Incoming POST data:
+{
+    'id': 'http://[2605:fd00:4:1001:f816:3eff:fe50:bc21]:8000/api/liked/731320c8-8d4b-4648-8c40-0feffe39bdc7/', 'author': {'id': 'http://[2605:fd00:4:1001:f816:3eff:fe50:bc21]/api/authors/86f5a339-03d3-4ff3-9d26-de924b1ebb2e/', 'username': 'cyan_primaryuser', 'profile_picture': '/media/profile_pictures/default.png', 'followers': ['http://[2605:fd00:4:1001:f816:3eff:fe50:bc21]/api/authors/a4c2dfdf-99dc-4b31-ad68-8678ba286f3e/'], 'following': ['http://[2605:fd00:4:1001:f816:3eff:fe50:bc21]/api/authors/0b3cf0a1-f2b1-4e2d-ba13-5071f8fd0e90/'], 'friends': [], 'remote_fqid': None, 'displayName': 'cyan_primaryuser', 'github': None, 'host': '86f5a339-03d3-4ff3-9d26-de924b1ebb2e', 'page': 'http://[2605:fd00:4:1001:f816:3eff:fe50:bc21]/86f5a339-03d3-4ff3-9d26-de924b1ebb2e', 'profileImage': '/media/profile_pictures/default.png', 'type': 'author', 'github_etag': None}, 'content_type': 'comment', 'object': '754b1940-1502-4b38-a7e2-907a69048e6c', 'published': '2025-03-30T22:28:47.859780Z', 'type': 'like'
 }
 
 
