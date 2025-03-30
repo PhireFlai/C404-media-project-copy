@@ -14,7 +14,6 @@ const CommentSection = ({ postId, author }) => {
   ); // Fetch comments using the custom hook
   const [createComment] = useCreateCommentMutation(); // Mutation hook for creating a comment
 
-
   // Handle comment submission
   const handleCommentSubmit = async () => {
     try {
@@ -33,12 +32,20 @@ const CommentSection = ({ postId, author }) => {
     setComment(""); // Clear the comment input
   };
 
+  const sanitizedComments =
+    comments?.length > 0
+      ? comments.map((comment) => ({
+          ...comment,
+          id: comment.id.split("comments/").pop().replace(/\/+$/, ""), // Extract the ID after "comments/" and remove trailing slashes
+        }))
+      : [];
+
   return (
     <div className="comment-section">
       <h4>Comments</h4>
       {/* Render the list of comments if there are any, otherwise display a message */}
-      {comments?.length > 0 ? (
-        comments.map((comment) => (
+      {sanitizedComments?.length > 0 ? (
+        sanitizedComments.map((comment) => (
           <CommentItem
             key={parseId(comment.id)}
             comment={comment}

@@ -51,11 +51,14 @@ python3 manage.py migrate
 
 # Create superuser (optional, auto-generated)
 # echo "Creating superuser..."
-# echo "from django.contrib.auth import get_user_model
-# User = get_user_model()
-# if not User.objects.filter(username='$DJANGO_SUPERUSER_USERNAME').exists():
-#     User.objects.create_superuser('$DJANGO_SUPERUSER_USERNAME', '$DJANGO_SUPERUSER_EMAIL', '$DJANGO_SUPERUSER_PASSWORD')
-# " | python3 manage.py shell
+echo "from django.contrib.auth import get_user_model
+User = get_user_model()
+if not User.objects.filter(username='$DJANGO_SUPERUSER_USERNAME').exists():
+    User.objects.create_superuser('$DJANGO_SUPERUSER_USERNAME', '$DJANGO_SUPERUSER_EMAIL', '$DJANGO_SUPERUSER_PASSWORD')
+" | python3 manage.py shell
 
 # Launch the Django development server
 python3 manage.py runserver
+#pkill -f manage.py # kill previous run
+#nohup python3 manage.py runserver [::]:8000 > backend.log 2>&1 &
+#disown

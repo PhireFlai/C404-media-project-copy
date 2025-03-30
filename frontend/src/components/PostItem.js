@@ -33,6 +33,8 @@ const PostItem = ({ post, refetchPosts }) => {
   const [editVisibility, setEditVisibility] = useState(post.visibility);
   const [isLiked, setIsLiked] = useState(false);
 
+  console.log("post", post);
+
   const {
     data: likes,
     error: likesError,
@@ -110,8 +112,21 @@ const PostItem = ({ post, refetchPosts }) => {
   };
 
   const handleCopyLink = () => {
-    const postLink = `${window.location.origin}/posts/${parsedPostId}`;
-    navigator.clipboard.writeText(postLink);
+    const postLink = `${window.location.origin}/posts/${parseId(post.id)}`;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(postLink)
+            .then(() => {
+                alert("Post link copied to clipboard!");
+            })
+            .catch((err) => {
+                console.error("Failed to copy link: ", err);
+                alert("Failed to copy link. Please try again.");
+            });
+    } else {
+        // Fallback for browsers that don't support Clipboard API
+        alert("Clipboard API not supported. Copy the link manually.");
+        prompt("Copy this link:", postLink);
+    }
   };
 
   // Handle cancel button click
@@ -204,7 +219,16 @@ const PostItem = ({ post, refetchPosts }) => {
             </ReactMarkdown>
           </div>
           <div className="post-image">
-            {post.image && <img src={`${post.image}`} alt="Post" />}
+            {post.image && (
+              <img
+              src={`${
+                post.remote_fqid
+                  ? `${new URL(post.remote_fqid).origin}/media/${post.image}` // Use the origin of the remote_fqid as the base URL
+                  : `${process.env.REACT_APP_API_BASE_URL || "http://localhost"}:8000/media/${post.image}` // Append port 8000 for localhost or base URL
+              }`}
+                alt="Post"
+              />
+            )}
           </div>
         </>
       )}

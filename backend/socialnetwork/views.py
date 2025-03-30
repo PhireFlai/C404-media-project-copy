@@ -432,6 +432,7 @@ def CreateComment(request, userId, pk):
     
     # Serialize both comment and updated post
     comment_serializer = CommentSerializer(comment)
+<<<<<<< HEAD
 
     # Get followers with remote_fqid - identical to perform_update
     followers_with_remote_fqid = post.author.followers.filter(remote_fqid__isnull=False)
@@ -441,6 +442,17 @@ def CreateComment(request, userId, pk):
         parsed_url = follower.remote_fqid.split('/')
         remote_domain_base = parsed_url[2]
 
+=======
+
+    # Get followers with remote_fqid - identical to perform_update
+    followers_with_remote_fqid = post.author.followers.filter(remote_fqid__isnull=False)
+    
+    for follower in followers_with_remote_fqid:
+            
+        parsed_url = follower.remote_fqid.split('/')
+        remote_domain_base = parsed_url[2]
+
+>>>>>>> d684157dd85c0cdee7ba5c7f909734dc526d3173
         # Remove the port from the remote domain
         parsed_remote_url = urlparse(f"http://{remote_domain_base}")
         remote_domain_without_brackets = parsed_remote_url.hostname  # Extract the hostname without the port
@@ -734,6 +746,7 @@ def IncomingPostToInbox(request, receiver):
         
         elif type == "like":
             author = request.data.get("author")
+<<<<<<< HEAD
             created_at = request.data.get("created_at")
             id = request.data.get("id")
             post = request.data.get("post")
@@ -768,6 +781,24 @@ def IncomingPostToInbox(request, receiver):
                 "published": like.created_at,
                 "object": like.post,
             }, status=status.HTTP_201_CREATED)
+=======
+            author_id = author['id'].rstrip('/').split('/')[-1]
+            created_at = request.data.get("created_at")
+            id = request.data.get("id")
+            post = request.data.get("post")
+            author_obj, created_author = User.objects.get_or_create(id=author_id, remote_fqid=author['id'])
+            data={
+                "created_at": created_at,
+                "id": id,
+                "post": post,
+            }
+            serializer = LikeSerializer(data=data)
+            if serializer.is_valid():
+                serializer.save(user=author_obj)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
+
+>>>>>>> d684157dd85c0cdee7ba5c7f909734dc526d3173
     except Exception as e:
         return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     return Response({"error": "Unsupported message type"}, status=status.HTTP_400_BAD_REQUEST)

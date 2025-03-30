@@ -1,4 +1,5 @@
 #!/bin/bash
+export CORS_ALLOWED_ORIGINS="http://localhost:3000,http://localhost:80,http://localhost"
 
 # Set environment variables
 export DB_HOST=localhost
@@ -10,6 +11,7 @@ export DB_ENGINE=django.db.backends.postgresql
 export SECRET_KEY='django-insecure-0((h29a37al@^re@e!a#jclgqzdo2j!j&4t-!b8(-5#)=kf@e!'
 export DEBUG=1
 export DJANGO_ALLOWED_HOSTS="localhost 127.0.0.1 [::1] *"
+export CORS_ALLOWED_ORIGINS="http://localhost:3000,http://localhost:80,http://localhost,http://[2605:fd00:4:1001:f816:3eff:fe04:65df],http://[2605:fd00:4:1001:f816:3eff:fe04:65df]:8000,http://[2605:fd00:4:1001:f816:3eff:fe38:3824],http://[2605:fd00:4:1001:f816:3eff:fe38:3824]:8000"
 
 # Check if running inside a virtual environment
 if [[ "$VIRTUAL_ENV" != "" ]]; then
@@ -20,10 +22,10 @@ else
 fi
 
 # Start the database container
-docker compose up -d db
+sudo docker compose up -d db
 
 # Wait for the database to be ready
-while ! docker exec db pg_isready -U $DB_USER -d $DB_DATABASE; do
+while ! sudo docker exec db pg_isready -U $DB_USER -d $DB_DATABASE; do
     echo "Database still launching"
     sleep 2
 done
@@ -40,5 +42,21 @@ python3 manage.py makemigrations
 python3 manage.py makemigrations socialnetwork
 python3 manage.py migrate
 
-# Launch the Django development server
-python3 manage.py createsuperuser
+# Create the superuser programmatically
+python3 manage.py shell <<EOF
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+username = "admin"
+email = ""
+password = "pass"
+
+if not User.objects.filter(username=username).exists():
+    user = User.objects.create_superuser(username=username, email=email, password=password)
+    user.is_approved = True  # Set the is_approved field to True
+    user.save()
+    print(f"Superuser '{username}' created and approved.")
+else:
+    print(f"Superuser '{username}' already exists.")
+EOF

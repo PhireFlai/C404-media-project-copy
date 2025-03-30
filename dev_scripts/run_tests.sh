@@ -12,6 +12,7 @@ export DJANGO_ALLOWED_HOSTS="localhost 127.0.0.1 [::1] *"
 export DJANGO_SUPERUSER_USERNAME=admin
 export DJANGO_SUPERUSER_EMAIL=admin@admin.com
 export DJANGO_SUPERUSER_PASSWORD=password
+export CORS_ALLOWED_ORIGINS="http://localhost:3000,http://localhost"
 
 # Check if running inside a virtual environment
 if [[ "$VIRTUAL_ENV" != "" ]]; then
@@ -25,4 +26,5 @@ fi
 cd backend || { echo "Failed to navigate to the backend directory"; echo "Make sure you're running from repo root"; exit 1; }
 
 # Run tests
+#python manage.py test socialnetwork.tests.test_post_api
 python manage.py test

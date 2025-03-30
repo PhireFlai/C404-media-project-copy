@@ -3,8 +3,10 @@ from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.hashers import make_password
 from .models import *
 import markdown
+from django.contrib.contenttypes.models import ContentType
 from .utils import get_local_ip
 my_ip = get_local_ip()
+print(my_ip)
 
 
 # Serializer for the User model
@@ -16,7 +18,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User        
-        fields = ['id', 'username', 'password', 'email', 'profile_picture', 'followers', 'following', 'friends']
+        fields = ['id', 'username', 'password', 'email', 'profile_picture', 'followers', 'following', 'friends', 'remote_fqid']
         extra_kwargs = {
             'password': {'write_only': True},  # Ensure password is write-only
             'followers': {'required': False},  # Make followers optional
@@ -25,16 +27,16 @@ class UserSerializer(serializers.ModelSerializer):
         
         
     def get_id(self, obj) -> str:
-        return f"http://{my_ip}:8000/api/authors/{obj.id}/"
+        return f"http://[{my_ip}]/api/authors/{obj.id}/"
     
     def get_friends(self, obj):
-        return [f"http://{my_ip}/api/authors/{friend.id}/" for friend in obj.friends.all()]
+        return [f"http://[{my_ip}]/api/authors/{friend.id}/" for friend in obj.friends.all()]
    
     def get_followers(self, obj):
-        return [f"http://{my_ip}/api/authors/{follower.id}/" for follower in obj.followers.all()]
+        return [f"http://[{my_ip}]/api/authors/{follower.id}/" for follower in obj.followers.all()]
     
     def get_following(self, obj):
-        return [f"http://{my_ip}/api/authors/{following.id}/" for following in obj.following.all()]
+        return [f"http://[{my_ip}]/api/authors/{following.id}/" for following in obj.following.all()]
     
     def validate_password(self, value):
         # Validate the password using Django's password validation
@@ -67,12 +69,16 @@ class UserSerializer(serializers.ModelSerializer):
 class CommentSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
     id = serializers.SerializerMethodField()  # Add this field
+    post = serializers.SerializerMethodField()
     class Meta:
         model = Comment
-        fields = ["id", "author", "content", "post", "created_at", "like_count"]
-        
+        fields = ["id", "author", "content", "post", "created_at", "like_count", "type", ]
+    
+    def get_post(self, obj) -> str:
+            return f"http://[{my_ip}]:8000/api/authors/{obj.post.author.id}/posts/{obj.post.id}/"
+
     def get_id(self, obj) -> str:
-        return f"http://{my_ip}:8000/api/authors/{obj.post.author.id}/posts/{obj.post.id}/comments/{obj.id}/"
+        return f"http://[{my_ip}]:8000/api/authors/{obj.post.author.id}/posts/{obj.post.id}/comments/{obj.id}/"
     
     def validate(self, data):
         content = data.get('content')
@@ -94,14 +100,16 @@ class CommentSerializer(serializers.ModelSerializer):
 class PostSerializer(serializers.ModelSerializer):
     formatted_content = serializers.SerializerMethodField()  # Add formatted content
     id = serializers.SerializerMethodField()  # Add this field
-    image = serializers.ImageField(required=False)  # Allow image uploads
+    image = serializers.ImageField(required=False, use_url=False)  # Allow image uploads
     author = UserSerializer(read_only=True)
+    comments = CommentSerializer(many=True, read_only=True)
     class Meta:
         model = Post
-        fields = ["id", "author", "title", "content", "image", "formatted_content", "created_at", "updated_at", "visibility", "like_count"]
-        
+        fields = ["id", "author", "title", "content", "image", "formatted_content", "created_at", "updated_at", "visibility", "like_count", "type", "remote_fqid", "comments"]
+
+    
     def get_id(self, obj) -> str:
-        return f"http://{my_ip}:8000/api/authors/{obj.author.id}/posts/{obj.id}/"
+        return f"http://[{my_ip}]:8000/api/authors/{obj.author.id}/posts/{obj.id}/"
     
     def get_formatted_content(self, obj):
         # Convert the content to formatted markdown
@@ -112,7 +120,7 @@ class FollowRequestSerializer(serializers.ModelSerializer):
     object = UserSerializer(read_only=True)
     class Meta:
         model = FollowRequest
-        fields = ['summary', 'actor', 'object']
+        fields = ['summary', 'actor', 'object', 'type']
 
     def validate(self, data):
         return data
@@ -132,40 +140,33 @@ class FollowRequestSerializer(serializers.ModelSerializer):
 class LikeSerializer(serializers.ModelSerializer):
     id = serializers.SerializerMethodField()  # Add this field
     user = UserSerializer(read_only=True)
+    content_type = serializers.SlugRelatedField(
+        queryset=ContentType.objects.all(),
+        slug_field='model'  # This will display the model name (e.g., 'post' or 'comment')
+    )
+
     class Meta:
         model = Like
-        fields = ['id', 'user', 'post', 'created_at']
-        
+        fields = ['id', 'user', 'content_type', 'object_id', 'created_at', 'type',]        
             
     def get_id(self, obj) -> str:
-        return f"http://{my_ip}:8000/api/liked/{obj.id}/"
-    
+        return f"http://[{my_ip}]:8000/api/liked/{obj.id}/"
+
     def validate(self, data):
+        # Ensure the object_id corresponds to the content_type
+        content_type = data.get('content_type')
+        object_id = data.get('object_id')
+
+        model = content_type.model_class()
+        if not model.objects.filter(id=object_id).exists():
+            raise serializers.ValidationError(f"The object with ID {object_id} does not exist in {content_type}.")
+
         return data
-    
+
     def create(self, validated_data):
-        user = validated_data.get('user')
-        post = validated_data.get('post')
+        user = self.context['request'].user  # Get the user from the request context
+        content_type = validated_data.get('content_type')
+        object_id = validated_data.get('object_id')
 
-        like = Like.objects.create(user=user, post=post)
-        return like 
-
-class CommentLikeSerializer(serializers.ModelSerializer):
-    id = serializers.SerializerMethodField()  # Add this field
-    user = UserSerializer(read_only=True)
-    class Meta:
-        model = CommentLike
-        fields = ['id', 'user', 'comment', 'created_at']
-        
-    def get_id(self, obj) -> str:
-        return f"http://{my_ip}:8000/api/liked/{obj.id}/"
-    
-    def validate(self, data):
-        return data
-    
-    def create(self, validated_data):
-        user = validated_data.get('user')
-        comment = validated_data.get('comment')
-
-        like = CommentLike.objects.create(user=user, comment=comment)
-        return like 
+        like = Like.objects.create(user=user, content_type=content_type, object_id=object_id)
+        return like
