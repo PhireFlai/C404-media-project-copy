@@ -717,10 +717,11 @@ def IncomingPostToInbox(request, receiver):
                 defaults={
                     "username": author_data.get("username"),
                     "email": author_data.get("email"),
-                    "profile_picture": author_data.get("profile_picture"),
-                    "remote_fqid": author_data.get("id")
+                    "profile_picture": author_data.get("profile_picture")
                 }
             )
+            author_obj.remote_fqid = author_data.get('id')
+            author_obj.save()
 
             print("Author obj:", vars(author_obj))
 
