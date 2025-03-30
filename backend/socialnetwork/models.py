@@ -41,6 +41,12 @@ class User(AbstractUser):
     github_etag = models.CharField(max_length=250, blank=True, null=True)
 
     remote_fqid = models.CharField(max_length=250, blank=True, null=True)
+
+    displayName = models.CharField(max_length=100, blank=True, null=True)
+    host = models.CharField(max_length=250, blank=True, null=True)
+    page = models.CharField(max_length=250, blank=True, null=True)
+
+    profileImage = models.CharField(max_length=250, blank=True, null=True)
     
     def __str__(self):
         return self.username  # Display the username in the admin panel
@@ -96,8 +102,11 @@ class Post(models.Model):
     image = models.ImageField(upload_to="post_images/", blank=True, null=True)
     visibility = models.CharField(max_length=20, choices=VISIBILITY_CHOICES, default=PUBLIC)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    published = models.DateTimeField(auto_now=True)
     remote_fqid = models.CharField(max_length=250, blank=True, null=True)
+    page = models.CharField(max_length=250, blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+    content_type = models.TextField(default="text/plain", editable=False)
 
     likes = GenericRelation(Like)  # Enable reverse relation
 
@@ -115,9 +124,11 @@ class Comment(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     type = models.TextField(default="comment", editable=False)
     author = models.ForeignKey(User, on_delete=models.CASCADE, null=True)  # Author can be null for now
-    content = models.TextField()
+    comment = models.TextField()
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="comments")
     created_at = models.DateTimeField(default=timezone.now, editable=False)
+    published = models.DateTimeField(auto_now=True)
+    contentType = models.CharField(default="text/markdown", max_length=50, editable=False)
 
     likes = GenericRelation(Like)  # Enable reverse relation
 

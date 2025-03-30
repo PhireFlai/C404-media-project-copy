@@ -18,7 +18,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User        
-        fields = ['id', 'username', 'password', 'email', 'profile_picture', 'followers', 'following', 'friends', 'remote_fqid']
+        fields = ['id', 'username', 'password', 'profile_picture', 'followers', 'following', 'friends', 'remote_fqid', 'displayName', 'github']
         extra_kwargs = {
             'password': {'write_only': True},  # Ensure password is write-only
             'followers': {'required': False},  # Make followers optional
@@ -55,15 +55,37 @@ class UserSerializer(serializers.ModelSerializer):
         # Create the user instance
         user = User.objects.create(
             **validated_data,
-            password=hashed_password  # Use the hashed password
+            password=hashed_password,  # Use the hashed password
         )
 
         # Set many-to-many relationships
         user.followers.set(followers_data)
         user.friends.set(friends_data)
 
+        user.displayName.set(validated_data.get('username', ''))
+        if ('authors' in user.id):
+            # Extract the host from the user ID
+            host_base = user.id.split('authors')[0]
+            user.host.set(host_base)
+        else:
+            user.host.set(user.id)
+        
+        current_remote_node = None
+        try:
+            current_remote_node = RemoteNode.objects.get(is_my_node=True)
+        except Exception as e:
+            print(f"Error fetching remote node: {e}")
+        
+        if current_remote_node:
+            page_path = current_remote_node.url + user.id
+            user.page.set(page_path)
+
+        user.profileImage.set(user.profile_picture.url if user.profile_picture else None)
+
+        user.save()
 
         return user
+
 # path("api/authors/<uuid:userId>/posts/<uuid:pk>/comments/<uuid:commentId>/"
 # Serializer for the Comment model
 class CommentSerializer(serializers.ModelSerializer):
@@ -72,7 +94,7 @@ class CommentSerializer(serializers.ModelSerializer):
     post = serializers.SerializerMethodField()
     class Meta:
         model = Comment
-        fields = ["id", "author", "content", "post", "created_at", "like_count", "type", ]
+        fields = ["id", "author", "comment", "post", "created_at", "like_count", "type", "contentType", "published"]
     
     def get_post(self, obj) -> str:
             return f"http://[{my_ip}]:8000/api/authors/{obj.post.author.id}/posts/{obj.post.id}/"
@@ -81,19 +103,19 @@ class CommentSerializer(serializers.ModelSerializer):
         return f"http://[{my_ip}]:8000/api/authors/{obj.post.author.id}/posts/{obj.post.id}/comments/{obj.id}/"
     
     def validate(self, data):
-        content = data.get('content')
+        comment = data.get('comment')
 
-        if not content or len(content) < 1:
+        if not comment or len(comment) < 1:
             raise serializers.ValidationError("Invalid comment.")
         
         return data
     
     def create(self, validated_data):
         author = validated_data.get('author')
-        content = validated_data.get('content')
+        comment = validated_data.get('comment')
         post = validated_data.get('post')
 
-        comment = Comment.objects.create(author=author, content=content, post=post)
+        comment = Comment.objects.create(author=author, comment=comment, post=post)
         return comment 
 
 # Serializer for the Post model
@@ -105,7 +127,7 @@ class PostSerializer(serializers.ModelSerializer):
     comments = CommentSerializer(many=True, read_only=True)
     class Meta:
         model = Post
-        fields = ["id", "author", "title", "content", "image", "formatted_content", "created_at", "updated_at", "visibility", "like_count", "type", "remote_fqid", "comments"]
+        fields = ["id", "author", "title", "content", "image", "formatted_content", "created_at", "published", "visibility", "like_count", "type", "remote_fqid", "comments", "description", "page", "content_type"]
 
     
     def get_id(self, obj) -> str:
@@ -114,6 +136,19 @@ class PostSerializer(serializers.ModelSerializer):
     def get_formatted_content(self, obj):
         # Convert the content to formatted markdown
         return markdown.markdown(obj.content)
+
+    def create(self, validated_data):
+        post = Post.objects.create(
+            **validated_data
+        )
+
+        post.description.set(post.title)
+        # author page is post page
+        post.page.set(post.author.page if post.author.page else None)
+
+        post.save()
+
+        return post
 
 class FollowRequestSerializer(serializers.ModelSerializer):
     actor = UserSerializer(read_only=True)
