@@ -829,6 +829,32 @@ def IncomingPostToInbox(request, receiver):
             print("Payload:", unfollow_data)
             return Response({"message": "Unfollow processed successfully"}, status=status.HTTP_200_OK)
 
+
+        elif type == "remove_follower":
+            actor = request.data.get("actor")
+            object = request.data.get("object")
+
+            actor_id = actor["id"].rstrip('/').split('/')[-1]
+            object_id = object["id"].rstrip('/').split('/')[-1]
+
+            try:
+                actor_obj = User.objects.get(id=actor_id)
+                object_obj = User.objects.get(id=object_id)
+            except User.DoesNotExist:
+                return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+            # The actor is removing themselves from object_obj's follower list
+            # So remove actor from object's followers
+            object_obj.followers.remove(actor_obj)
+
+            # Remove them from friends if needed
+            if object_obj in actor_obj.friends.all():
+                actor_obj.friends.remove(object_obj)
+                object_obj.friends.remove(actor_obj)
+
+            return Response({"message": "Follower removal processed"}, status=status.HTTP_200_OK)
+
+
     except Exception as e:
         return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     return Response({"error": "Unsupported message type"}, status=status.HTTP_400_BAD_REQUEST)
@@ -1212,6 +1238,45 @@ def RemoveFollower(request, followerId, followedId):
         # Remove each other as friends
         followed.friends.remove(follower)
         follower.friends.remove(followed)
+    
+    # Notify remote follower if they are from a remote node
+    if follower.remote_fqid:
+        try:
+            from requests.auth import HTTPBasicAuth
+            from urllib.parse import urlparse
+
+            parsed_url = follower.remote_fqid.split('/')
+            remote_domain_base = parsed_url[2]
+
+            parsed_remote_url = urlparse(f"http://{remote_domain_base}")
+            remote_domain_without_brackets = parsed_remote_url.hostname
+            remote_domain = f"[{remote_domain_without_brackets}]"
+
+            remote_node = RemoteNode.objects.get(url=f"http://{remote_domain}/")
+            auth = HTTPBasicAuth(remote_node.username, remote_node.password)
+
+            remove_data = {
+                "type": "remove_follower",
+                "summary": f"{request.user.username} has removed {follower.username} as a follower",
+                "actor": {
+                    "id": str(request.user.id),
+                    "username": request.user.username,
+                    "remote_fqid": RemoteNode.objects.get(is_my_node=True).url + f"authors/{request.user.id}/"
+                },
+                "object": {
+                    "id": str(follower.id),
+                    "username": follower.username,
+                    "remote_fqid": follower.remote_fqid
+                }
+            }
+
+            inbox_url = f"{follower.remote_fqid}inbox/"
+            headers = {"Content-Type": "application/json"}
+            response = requests.post(inbox_url, auth=auth, json=remove_data, headers=headers)
+            response.raise_for_status()
+
+        except Exception as e:
+            print(f"Failed to notify remote follower of removal: {e}")
     
     return Response({'message': 'Follower removed successfully'}, status=status.HTTP_200_OK)    
     
