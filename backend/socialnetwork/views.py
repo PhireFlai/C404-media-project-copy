@@ -825,22 +825,50 @@ def IncomingPostToInbox(request, receiver):
             }, status=status.HTTP_201_CREATED)
         
         elif type == "like":
-            author = request.data.get("author")
-            author_id = author['id'].rstrip('/').split('/')[-1]
+            author = request.data.get("user")
             created_at = request.data.get("created_at")
             id = request.data.get("id")
-            post = request.data.get("post")
-            author_obj, created_author = User.objects.get_or_create(id=author_id, remote_fqid=author['id'])
-            data={
-                "created_at": created_at,
-                "id": id,
-                "post": post,
-            }
-            serializer = LikeSerializer(data=data)
-            if serializer.is_valid():
-                serializer.save(user=author_obj)
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
+            object_id = request.data.get("object_id")
+            content = request.data.get("content_type")
+            author_id = author['id'].rstrip('/').split('/')[-1]
+            like_id = id.rstrip('/').split('/')[-1]
+
+            if content == "post":
+                content_type = ContentType.objects.get_for_model(Post)
+            elif content == "comment":
+                content_type = ContentType.objects.get_for_model(Comment)
+
+            author_obj, _ = User.objects.get_or_create(
+                id=author_id, 
+                defaults={
+                    "remote_fqid": author['id'],
+                    "username": author.get('username'),
+                    "email": author.get('email'),
+                    "profile_picture": author.get("profile_picture")
+                    }
+                )
+            
+            like, created = Like.objects.update_or_create(
+                id=like_id,
+                defaults={
+                    "user": author_obj,
+                    "created_at": created_at,
+                    "object_id": object_id,
+                    "content_type": content_type
+                }
+            )
+
+
+            return Response({
+                 "id": like.id,
+                 "type": like.type,
+                 "user": {
+                     "id": author_obj.id,
+                     "username": author_obj.username,
+                 },
+                 "published": like.created_at,
+                 "object": like.object_id,
+             }, status=status.HTTP_201_CREATED)
 
 
         elif type == "unfollow":
@@ -892,7 +920,6 @@ def IncomingPostToInbox(request, receiver):
                 object_obj.friends.remove(actor_obj)
 
             return Response({"message": "Follower removal processed"}, status=status.HTTP_200_OK)
-
 
     except Exception as e:
         return Response({"message": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -1381,23 +1408,82 @@ def AddLikeOnPost(request, userId, object_id):
 
     # Create the Like object
     content_type = ContentType.objects.get_for_model(Post)
-    data = {'user': user.id, 'content_type': content_type.id, 'object_id': post.id}
-    like = Like.objects.create(user=user, content_type=content_type, object_id=post.id)
+    like = Like.objects.create(
+        user=user, 
+        content_type=content_type, 
+        object_id=post.id
+    )
 
-    # Forward the like to the inbox (if this functionality exists)
-    inbox_url = f"http://backend:8000/api/authors/{userId}/inbox/"
+    like_serializer = LikeSerializer(like)
 
-    serializer = LikeSerializer(data=data)
-
-    if serializer.is_valid():
-        serializer.save(user=user)
-        like_id = serializer.data['id'].strip('/').split('/')[-1]
-        like = Like.objects.get(id=like_id)
+    followers_with_remote_fqid = post.author.followers.filter(remote_fqid__isnull=False)
     
-    factory = RequestFactory()
-    request = factory.post(inbox_url, data=LikeSerializer(like).data)
-    IncomingPostToInbox(request, userId)
-    return Response(LikeSerializer(like).data, status=status.HTTP_200_OK)
+    for follower in followers_with_remote_fqid:
+            
+        parsed_url = follower.remote_fqid.split('/')
+        print("Parsed URL 1:", parsed_url)
+        remote_domain_base = parsed_url[2]
+
+        # Remove the port from the remote domain
+        parsed_remote_url = urlparse(f"http://{remote_domain_base}")
+        remote_domain_without_brackets = parsed_remote_url.hostname  # Extract the hostname without the port
+        remote_domain = f"[{remote_domain_without_brackets}]"  # Add brackets for IPv6 format
+
+        
+        try:
+            remote_node = RemoteNode.objects.get(url=f"http://{remote_domain}/")
+            auth = HTTPBasicAuth(remote_node.username, remote_node.password)
+        except RemoteNode.DoesNotExist:
+            return Response({'error': 'Remote node not configured'}, 
+                      status=status.HTTP_400_BAD_REQUEST)
+        
+        inbox_url = f"{follower.remote_fqid}inbox/"
+        like_data = LikeSerializer(like).data
+        like_data.update({'remote_fqid' : like_data['id']})
+        print(like_data)
+        headers = {"Content-Type": "application/json"}
+        
+        try:
+            print(inbox_url)
+            response = requests.post(inbox_url, auth = auth, json=like_data, headers=headers)
+            print(response.json())
+            response.raise_for_status()
+        except requests.exceptions.RequestException as e:
+            print(f"Failed to send post to {follower.username}'s inbox: {e}")
+
+    if post.author.remote_fqid:
+        print(post.author.remote_fqid)
+        try:
+            parsed_url = post.author.remote_fqid.split('/')
+            print(parsed_url)
+            remote_domain_base = parsed_url[2]
+
+            # Remove the port from the remote domain
+            parsed_remote_url = urlparse(f"http://{remote_domain_base}")
+            remote_domain_without_brackets = parsed_remote_url.hostname  # Extract the hostname without the port
+            remote_domain = f"[{remote_domain_without_brackets}]"  # Add brackets for IPv6 format
+            print(remote_domain)
+            remote_node = RemoteNode.objects.get(url=f"http://{remote_domain}/")
+            auth = HTTPBasicAuth(remote_node.username, remote_node.password)
+            
+            like_data = LikeSerializer(like).data
+            print("Like data:",like_data)
+            print(post.author.remote_fqid)
+            author_inbox_url = f"{post.author.remote_fqid}inbox/"
+            response = requests.post(
+                author_inbox_url,
+                auth=auth,
+                json=like_data,
+                headers={"Content-Type": "application/json"}
+            )
+            response.raise_for_status()
+            print(response.text)
+        except Exception as e:
+            print(f"Failed to send to post author: {str(e)}")
+    
+    return Response(like_serializer.data, status=status.HTTP_201_CREATED)
+        
+
 
 class LikesList(generics.ListCreateAPIView):
     queryset = Like.objects.all()
@@ -1489,23 +1575,76 @@ def AddCommentLike(request, userId, pk, ck):
 
     # Create the Like object
     content_type = ContentType.objects.get_for_model(Comment)
-    data = {'user': user.id, 'content_type': content_type.id, 'object_id': comment.id}
-    like = Like.objects.create(user=user, content_type=content_type, object_id=comment.id)
+    like = Like.objects.create(
+        user=user, 
+        content_type=content_type, 
+        object_id=comment.id
+    )
 
     # Forward the like to the inbox (if this functionality exists)
-    inbox_url = f"http://backend:8000/api/authors/{userId}/inbox/"
-    serializer = LikeSerializer(data=data)
+    like_serializer = LikeSerializer(like)
 
-    if serializer.is_valid():
-        serializer.save(user=user)
-        like_id = serializer.data['id'].strip('/').split('/')[-1]
-        like = Like.objects.get(id=like_id)
-    factory = RequestFactory()
-    request = factory.post(inbox_url, data=LikeSerializer(like).data)
-    IncomingPostToInbox(request, userId)
-    # requests.post(inbox_url, data=LikeSerializer(like).data)
+    followers_with_remote_fqid = comment.author.followers.filter(remote_fqid__isnull=False)
+    
+    for follower in followers_with_remote_fqid:
+            
+        parsed_url = follower.remote_fqid.split('/')
+        remote_domain_base = parsed_url[2]
 
-    return Response(LikeSerializer(like).data, status=status.HTTP_200_OK)
+        # Remove the port from the remote domain
+        parsed_remote_url = urlparse(f"http://{remote_domain_base}")
+        remote_domain_without_brackets = parsed_remote_url.hostname  # Extract the hostname without the port
+        remote_domain = f"[{remote_domain_without_brackets}]"  # Add brackets for IPv6 format
+
+        
+        try:
+            remote_node = RemoteNode.objects.get(url=f"http://{remote_domain}/")
+            auth = HTTPBasicAuth(remote_node.username, remote_node.password)
+        except RemoteNode.DoesNotExist:
+            return Response({'error': 'Remote node not configured'}, 
+                      status=status.HTTP_400_BAD_REQUEST)
+        
+        inbox_url = f"{follower.remote_fqid}inbox/"
+        like_data = LikeSerializer(like).data
+        like_data.update({'remote_fqid' : like_data['id']})
+        print(like_data)
+        headers = {"Content-Type": "application/json"}
+        
+        try:
+            print(inbox_url)
+            response = requests.post(inbox_url, auth = auth, json=like_data, headers=headers)
+            print(response.json())
+            response.raise_for_status()
+        except requests.exceptions.RequestException as e:
+            print(f"Failed to send post to {follower.username}'s inbox: {e}")
+        # Send to post author's inbox if they're remote
+    if comment.author.remote_fqid:
+        try:
+            parsed_url = comment.author.remote_fqid.split('/')
+            remote_domain_base = parsed_url[2]
+
+            # Remove the port from the remote domain
+            parsed_remote_url = urlparse(f"http://{remote_domain_base}")
+            remote_domain_without_brackets = parsed_remote_url.hostname  # Extract the hostname without the port
+            remote_domain = f"[{remote_domain_without_brackets}]"  # Add brackets for IPv6 format
+            print(remote_domain)
+            remote_node = RemoteNode.objects.get(url=f"http://{remote_domain}/")
+            auth = HTTPBasicAuth(remote_node.username, remote_node.password)
+            
+            like_data = LikeSerializer(like).data
+            print(comment.author.remote_fqid)
+            author_inbox_url = f"{comment.author.remote_fqid}inbox/"
+            response = requests.post(
+                author_inbox_url,
+                auth=auth,
+                json=like_data,
+                headers={"Content-Type": "application/json"}
+            )
+            response.raise_for_status()
+        except Exception as e:
+            print(f"Failed to send to post author: {str(e)}")
+    
+    return Response(like_serializer.data, status=status.HTTP_201_CREATED)
 
 class CommentLikesList(generics.ListCreateAPIView):
     serializer_class = LikeSerializer
