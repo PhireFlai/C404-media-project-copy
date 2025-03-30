@@ -524,7 +524,7 @@ def CreateComment(request, userId, pk):
 
 # Post to an author's inbox
 @api_view(["POST"])
-@permission_classes([AllowAny])
+@permission_classes([ConditionalMultiAuthPermission])
 def IncomingPostToInbox(request, receiver):
     try:
         type = request.data.get("type")
@@ -999,14 +999,27 @@ def createForeignFollowRequest(request):
 
             request_data = FollowRequestSerializer(serializer.instance).data
 
+            remote_domain = object_FQID.split("/")[2]  # Extract the domain from the FQID
+            print(f"Remote domain: {remote_domain} for remote follow request")
+
+            remote_node = RemoteNode.objects.get(url=f"http://{remote_domain}/")
+            auth = HTTPBasicAuth(remote_node.username, remote_node.password)
 
             # Send to the remote
             inbox_url = f"{object_FQID}inbox/"
             headers = {"Content-Type": "application/json"}
+
+            # Print the request data for debugging
+            print("Sending follow request to remote inbox:")
+            print(f"URL: {inbox_url}")
+            print(f"Headers: {headers}")
+            print(f"Payload: {request_data}")
+
             response = requests.post(
                 inbox_url,
                 json=request_data,
-                headers=headers
+                headers=headers,
+                auth=auth
             )
             response.raise_for_status()
             return Response({"message": "Follow request sent successfully"}, status=status.HTTP_201_CREATED)
