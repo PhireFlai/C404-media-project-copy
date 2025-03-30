@@ -505,6 +505,8 @@ def CreateComment(request, userId, pk):
 def IncomingPostToInbox(request, receiver):
     try:
         type = request.data.get("type")
+        print("Incoming post type:", type)
+        print("Incoming post data:", request.data)
 
         if type == "follow":
             summary = request.data.get("summary")
@@ -592,18 +594,29 @@ def IncomingPostToInbox(request, receiver):
 
             return Response({"message": "Follow request accepted successfully"}, status=status.HTTP_200_OK)
 
-        elif type == "delete_follow_request":
+        elif type == "decline_follow":
             print("Deleting follow request")
             print(request.data)
 
             actor = request.data.get("actor")
             object = request.data.get("object")
-            actor_id = actor['id'].split('/')[-2]
-            object_id = object['id'].split('/')[-2]
+            actor_id = actor['id']
+            object_id = object['id']
+
+            # Only split if the ID contains slashes
+            if '/' in actor_id:
+                actor_id = actor_id.rstrip('/').split('/')[-1]
+
+            if '/' in object_id:
+                object_id = object_id.rstrip('/').split('/')[-1]
+
+            print(f"Actor ID: {actor_id}")
+            print(f"Object ID: {object_id}")
 
             try:
                 # Fetch the follow request
                 follow_request = FollowRequest.objects.get(actor_id=actor_id, object_id=object_id)
+                print(follow_request)
                 follow_request.delete()
                 return Response({"message": "Follow request deleted successfully"}, status=status.HTTP_200_OK)
             except FollowRequest.DoesNotExist:
@@ -666,7 +679,7 @@ def IncomingPostToInbox(request, receiver):
                 id=comment_id,
                 defaults={
                     "author": author_obj,
-                    "content": comment_data.get("content"),
+                    "comment": comment_data.get("comment"),
                     "post": post,  # Now properly linked to valid post
                     "created_at": comment_data.get("created_at") or timezone.now(),
                     "type": comment_data.get("type", "comment")
@@ -704,12 +717,10 @@ def IncomingPostToInbox(request, receiver):
 
             # Extract post ID from URL
             post_id = post_data.get("id").rstrip('/').split('/')[-1]
-            
+                
             # Extract author data
             author_data = post_data.get("author")
             author_id = author_data.get("id").rstrip('/').split('/')[-1]
-
-            print("Author id:", author_data.get("id"))
 
             # Get or create author
             author_obj, _ = User.objects.get_or_create(
@@ -717,17 +728,14 @@ def IncomingPostToInbox(request, receiver):
                 defaults={
                     "username": author_data.get("username"),
                     "email": author_data.get("email"),
-                    "profile_picture": author_data.get("profile_picture")
+                    "profile_picture": author_data.get("profile_picture"),
+                    "remote_fqid": author_data.get("id")
                 }
             )
-            author_obj.remote_fqid = author_data.get('id')
-            author_obj.save()
-
-            print("Author obj:", vars(author_obj))
 
             # Handle post timestamps
             created_at = post_data.get("created_at") 
-            updated_at = post_data.get("updated_at") 
+            published = post_data.get("published") 
 
             # Create/update post
             post, _ = Post.objects.update_or_create(
@@ -738,7 +746,7 @@ def IncomingPostToInbox(request, receiver):
                     "author": author_obj,
                     "visibility": post_data.get("visibility"),
                     "created_at": created_at,
-                    "updated_at": updated_at,
+                    "published": published,
                     "remote_fqid": post_data.get("id"),
                     "image": post_data.get("image"),
                 }
@@ -766,7 +774,7 @@ def IncomingPostToInbox(request, receiver):
                     id=comment_id,
                     defaults={
                         "author": comment_author,
-                        "content": comment_data["content"],
+                        "comment": comment_data["comment"],
                         "post": post,
                         "created_at": comment_data.get("created_at"),
                         "type": comment_data.get("type", "comment")
@@ -782,7 +790,7 @@ def IncomingPostToInbox(request, receiver):
                 "image": post.image.url if post.image else None,
                 "formatted_content": markdown.markdown(post.content),
                 "created_at": post.created_at,
-                "updated_at": post.updated_at,
+                "published": post.published,
                 "visibility": post.visibility,
                 "like_count": post.like_count,
                 "type": "post",

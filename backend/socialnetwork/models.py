@@ -40,7 +40,7 @@ class User(AbstractUser):
     github = models.URLField(max_length=200, blank=True, null=True)
     github_etag = models.CharField(max_length=250, blank=True, null=True)
 
-    remote_fqid = models.CharField(max_length=500, blank=True, null=True)
+    remote_fqid = models.CharField(max_length=250, blank=True, null=True)
     
     def __str__(self):
         return self.username  # Display the username in the admin panel
@@ -60,7 +60,7 @@ class User(AbstractUser):
 class Like(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
-    type = models.TextField(default="like", editable=False)
+    type = models.TextField(default="post_like", editable=False)
     
     # Fields for Generic Foreign Key
     content_type = models.ForeignKey(
@@ -97,7 +97,7 @@ class Post(models.Model):
     visibility = models.CharField(max_length=20, choices=VISIBILITY_CHOICES, default=PUBLIC)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    remote_fqid = models.CharField(max_length=500, blank=True, null=True)
+    remote_fqid = models.CharField(max_length=250, blank=True, null=True)
 
     likes = GenericRelation(Like)  # Enable reverse relation
 
