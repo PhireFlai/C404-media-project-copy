@@ -25,6 +25,7 @@ class CustomUserAdmin(UserAdmin):
         ('Approval', {'fields': ('is_approved',)}),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
         ('GitHub', {'fields': ('github', 'github_etag')}),
+        ('Profile', {'fields': ('displayName', 'host', 'page', 'profileImage')}),
         
     )
 
@@ -44,7 +45,8 @@ class RemoteNodeAdmin(admin.ModelAdmin):
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
     list_display = ('id', 'title', 'author', 'created_at', 'remote_fqid')  # Customize the list view
-    readonly_fields = ('remote_fqid',)  # Make remote_fqid read-only in the admin panel
+    readonly_fields = ('remote_fqid', 'published', 'contentType',)  # Make remote_fqid read-only in the admin panel
+    fields = ('title', 'author', 'content', 'image', 'visibility', 'remote_fqid', 'page', 'description', 'contentType')  # Fields to display in the detail view
 
 
 

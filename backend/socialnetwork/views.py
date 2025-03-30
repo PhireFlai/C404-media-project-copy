@@ -87,15 +87,26 @@ def createUser(request):
     else:
         is_approved = True  # Automatically approve
 
-    user = User.objects.create_user(username=username, password=password, is_approved=is_approved)
-    token = Token.objects.create(user=user)
+    # Prepare data for the serializer
+    user_data = {
+        'username': username,
+        'password': password,
+        'is_approved': is_approved,
+    }
 
-    return Response({
-        'token': token.key,
-        'user_id': user.id,
-        'username': user.username,
-        'is_approved': user.is_approved
-    }, status=status.HTTP_201_CREATED)
+    # Use the serializer to create the user
+    serializer = UserSerializer(data=user_data)
+    if serializer.is_valid():
+        user = serializer.save()
+        token = Token.objects.create(user=user)
+        return Response({
+            'token': token.key,
+            'user_id': user.id,
+            'username': user.username,
+            'is_approved': user.is_approved
+        }, status=status.HTTP_201_CREATED)
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # Logs in a user
 @api_view(['POST'])
@@ -119,9 +130,12 @@ def loginUser(request):
 
 # Lists all users
 class UsersList(generics.ListCreateAPIView):
-    queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [MultiAuthPermission]
+
+    def get_queryset(self):
+        # Filter users to exclude those with a remote_fqid
+        return User.objects.filter(remote_fqid__isnull=True)
     
 # Get all friends posts
 class FriendsPostsView(ListAPIView):
@@ -153,7 +167,7 @@ class PostListCreateView(generics.ListCreateAPIView):
         author = get_object_or_404(User, id=user_id)  # Fetch the profile owner
 
         if not viewer.is_authenticated:
-            return Post.objects.filter(author=author, visibility=Post.PUBLIC).order_by("-updated_at")
+            return Post.objects.filter(author=author, visibility=Post.PUBLIC).order_by("-published")
 
         author = get_object_or_404(User, id=user_id)  # Fetch the profile owner
 
@@ -165,10 +179,10 @@ class PostListCreateView(generics.ListCreateAPIView):
         # Fetch posts based on visibility ranking
         if viewer == author:
             # If the viewer is the profile owner, show all their posts
-            return Post.objects.filter(author=author).exclude(visibility=Post.DELETED).order_by("-updated_at")
+            return Post.objects.filter(author=author).exclude(visibility=Post.DELETED).order_by("-published")
         elif mutual_follow:
             # If the viewer and author follow each other, show public, friends-only, and unlisted posts
-            return Post.objects.filter(author=author).exclude(visibility=Post.DELETED).order_by("-updated_at")
+            return Post.objects.filter(author=author).exclude(visibility=Post.DELETED).order_by("-published")
         elif viewer_follows_author:
             # If the viewer follows the author, show public + unlisted posts (but NOT friends-only)
             return Post.objects.filter(author=author, visibility__in=[Post.PUBLIC, Post.UNLISTED]).exclude(visibility=Post.DELETED).order_by("-created_at")
@@ -193,8 +207,8 @@ class PostListCreateView(generics.ListCreateAPIView):
             remote_domain_base = parsed_url[2]
 
             # Remove the port from the remote domain
-            print(parsed_url)
-            print(remote_domain_base)
+            # print(parsed_url)
+            # print(remote_domain_base)
             parsed_remote_url = urlparse(f"http://{remote_domain_base}")
             remote_domain_without_brackets = parsed_remote_url.hostname  # Extract the hostname without the port
             remote_domain = f"[{remote_domain_without_brackets}]"  # Add brackets for IPv6 format
@@ -210,13 +224,19 @@ class PostListCreateView(generics.ListCreateAPIView):
             inbox_url = f"{follower.remote_fqid}inbox/"
             post_data = PostSerializer(post).data
             post_data.update({'remote_fqid' : post_data['id']})
-            print("Creating new post with: ", post_data)
+            post_data['id'] = f"{remote_node.url}/posts/{post_data['id']}"  # Update the ID to include the remote node URL
+            # print("Creating new post with: ", post_data)
             headers = {"Content-Type": "application/json"}
+
+            print(f"Sending post")
+            print(f"URL: {inbox_url}")
+            print(f"Headers: {headers}")
+            print(f"Payload: {post_data}")
             
             try:
-                print(inbox_url)
+                # print(inbox_url)
                 response = requests.post(inbox_url, auth = auth, json=post_data, headers=headers)
-                print(response.json())
+                # print(response.json())
                 response.raise_for_status()
             except requests.exceptions.RequestException as e:
                 print(f"Failed to send post to {follower.username}'s inbox: {e}")
@@ -421,13 +441,13 @@ def updateUserProfile(request, userId):
 def CreateComment(request, userId, pk):
     post = get_object_or_404(Post, id=pk)
     author = request.user
-    content = request.data.get('content')
+    comment = request.data.get('comment')
     
     # Create comment and update post timestamp
     comment = Comment.objects.create(
         author=author,
         post=post, 
-        content=content
+        comment=comment
     )
     
     # Serialize both comment and updated post
@@ -470,23 +490,29 @@ def CreateComment(request, userId, pk):
     if post.author.remote_fqid:
         try:
             parsed_url = post.author.remote_fqid.split('/')
-            print("Parsed URL:", parsed_url)
+            # print("Parsed URL:", parsed_url)
             remote_domain_base = parsed_url[2]
-            print("Remote domain base:", remote_domain_base)
+            # print("Remote domain base:", remote_domain_base)
 
             # Remove the port from the remote domain
             parsed_remote_url = urlparse(f"http://{remote_domain_base}")
-            print("Parsed remote URL:", parsed_remote_url)
+            # print("Parsed remote URL:", parsed_remote_url)
             remote_domain_without_brackets = parsed_remote_url.hostname  # Extract the hostname without the port
-            print("Remote domain without brackets:", remote_domain_without_brackets)
+            # print("Remote domain without brackets:", remote_domain_without_brackets)
             remote_domain = f"[{remote_domain_without_brackets}]"  # Add brackets for IPv6 format
-            print(remote_domain)
+            # print(remote_domain)
             remote_node = RemoteNode.objects.get(url=f"http://{remote_domain}/")
             auth = HTTPBasicAuth(remote_node.username, remote_node.password)
             
             comment_data = CommentSerializer(comment).data
-            print(post.author.remote_fqid)
+            # print(post.author.remote_fqid)
             author_inbox_url = f"{post.author.remote_fqid}inbox/"
+
+            print(f"Sending comment:")
+            print(f"URL: {author_inbox_url}")
+            print(f"Headers: {headers}")
+            print(f"Payload: {comment_data}")
+
             response = requests.post(
                 author_inbox_url,
                 auth=auth,
@@ -501,10 +527,12 @@ def CreateComment(request, userId, pk):
 
 # Post to an author's inbox
 @api_view(["POST"])
-@permission_classes([AllowAny])
+@permission_classes([ConditionalMultiAuthPermission])
 def IncomingPostToInbox(request, receiver):
     try:
         type = request.data.get("type")
+        print("Incoming post type:", type)
+        print("Incoming post data:", request.data)
 
         if type == "follow":
             summary = request.data.get("summary")
@@ -592,18 +620,29 @@ def IncomingPostToInbox(request, receiver):
 
             return Response({"message": "Follow request accepted successfully"}, status=status.HTTP_200_OK)
 
-        elif type == "delete_follow_request":
+        elif type == "decline_follow":
             print("Deleting follow request")
             print(request.data)
 
             actor = request.data.get("actor")
             object = request.data.get("object")
-            actor_id = actor['id'].split('/')[-2]
-            object_id = object['id'].split('/')[-2]
+            actor_id = actor['id']
+            object_id = object['id']
+
+            # Only split if the ID contains slashes
+            if '/' in actor_id:
+                actor_id = actor_id.rstrip('/').split('/')[-1]
+
+            if '/' in object_id:
+                object_id = object_id.rstrip('/').split('/')[-1]
+
+            print(f"Actor ID: {actor_id}")
+            print(f"Object ID: {object_id}")
 
             try:
                 # Fetch the follow request
                 follow_request = FollowRequest.objects.get(actor_id=actor_id, object_id=object_id)
+                print(follow_request)
                 follow_request.delete()
                 return Response({"message": "Follow request deleted successfully"}, status=status.HTTP_200_OK)
             except FollowRequest.DoesNotExist:
@@ -666,7 +705,7 @@ def IncomingPostToInbox(request, receiver):
                 id=comment_id,
                 defaults={
                     "author": author_obj,
-                    "content": comment_data.get("content"),
+                    "comment": comment_data.get("comment"),
                     "post": post,  # Now properly linked to valid post
                     "created_at": comment_data.get("created_at") or timezone.now(),
                     "type": comment_data.get("type", "comment")
@@ -704,7 +743,7 @@ def IncomingPostToInbox(request, receiver):
 
             # Extract post ID from URL
             post_id = post_data.get("id").rstrip('/').split('/')[-1]
-            
+                
             # Extract author data
             author_data = post_data.get("author")
             author_id = author_data.get("id").rstrip('/').split('/')[-1]
@@ -722,7 +761,7 @@ def IncomingPostToInbox(request, receiver):
 
             # Handle post timestamps
             created_at = post_data.get("created_at") 
-            updated_at = post_data.get("updated_at") 
+            published = post_data.get("published") 
 
             # Create/update post
             post, _ = Post.objects.update_or_create(
@@ -733,7 +772,7 @@ def IncomingPostToInbox(request, receiver):
                     "author": author_obj,
                     "visibility": post_data.get("visibility"),
                     "created_at": created_at,
-                    "updated_at": updated_at,
+                    "published": published,
                     "remote_fqid": post_data.get("id"),
                     "image": post_data.get("image"),
                 }
@@ -761,7 +800,7 @@ def IncomingPostToInbox(request, receiver):
                     id=comment_id,
                     defaults={
                         "author": comment_author,
-                        "content": comment_data["content"],
+                        "comment": comment_data["comment"],
                         "post": post,
                         "created_at": comment_data.get("created_at"),
                         "type": comment_data.get("type", "comment")
@@ -777,7 +816,7 @@ def IncomingPostToInbox(request, receiver):
                 "image": post.image.url if post.image else None,
                 "formatted_content": markdown.markdown(post.content),
                 "created_at": post.created_at,
-                "updated_at": post.updated_at,
+                "published": post.published,
                 "visibility": post.visibility,
                 "like_count": post.like_count,
                 "type": "post",
@@ -921,13 +960,13 @@ class GetCommented(generics.ListCreateAPIView):
         authorID = self.kwargs['userId']
         author = User.objects.get(id=authorID)
         postID = self.request.data.get('post')
-        content = self.request.data.get('content')
+        comment = self.request.data.get('comment')
         try:
             post = Post.objects.get(id=postID)
         except Post.DoesNotExist:
             return Response({"error": "Post not found"}, status=status.HTTP_404_NOT_FOUND)
         post_author = post.author.id
-        comment_data={'content': content, 'post': postID}
+        comment_data={'comment': comment, 'post': postID}
         serializer = CommentSerializer(data=comment_data)
     
         if serializer.is_valid():
@@ -1026,14 +1065,27 @@ def createForeignFollowRequest(request):
 
             request_data = FollowRequestSerializer(serializer.instance).data
 
+            remote_domain = object_FQID.split("/")[2]  # Extract the domain from the FQID
+            print(f"Remote domain: {remote_domain} for remote follow request")
+
+            remote_node = RemoteNode.objects.get(url=f"http://{remote_domain}/")
+            auth = HTTPBasicAuth(remote_node.username, remote_node.password)
 
             # Send to the remote
             inbox_url = f"{object_FQID}inbox/"
             headers = {"Content-Type": "application/json"}
+
+            # Print the request data for debugging
+            print("Sending follow request to remote inbox:")
+            print(f"URL: {inbox_url}")
+            print(f"Headers: {headers}")
+            print(f"Payload: {request_data}")
+
             response = requests.post(
                 inbox_url,
                 json=request_data,
-                headers=headers
+                headers=headers,
+                auth=auth
             )
             response.raise_for_status()
             return Response({"message": "Follow request sent successfully"}, status=status.HTTP_201_CREATED)
@@ -1130,11 +1182,18 @@ def AcceptFollowRequest(request, objectId, actorId ):
                 }
 
             author_inbox_url = f"{follow_request.actor.remote_fqid}inbox/"
+            headers = {"Content-Type": "application/json"}
+
+            print(f"Sending POST request to {action} follow request:")
+            print(f"URL: {author_inbox_url}")
+            print(f"Headers: {headers}")
+            print(f"Payload: {follow_data}")
+
             response = requests.post(
                 author_inbox_url,
                 auth=auth,
                 json=follow_data,
-                headers={"Content-Type": "application/json"}
+                headers=headers
             )
             response.raise_for_status()
         except Exception as e:
@@ -1471,14 +1530,14 @@ class PublicFeedView(ListAPIView):
         
         if not user.is_authenticated:
             # Return only public posts if the user is not authenticated
-            return Post.objects.filter(visibility=Post.PUBLIC).exclude(visibility=Post.DELETED).order_by("-updated_at")
+            return Post.objects.filter(visibility=Post.PUBLIC).exclude(visibility=Post.DELETED).order_by("-published")
 
         return Post.objects.filter(
             Q(author=user) |  # Show ALL posts by the user
             Q(visibility=Post.PUBLIC) # Show all public posts from all authors
         ).exclude(
             visibility=Post.DELETED # excluding deleted
-        ).order_by("-updated_at")  # Show latest posts first
+        ).order_by("-published")  # Show latest posts first
 
 class FriendsFeedView(ListAPIView):
 
@@ -1503,7 +1562,7 @@ class FriendsFeedView(ListAPIView):
             Q(visibility=Post.UNLISTED, author__in=friend_ids) # Unlisted for friends
         ).exclude(
             visibility=Post.DELETED
-        ).order_by("-updated_at")  # Show latest posts first
+        ).order_by("-published")  # Show latest posts first
 
 class FollowersFeedView(ListAPIView):
     serializer_class = PostSerializer
@@ -1525,7 +1584,7 @@ class FollowersFeedView(ListAPIView):
             Q(visibility=Post.UNLISTED, author__in=following_ids)  # Unlisted for followers
         ).exclude(
             visibility=Post.DELETED
-        ).order_by("-updated_at")  # Show latest posts first
+        ).order_by("-published")  # Show latest posts first
 
 
 class SearchUsersView(APIView):

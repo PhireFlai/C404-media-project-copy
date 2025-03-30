@@ -232,7 +232,7 @@ const PostPage = () => {
             <strong>Visibility:</strong> {post.visibility}
           </p>
           <p className="text-muted">
-            Last updated: {format(new Date(post.updated_at), "PPPppp")}
+            Last updated: {format(new Date(post.published), "PPPppp")}
           </p>
         </>
       )}
