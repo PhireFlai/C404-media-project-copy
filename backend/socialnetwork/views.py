@@ -791,11 +791,18 @@ def IncomingPostToInbox(request, receiver):
             }, status=status.HTTP_201_CREATED)
         
         elif type == "like":
-            author = request.data.get("author")
+            author = request.data.get("user")
             created_at = request.data.get("created_at")
             id = request.data.get("id")
             object_id = request.data.get("object_id")
+            content = request.data.get("content_type")
             author_id = author['id'].rstrip('/').split('/')[-1]
+            like_id = id.rstrip('/').split('/')[-1]
+
+            if content == "post":
+                content_type = ContentType.objects.get_for_model(Post)
+            elif content == "comment":
+                content_type = ContentType.objects.get_for_model(Comment)
 
             author_obj, _ = User.objects.get_or_create(
                 id=author_id, 
@@ -807,19 +814,20 @@ def IncomingPostToInbox(request, receiver):
                     }
                 )
             
-            like = Like.objects.create(
-                id=id,
+            like, _ = Like.objects.update_or_create(
+                id=like_id,
                 defaults={
-                    "author": author_obj,
+                    "user": author_obj,
                     "created_at": created_at,
                     "object_id": object_id,
+                    "content_type": content_type
                 }
             )
 
             return Response({
                 "id": like.id,
                 "type": like.type,
-                "author": {
+                "user": {
                     "id": author_obj.id,
                     "username": author_obj.username,
                 },
