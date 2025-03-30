@@ -1130,6 +1130,7 @@ def AddLikeOnPost(request, userId, object_id):
     for follower in followers_with_remote_fqid:
             
         parsed_url = follower.remote_fqid.split('/')
+        print("Parsed URL 1:", parsed_url)
         remote_domain_base = parsed_url[2]
 
         # Remove the port from the remote domain
@@ -1158,10 +1159,12 @@ def AddLikeOnPost(request, userId, object_id):
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
             print(f"Failed to send post to {follower.username}'s inbox: {e}")
-        # Send to post author's inbox if they're remote
+
     if post.author.remote_fqid:
+        print(post.author.remote_fqid)
         try:
             parsed_url = post.author.remote_fqid.split('/')
+            print(parsed_url)
             remote_domain_base = parsed_url[2]
 
             # Remove the port from the remote domain
@@ -1172,13 +1175,13 @@ def AddLikeOnPost(request, userId, object_id):
             remote_node = RemoteNode.objects.get(url=f"http://{remote_domain}/")
             auth = HTTPBasicAuth(remote_node.username, remote_node.password)
             
-            like_data = LikeSerializer(comment).data
+            like_data = LikeSerializer(like).data
             print(post.author.remote_fqid)
             author_inbox_url = f"{post.author.remote_fqid}inbox/"
             response = requests.post(
                 author_inbox_url,
                 auth=auth,
-                json=comment_data,
+                json=like_data,
                 headers={"Content-Type": "application/json"}
             )
             response.raise_for_status()
