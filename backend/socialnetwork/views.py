@@ -825,22 +825,8 @@ def IncomingPostToInbox(request, receiver):
                 actor_obj.friends.remove(object_obj)
                 object_obj.friends.remove(actor_obj)
             
-            # Only send something back if you're the node that initiated the unfollow
-            if RemoteNode.objects.filter(is_my_node=True).exists():
-                try:
-                    # Define inbox_url and send response back if needed
-                    inbox_url = actor["remote_fqid"] + "inbox/"
-                    unfollow_ack = {
-                        "type": "unfollow_ack",
-                        "summary": "Unfollow processed",
-                        "actor": actor,
-                        "object": object,
-                    }
-                    response = requests.post(inbox_url, json=unfollow_ack, headers={"Content-Type": "application/json"})
-                    response.raise_for_status()
-                except Exception as e:
-                    print("Unfollow: optional notify failed:", e)
-
+            print("Sending unfollow to:", inbox_url)
+            print("Payload:", unfollow_data)
             return Response({"message": "Unfollow processed successfully"}, status=status.HTTP_200_OK)
 
     except Exception as e:
@@ -1021,7 +1007,7 @@ def createForeignFollowRequest(request):
             response = requests.post(
                 inbox_url,
                 json=request_data,
-                headers=headersunfollow
+                headers=headers
             )
             response.raise_for_status()
             return Response({"message": "Follow request sent successfully"}, status=status.HTTP_201_CREATED)
@@ -1199,9 +1185,7 @@ def Unfollow(request, followedId, followerId):
             response = requests.post(inbox_url, auth=auth, json=unfollow_data, headers=headers)
             response.raise_for_status()
 
-        except requests.exceptions.HTTPError as e:
-            print("Status code:", e.response.status_code)
-            print("Response content:", e.response.text)
+        except Exception as e:
             print(f"Failed to notify remote user of unfollow: {e}")
 
     return Response({'message': 'Unfollowed successfully'}, status=status.HTTP_200_OK)
