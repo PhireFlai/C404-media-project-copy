@@ -1395,7 +1395,7 @@ def AddCommentLike(request, userId, pk, ck):
     # Forward the like to the inbox (if this functionality exists)
     like_serializer = LikeSerializer(like)
 
-    followers_with_remote_fqid = post.author.followers.filter(remote_fqid__isnull=False)
+    followers_with_remote_fqid = comment.author.followers.filter(remote_fqid__isnull=False)
     
     for follower in followers_with_remote_fqid:
             
@@ -1429,9 +1429,9 @@ def AddCommentLike(request, userId, pk, ck):
         except requests.exceptions.RequestException as e:
             print(f"Failed to send post to {follower.username}'s inbox: {e}")
         # Send to post author's inbox if they're remote
-    if post.author.remote_fqid:
+    if comment.author.remote_fqid:
         try:
-            parsed_url = post.author.remote_fqid.split('/')
+            parsed_url = comment.author.remote_fqid.split('/')
             remote_domain_base = parsed_url[2]
 
             # Remove the port from the remote domain
@@ -1443,8 +1443,8 @@ def AddCommentLike(request, userId, pk, ck):
             auth = HTTPBasicAuth(remote_node.username, remote_node.password)
             
             like_data = LikeSerializer(comment).data
-            print(post.author.remote_fqid)
-            author_inbox_url = f"{post.author.remote_fqid}inbox/"
+            print(comment.author.remote_fqid)
+            author_inbox_url = f"{comment.author.remote_fqid}inbox/"
             response = requests.post(
                 author_inbox_url,
                 auth=auth,
