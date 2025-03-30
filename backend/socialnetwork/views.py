@@ -130,9 +130,12 @@ def loginUser(request):
 
 # Lists all users
 class UsersList(generics.ListCreateAPIView):
-    queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [MultiAuthPermission]
+
+    def get_queryset(self):
+        # Filter users to exclude those with a remote_fqid
+        return User.objects.filter(remote_fqid__isnull=True)
     
 # Get all friends posts
 class FriendsPostsView(ListAPIView):
