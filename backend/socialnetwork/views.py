@@ -589,7 +589,6 @@ def IncomingPostToInbox(request, receiver):
 
             # Return the created FollowRequest data
             return Response({
-                "id": id,
                 "type": type,
                 "summary": summary,
                 "actor": {
