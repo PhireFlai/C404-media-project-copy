@@ -62,7 +62,7 @@ const PostItem = ({ post, refetchPosts }) => {
       console.error("Error fetching likes:", likesError);
     } else if (likes && likes.length > 0) {
       likes.forEach((like) => {
-        if (parseId(like.user?.id) === parseId(user.id)) {
+        if (parseId(like.author?.id) === parseId(user.id)) {
           setIsLiked(true);
         }
       });
@@ -179,9 +179,9 @@ const PostItem = ({ post, refetchPosts }) => {
             onChange={(e) => setEditVisibility(e.target.value)}
             className="post-visibility-select"
           >
-            <option value="public">Public</option>
-            <option value="friends-only">Friends Only</option>
-            <option value="unlisted">Unlisted</option>
+            <option value="PUBLIC">Public</option>
+            <option value="FRIENDS">Friends Only</option>
+            <option value="UNLISTED">Unlisted</option>
           </select>
 
           {/* image upload input */}
@@ -277,6 +277,8 @@ const PostItem = ({ post, refetchPosts }) => {
         />
       )}
     </div>
+
+
   );
 };
 

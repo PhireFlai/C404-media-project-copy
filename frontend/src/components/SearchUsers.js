@@ -52,7 +52,7 @@ const SearchUsers = () => {
                 actorId,
                 actorUsername,
                 objectFQID: remoteUser.id,
-                objectUsername: remoteUser.username,
+                objectUsername: remoteUser.displayName,
             }).unwrap();
 
             alert("Follow request sent!");

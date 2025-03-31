@@ -65,7 +65,7 @@ class User(AbstractUser):
 
 class Like(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    author = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     type = models.TextField(default="like", editable=False)
     
     # Fields for Generic Foreign Key
@@ -76,22 +76,22 @@ class Like(models.Model):
     object_id = models.UUIDField()
     content_object = GenericForeignKey("content_type", "object_id")
     
-    created_at = models.DateTimeField(default=timezone.now, editable=False)
+    published = models.DateTimeField(default=timezone.now, editable=False)
 
     def __str__(self):
-        return f"{self.user.username} likes {self.content_object}"
+        return f"{self.author.username} likes {self.content_object}"
     
 class Post(models.Model):
-    PUBLIC = 'public'
-    FRIENDS_ONLY = 'friends-only'
-    UNLISTED = 'unlisted'
-    DELETED = 'deleted'
+    PUBLIC = 'PUBLIC'
+    FRIENDS = 'FRIENDS'
+    UNLISTED = 'UNLISTED'
+    DELETED = 'DELETED'
 
     VISIBILITY_CHOICES = [
-        (PUBLIC, 'Public'),
-        (FRIENDS_ONLY, 'Friends Only'),
-        (UNLISTED, 'Unlisted'),
-        (DELETED, 'Deleted')
+        (PUBLIC, 'PUBLIC'),
+        (FRIENDS, 'FRIENDS'),
+        (UNLISTED, 'UNLISTED'),
+        (DELETED, 'DELETED')
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -137,7 +137,7 @@ class Comment(models.Model):
         return self.likes.count()
 
     def __str__(self):
-        return f"{self.author.username} comments {self.content}"
+        return f"{self.author.username} comments {self.comment}"
 
 class FollowRequest(models.Model):
     type = models.TextField(default="follow", editable=False)

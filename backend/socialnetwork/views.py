@@ -22,7 +22,7 @@ from .utils import forward_get_request
 from requests.auth import HTTPBasicAuth
 from urllib.parse import urlparse
 from django.test import RequestFactory
-
+from django.views.decorators.csrf import csrf_exempt
 
 @swagger_auto_schema(
     method="post",
@@ -135,7 +135,7 @@ class UsersList(generics.ListCreateAPIView):
 
     def get_queryset(self):
         # Filter users to exclude those with a remote_fqid
-        return User.objects.filter(remote_fqid__isnull=True)
+        return User.objects.filter(remote_fqid__isnull=True, is_staff=False)
 
     def list(self, request, *args, **kwargs):
         # Get the queryset and serialize it
@@ -202,7 +202,6 @@ class PostListCreateView(generics.ListCreateAPIView):
         else:
             # If no relationship, only show public posts
             return Post.objects.filter(author=author, visibility=Post.PUBLIC).exclude(visibility=Post.DELETED).order_by("-created_at")
-
 
     
     def perform_create(self, serializer):
@@ -289,7 +288,7 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
             return post
 
         # If the post is friends-only but the user is not a friend, deny access
-        if post.visibility == Post.FRIENDS_ONLY and self.request.user not in post.author.friends.all():
+        if post.visibility == Post.FRIENDS and self.request.user not in post.author.friends.all():
             raise PermissionDenied("You do not have permission to view this post.")
 
         return post
@@ -550,27 +549,35 @@ def IncomingPostToInbox(request, receiver):
         if type == "follow":
             summary = request.data.get("summary")
             actor = request.data.get("actor")
-            object = request.data.get("object")
-            actor_id = actor['id'].split('/')[-2]
-            object_id = object['id'].split('/')[-2]
+            follow_object = request.data.get("object")
+            actor_id = actor['id'].rstrip("/").split("/")[-1] 
+            object_id = follow_object['id'].rstrip("/").split("/")[-1] 
 
+            print(f"Actor: {actor}\n Object: {follow_object}\n Actor_Id: {actor_id}\nObject_Id: {object_id}")
 
             # Get or create the actor and object users
-            actor_obj, created_actor = User.objects.get_or_create(
-                id=actor_id,
-                defaults={
-                    "remote_fqid": actor['id'],
-                    "username": actor.get('username'),
-                }
-            )
+            try:
+                # Try to get the actor
+                actor_obj = User.objects.get(id=actor_id)
+                print("user found", actor_obj)
+            except User.DoesNotExist:
+                print("user not found")
+                # If the actor does not exist, create it
+                
+                actor_obj = User.objects.create(
+                    id=actor_id,
+                    remote_fqid=actor['id'],
+                    username=actor.get('displayName'),
+                    displayName=actor.get('displayName'),
+                )
 
-            object_obj, created_object = User.objects.get_or_create(
-                id=object_id,
-                defaults={
-                    "remote_fqid": object['id'],
-                    "username": object.get('username'),
-                }
-            )
+            try:
+                object_obj = User.objects.get(id=object_id)
+            except User.DoesNotExist:
+                return Response({"error": f"Object with ID {object_id} not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+            print("Found both")
 
             # Make sure the object followers does not already contain the actor
             if object_obj.followers.filter(id=actor_obj.id).exists():
@@ -584,11 +591,12 @@ def IncomingPostToInbox(request, receiver):
                 actor_obj.friends.add(object_obj)
                 object_obj.friends.add(actor_obj)
 
+            print("Added actors and follow relationship")
+
             # Return the created FollowRequest data
             return Response({
-                "id": follow_request.id,
-                "type": follow_request.type,
-                "summary": follow_request.summary,
+                "type": type,
+                "summary": summary,
                 "actor": {
                     "id": actor_obj.id,
                     "username": actor_obj.username,
@@ -604,11 +612,11 @@ def IncomingPostToInbox(request, receiver):
             print(request.data)
 
             actor = request.data.get("actor")
-            object = request.data.get("object")
+            follow_object = request.data.get("object")
             actor_id = actor['id']
-            object_id = object['id']
+            object_id = follow_object['id']
 
-            print(f"Actor: {actor}\n Object: {object}\n Actor_Id: {actor_id}\nObject_Id: {object_id}")
+            print(f"Actor: {actor}\n Object: {follow_object}\n Actor_Id: {actor_id}\nObject_Id: {object_id}")
 
             try:
                 # Fetch the follow request
@@ -635,9 +643,9 @@ def IncomingPostToInbox(request, receiver):
             print(request.data)
 
             actor = request.data.get("actor")
-            object = request.data.get("object")
+            follow_object = request.data.get("object")
             actor_id = actor['id']
-            object_id = object['id']
+            object_id = follow_object['id']
 
             # Only split if the ID contains slashes
             if '/' in actor_id:
@@ -672,6 +680,8 @@ def IncomingPostToInbox(request, receiver):
             # Extract post data from comment's post field
             post_url = comment_data.get("post")
             url_parts = post_url.rstrip('/').split('/')
+
+            print("Extracted")
             
             try:
                 # Find the index of 'posts' in the URL path
@@ -722,6 +732,8 @@ def IncomingPostToInbox(request, receiver):
                 }
             )
 
+            print("Comment created or updated:", comment)
+
             # Process likes
             for like_data in comment_data.get("likes", []):
                 like_author_data = like_data.get("author")
@@ -743,6 +755,7 @@ def IncomingPostToInbox(request, receiver):
                         "created_at": like_data.get("published") or timezone.now()
                     }
                 )
+            print("Likes processed")
 
             return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)
         
@@ -771,7 +784,7 @@ def IncomingPostToInbox(request, receiver):
 
             # Handle post timestamps
             created_at = post_data.get("created_at") 
-            published = post_data.get("published") 
+            published = post_data.get("published")
 
             # Create/update post
             post, _ = Post.objects.update_or_create(
@@ -781,12 +794,13 @@ def IncomingPostToInbox(request, receiver):
                     "content": post_data.get("content"),
                     "author": author_obj,
                     "visibility": post_data.get("visibility"),
-                    "created_at": created_at,
                     "published": published,
                     "remote_fqid": post_data.get("id"),
                     "image": post_data.get("image"),
                 }
             )
+
+            print(post)
 
             # Handle comments
             for comment_data in post_data.get("comments", []):
@@ -816,6 +830,7 @@ def IncomingPostToInbox(request, receiver):
                         "type": comment_data.get("type", "comment")
                     }
                 )
+            print('handled comments for new/updated post')
 
             # Return complete post data
             return Response({
@@ -838,10 +853,13 @@ def IncomingPostToInbox(request, receiver):
             author = request.data.get("user")
             created_at = request.data.get("created_at")
             id = request.data.get("id")
-            object_id = request.data.get("object_id")
+            object_id = request.data.get("object_id", "")
             content = request.data.get("content_type")
             author_id = author['id'].rstrip('/').split('/')[-1]
             like_id = id.rstrip('/').split('/')[-1]
+
+            if not object_id:
+                object_id = request.data("object").rstrip('/').split('/')[-1]
 
             if content == "post":
                 content_type = ContentType.objects.get_for_model(Post)
@@ -882,10 +900,10 @@ def IncomingPostToInbox(request, receiver):
 
         elif type == "unfollow":
             actor = request.data.get("actor")
-            object = request.data.get("object")
+            follow_object = request.data.get("object")
 
             actor_id = actor["id"].rstrip('/').split('/')[-1]
-            object_id = object["id"].rstrip('/').split('/')[-1]
+            object_id = follow_object["id"].rstrip('/').split('/')[-1]
 
             try:
                 actor_obj = User.objects.get(id=actor_id)
@@ -906,10 +924,10 @@ def IncomingPostToInbox(request, receiver):
 
         elif type == "remove_follower":
             actor = request.data.get("actor")
-            object = request.data.get("object")
+            follow_object = request.data.get("object")
 
             actor_id = actor["id"].rstrip('/').split('/')[-1]
-            object_id = object["id"].rstrip('/').split('/')[-1]
+            object_id = follow_object["id"].rstrip('/').split('/')[-1]
 
             try:
                 actor_obj = User.objects.get(id=actor_id)
@@ -1065,13 +1083,15 @@ def createForeignFollowRequest(request):
         actor_id = request.data.get("actorId")
         actor_username = request.data.get("actorUsername")
         object_FQID = request.data.get("objectFQID")
-        object_username = request.data.get("objectUsername")
+        object_displayname = request.data.get("objectUsername")
 
         current_remote_node = RemoteNode.objects.get(is_my_node=True)
         actor_FQID = f"http://{current_remote_node.url}authors/{actor_id}/"
-        object_id = object_FQID.split("/")[-2] 
+        if not object_FQID.endswith("/"):
+            object_FQID = object_FQID + "/"
+        object_id = object_FQID.rstrip("/").split("/")[-1] 
 
-        print(f"Foreign follow request from {actor_username} ({actor_id}) to {object_username} ({object_id}) with id {object_FQID}")
+        print(f"Foreign follow request from {actor_username} ({actor_id}) to {object_displayname} ({object_id}) with id {object_FQID}")
 
         # Fetch or create the actor and object users
         try:
@@ -1082,7 +1102,17 @@ def createForeignFollowRequest(request):
         try:
             object_user = User.objects.get(id=object_id)
         except User.DoesNotExist:
-            object_user = User.objects.create(id=object_id, username=object_username, remote_fqid=object_FQID)
+            object_data = {
+                "id": object_id,
+                "username": object_displayname,
+                "remote_fqid": object_FQID,
+                "password": "default@1"
+            }
+            object_serializer = UserSerializer(data=object_data)
+            if object_serializer.is_valid():
+                object_user = object_serializer.save()
+            else:
+                return Response(object_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         # Check if a follow request already exists
         if FollowRequest.objects.filter(actor=actor, object=object_user).exists():
@@ -1095,10 +1125,9 @@ def createForeignFollowRequest(request):
         serializer = FollowRequestSerializer(data=data)
 
         if serializer.is_valid():
-            follow_request = serializer.save(actor=actor, object=object_user)
+            serializer.save(actor=actor, object=object_user)
 
-            # Extract the serialized follow request data
-            request_data = FollowRequestSerializer(follow_request).data
+            request_data = FollowRequestSerializer(serializer.instance).data
 
             # Prepare the remote inbox URL and headers
             inbox_url = f"{object_FQID}inbox/"
@@ -1122,7 +1151,8 @@ def createForeignFollowRequest(request):
                 headers=headers,
                 auth=auth
             )
-            response.raise_for_status()
+            print(response.json())
+
 
             # Add the actor to the object's followers
             object_user.followers.add(actor)
@@ -1132,8 +1162,14 @@ def createForeignFollowRequest(request):
                 actor.friends.add(object_user)
                 object_user.friends.add(actor)
 
+            # Save the object and actor
+            # object_user.save()
+            # actor.save()
+
             # Delete the follow request after processing
-            follow_request.delete()
+            serializer.instance.delete()
+
+            response.raise_for_status()
 
             return Response({"message": "Follow request sent successfully"}, status=status.HTTP_201_CREATED)
         else:
@@ -1421,13 +1457,13 @@ def AddLikeOnPost(request, userId, object_id):
     post = get_object_or_404(Post, id=object_id)
 
     # Check if the user has already liked the post
-    if Like.objects.filter(user=user, object_id=post.id, content_type=ContentType.objects.get_for_model(Post)).exists():
+    if Like.objects.filter(author=user, object_id=post.id, content_type=ContentType.objects.get_for_model(Post)).exists():
         return Response({'error': 'You have already liked this post.'}, status=status.HTTP_400_BAD_REQUEST)
 
     # Create the Like object
     content_type = ContentType.objects.get_for_model(Post)
     like = Like.objects.create(
-        user=user, 
+        author=user, 
         content_type=content_type, 
         object_id=post.id
     )
@@ -1435,9 +1471,8 @@ def AddLikeOnPost(request, userId, object_id):
     like_serializer = LikeSerializer(like)
 
     followers_with_remote_fqid = post.author.followers.filter(remote_fqid__isnull=False)
-    
     for follower in followers_with_remote_fqid:
-            
+        
         parsed_url = follower.remote_fqid.split('/')
         print("Parsed URL 1:", parsed_url)
         remote_domain_base = parsed_url[2]
@@ -1588,13 +1623,13 @@ def AddCommentLike(request, userId, pk, ck):
     comment = get_object_or_404(Comment, id=ck)
 
     # Check if the user has already liked the comment
-    if Like.objects.filter(user=user, object_id=comment.id, content_type=ContentType.objects.get_for_model(Comment)).exists():
+    if Like.objects.filter(author=user, object_id=comment.id, content_type=ContentType.objects.get_for_model(Comment)).exists():
         return Response({'error': 'You have already liked this comment.'}, status=status.HTTP_400_BAD_REQUEST)
 
     # Create the Like object
     content_type = ContentType.objects.get_for_model(Comment)
     like = Like.objects.create(
-        user=user, 
+        author=user, 
         content_type=content_type, 
         object_id=comment.id
     )
@@ -1715,7 +1750,7 @@ class FriendsFeedView(ListAPIView):
         friend_ids = user.friends.values_list('id', flat=True)  # Extract only the 'id' field
 
         return Post.objects.filter(
-            Q(visibility=Post.FRIENDS_ONLY, author__in=friend_ids) | # Friends-only posts
+            Q(visibility=Post.FRIENDS, author__in=friend_ids) | # Friends-only posts
             Q(visibility=Post.UNLISTED, author__in=friend_ids) # Unlisted for friends
         ).exclude(
             visibility=Post.DELETED
@@ -1798,6 +1833,8 @@ class SearchUsersView(APIView):
                             continue
 
                         displayName = author.get("displayName", "")
+
+                        author['id'] = author['host'] + 'authors/' + author_uuid + '/'
 
                         if displayName and (query.lower() in displayName.lower()):
                             remote_authors.append(author)

@@ -11,7 +11,7 @@ print(my_ip)
 
 # Serializer for the User model
 class UserSerializer(serializers.ModelSerializer):
-    id = serializers.SerializerMethodField()  # Add this field
+    id = serializers.SerializerMethodField()  # Dynamically generate the ID
     friends = serializers.SerializerMethodField()
     followers = serializers.SerializerMethodField()
     following = serializers.SerializerMethodField()
@@ -28,7 +28,7 @@ class UserSerializer(serializers.ModelSerializer):
         
         
     def get_id(self, obj) -> str:
-        return f"http://[{my_ip}]/api/authors/{obj.id}/"
+        return f"{obj.host}authors/{obj.id}/"
     
     def get_friends(self, obj):
         return [f"http://[{my_ip}]/api/authors/{friend.id}/" for friend in obj.friends.all()]
@@ -45,6 +45,9 @@ class UserSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
+        # Pop the `id` from the validated data if present
+        user_id = validated_data.pop('id', None)
+
         # Extract and remove many-to-many fields
         followers_data = validated_data.pop('followers', [])
         friends_data = validated_data.pop('friends', [])
@@ -53,8 +56,15 @@ class UserSerializer(serializers.ModelSerializer):
         password = validated_data.pop('password')
         hashed_password = make_password(password)
 
+        if validated_data.get('remote_fqid'):
+            # If remote_fqid is provided, use it as the ID
+            user_id = validated_data['remote_fqid'].rstrip("/").split("/")[-1] 
+
+        print(f"Creating user with ID: {user_id}")
+
         # Create the user instance
         user = User.objects.create(
+            id=user_id,  # Use the provided ID or let the database generate one
             **validated_data,
             password=hashed_password,  # Use the hashed password
         )
@@ -66,22 +76,24 @@ class UserSerializer(serializers.ModelSerializer):
         # Assign values to non-many-to-many fields
         user.displayName = validated_data.get('username', '')
 
-        # Convert user.id to a string before checking or splitting
-        user_id_str = str(user.id)
-        if 'authors' in user_id_str:
-            # Extract the host from the user ID
-            host_base = user_id_str.split('authors')[0]
-            user.host = host_base
-        else:
-            user.host = user_id_str
-
         current_remote_node = None
         try:
             current_remote_node = RemoteNode.objects.get(is_my_node=True)
         except Exception as e:
             print(f"Error fetching remote node: {e}")
 
-        if current_remote_node:
+        # Convert user.id to a string before checking or splitting
+        user_id_str = str(user.id)
+        if 'authors' in user_id_str:
+            # Extract the host from the user ID
+            host_base = user_id_str.split('authors')[0]
+            user.host = host_base
+        
+        # If the user id does not have http, append our remote node url
+        if 'http' not in user_id_str:
+            user.host = current_remote_node.url + 'api/'
+
+        if not user.page:
             page_path = current_remote_node.url + user_id_str
             user.page = page_path
 
@@ -179,7 +191,7 @@ class FollowRequestSerializer(serializers.ModelSerializer):
 #   api/liked/<uuid:id>/
 class LikeSerializer(serializers.ModelSerializer):
     id = serializers.SerializerMethodField()  # Add this field
-    user = UserSerializer(read_only=True)
+    author = UserSerializer(read_only=True)
     content_type = serializers.SlugRelatedField(
         queryset=ContentType.objects.all(),
         slug_field='model'  # This will display the model name (e.g., 'post' or 'comment')
@@ -187,7 +199,7 @@ class LikeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Like
-        fields = ['id', 'user', 'content_type', 'object_id', 'created_at', 'type',]        
+        fields = ['id', 'author', 'content_type', 'object_id', 'published', 'type',]        
             
     def get_id(self, obj) -> str:
         return f"http://[{my_ip}]:8000/api/liked/{obj.id}/"
