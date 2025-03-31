@@ -85,7 +85,8 @@ TEMPLATES = [
 WSGI_APPLICATION = 'socialnetwork.wsgi.application'
 
 # Allow React App to connect to the backend
-CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
+# CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
+CORS_ALLOW_ALL_ORIGINS = True
 # settings.py
 SECURE_CROSS_ORIGIN_OPENER_POLICY = None # Switch back TODO
 
