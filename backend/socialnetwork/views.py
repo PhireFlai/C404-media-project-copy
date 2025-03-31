@@ -1309,7 +1309,7 @@ def Unfollow(request, followedId, followerId):
             }
 
             inbox_url = f"{followed.remote_fqid}inbox/"
-            print("Sending unfollow to:", inbox_url)
+            #print("Sending unfollow to:", inbox_url)
             print("Payload:", unfollow_data)
             headers = {"Content-Type": "application/json"}
             response = requests.post(inbox_url, auth=auth, json=unfollow_data, headers=headers)
