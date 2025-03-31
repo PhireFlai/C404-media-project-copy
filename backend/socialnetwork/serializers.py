@@ -66,6 +66,12 @@ class UserSerializer(serializers.ModelSerializer):
         # Assign values to non-many-to-many fields
         user.displayName = validated_data.get('username', '')
 
+        current_remote_node = None
+        try:
+            current_remote_node = RemoteNode.objects.get(is_my_node=True)
+        except Exception as e:
+            print(f"Error fetching remote node: {e}")
+
         # Convert user.id to a string before checking or splitting
         user_id_str = str(user.id)
         if 'authors' in user_id_str:
@@ -75,16 +81,9 @@ class UserSerializer(serializers.ModelSerializer):
         
         # If the user id does not have http, append our remote node url
         if 'http' not in user_id_str:
-            our_host = RemoteNode.objects.filter(is_my_node=True).first()
-            user_id_str = our_host.url + 'api/'
+            user.host = current_remote_node.url + 'api/'
 
-        current_remote_node = None
-        try:
-            current_remote_node = RemoteNode.objects.get(is_my_node=True)
-        except Exception as e:
-            print(f"Error fetching remote node: {e}")
-
-        if current_remote_node:
+        if not user.page:
             page_path = current_remote_node.url + user_id_str
             user.page = page_path
 
