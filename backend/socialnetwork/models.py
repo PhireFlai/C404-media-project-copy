@@ -137,7 +137,7 @@ class Comment(models.Model):
         return self.likes.count()
 
     def __str__(self):
-        return f"{self.author.username} comments {self.content}"
+        return f"{self.author.username} comments {self.comment}"
 
 class FollowRequest(models.Model):
     type = models.TextField(default="follow", editable=False)

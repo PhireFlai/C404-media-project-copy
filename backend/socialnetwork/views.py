@@ -680,6 +680,8 @@ def IncomingPostToInbox(request, receiver):
             # Extract post data from comment's post field
             post_url = comment_data.get("post")
             url_parts = post_url.rstrip('/').split('/')
+
+            print("Extracted")
             
             try:
                 # Find the index of 'posts' in the URL path
@@ -730,6 +732,8 @@ def IncomingPostToInbox(request, receiver):
                 }
             )
 
+            print("Comment created or updated:", comment)
+
             # Process likes
             for like_data in comment_data.get("likes", []):
                 like_author_data = like_data.get("author")
@@ -751,6 +755,7 @@ def IncomingPostToInbox(request, receiver):
                         "created_at": like_data.get("published") or timezone.now()
                     }
                 )
+            print("Likes processed")
 
             return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)
         
@@ -795,6 +800,8 @@ def IncomingPostToInbox(request, receiver):
                     "image": post_data.get("image"),
                 }
             )
+
+            print(post)
 
             # Handle comments
             for comment_data in post_data.get("comments", []):

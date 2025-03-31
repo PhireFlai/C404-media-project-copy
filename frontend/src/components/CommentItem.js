@@ -60,7 +60,7 @@ const CommentItem = ({ comment, postId, userId, refetchComments }) => {
   return (
     <div className="comment-item" key={parseId(comment.id)}>
       <div>
-        <p>{comment.content}</p>
+        <p>{comment.comment}</p>
         <p>
           <Link to={`/${parseId(comment.author?.id)}/`}>
             <strong>{comment.author?.username || ""}</strong>
