@@ -65,7 +65,7 @@ class User(AbstractUser):
 
 class Like(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    author = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     type = models.TextField(default="like", editable=False)
     
     # Fields for Generic Foreign Key
@@ -76,7 +76,7 @@ class Like(models.Model):
     object_id = models.UUIDField()
     content_object = GenericForeignKey("content_type", "object_id")
     
-    created_at = models.DateTimeField(default=timezone.now, editable=False)
+    published = models.DateTimeField(default=timezone.now, editable=False)
 
     def __str__(self):
         return f"{self.user.username} likes {self.content_object}"

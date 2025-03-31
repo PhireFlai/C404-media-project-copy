@@ -62,9 +62,10 @@ const PostItem = ({ post, refetchPosts }) => {
       console.error("Error fetching likes:", likesError);
     } else if (likes && likes.length > 0) {
       likes.forEach((like) => {
-        if (parseId(like.user?.id) === parseId(user.id)) {
-          setIsLiked(true);
-        }
+        console.log(like);
+        // if (parseId(like.author?.id) === parseId(user.id)) {
+        //   setIsLiked(true);
+        // }
       });
     }
   }, [likes, likesError, likesLoading, user, post]);

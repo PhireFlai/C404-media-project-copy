@@ -1427,7 +1427,7 @@ def AddLikeOnPost(request, userId, object_id):
     # Create the Like object
     content_type = ContentType.objects.get_for_model(Post)
     like = Like.objects.create(
-        user=user, 
+        author=user, 
         content_type=content_type, 
         object_id=post.id
     )
@@ -1435,9 +1435,8 @@ def AddLikeOnPost(request, userId, object_id):
     like_serializer = LikeSerializer(like)
 
     followers_with_remote_fqid = post.author.followers.filter(remote_fqid__isnull=False)
-    
     for follower in followers_with_remote_fqid:
-            
+        
         parsed_url = follower.remote_fqid.split('/')
         print("Parsed URL 1:", parsed_url)
         remote_domain_base = parsed_url[2]
