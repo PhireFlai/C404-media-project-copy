@@ -40,7 +40,7 @@ class MultiAuthPermission(BasePermission):
                 auth_decoded = base64.b64decode(auth_header.split(" ")[1]).decode("utf-8")
                 username, password = auth_decoded.split(":", 1)
 
-                remote_node = RemoteNode.objects.get(username=username, password=password, is_active=True)
+                remote_node = RemoteNode.objects.get(username=username, password=password, is_active=True, is_my_node=True)
                 request.remote_node = remote_node
                 return True
             except (RemoteNode.DoesNotExist, ValueError, base64.binascii.Error):

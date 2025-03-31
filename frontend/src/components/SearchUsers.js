@@ -67,7 +67,7 @@ const SearchUsers = () => {
         if (!currentUser || !currentUser.id) return false;
     
         // Check if any follower contains the current user's ID
-        return followers.some((follower) => follower.includes(currentUser.id));
+        return false; // Placeholder for actual logic
       };
     
       const handleCloseResults = () => {
@@ -100,13 +100,13 @@ const SearchUsers = () => {
                             {isLocal(user.id) ? (
                                 // Local, so extract UUID and redirect to the profile
                                 <span onClick={() => navigate(parseId(user.id))}>
-                                    {user.username}
+                                    {user.displayName}
                                 </span>
                             ) : (
                                 // If the user is remote, show the follow button or followed indicator
                                 <>
-                                    <span>{user.username}</span>
-                                    {isFollowed(user.followers) ? (
+                                    <span>{user.displayName}</span>
+                                    {isFollowed(user) ? (
                                         <span className="followed-indicator">Followed</span>
                                     ) : (
                                         <button

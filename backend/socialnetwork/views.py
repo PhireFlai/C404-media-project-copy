@@ -136,6 +136,19 @@ class UsersList(generics.ListCreateAPIView):
     def get_queryset(self):
         # Filter users to exclude those with a remote_fqid
         return User.objects.filter(remote_fqid__isnull=True)
+
+    def list(self, request, *args, **kwargs):
+        # Get the queryset and serialize it
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+
+        # Wrap the serialized data in the required format
+        response_data = {
+            "type": "authors",
+            "authors": serializer.data
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
     
 # Get all friends posts
 class FriendsPostsView(ListAPIView):
@@ -559,20 +572,17 @@ def IncomingPostToInbox(request, receiver):
                 }
             )
 
-            # Check if the follow request already exists
-            if FollowRequest.objects.filter(actor=actor_obj, object=object_obj).exists():
-                return Response({"message": "Follow request has already been sent"}, status=status.HTTP_400_BAD_REQUEST)
+            # Make sure the object followers does not already contain the actor
+            if object_obj.followers.filter(id=actor_obj.id).exists():
+                return Response({"message": "Already following"}, status=status.HTTP_200_OK)
 
-            # Check if the actor is already following the object
-            if actor_obj.following.filter(id=object_obj.id).exists():
-                return Response({"message": "You are already following this user"}, status=status.HTTP_400_BAD_REQUEST)
+            # Add the actor to the object's followers
+            object_obj.followers.add(actor_obj)
 
-            # Manually create the FollowRequest object
-            follow_request = FollowRequest.objects.create(
-                summary=summary,
-                actor=actor_obj,
-                object=object_obj
-            )
+            # If they are mutually following, add each other as friends
+            if actor_obj.followers.filter(id=object_obj.id).exists():
+                actor_obj.friends.add(object_obj)
+                object_obj.friends.add(actor_obj)
 
             # Return the created FollowRequest data
             return Response({
@@ -1083,28 +1093,29 @@ def createForeignFollowRequest(request):
         data = {"summary": summary}
         
         serializer = FollowRequestSerializer(data=data)
-    
+
         if serializer.is_valid():
-            serializer.save(actor=actor, object=object_user)
+            follow_request = serializer.save(actor=actor, object=object_user)
 
-            request_data = FollowRequestSerializer(serializer.instance).data
+            # Extract the serialized follow request data
+            request_data = FollowRequestSerializer(follow_request).data
 
-            remote_domain = object_FQID.split("/")[2]  # Extract the domain from the FQID
-            print(f"Remote domain: {remote_domain} for remote follow request")
-
-            remote_node = RemoteNode.objects.get(url=f"http://{remote_domain}/")
-            auth = HTTPBasicAuth(remote_node.username, remote_node.password)
-
-            # Send to the remote
+            # Prepare the remote inbox URL and headers
             inbox_url = f"{object_FQID}inbox/"
             headers = {"Content-Type": "application/json"}
 
-            # Print the request data for debugging
+            # Debugging: Print the request details
             print("Sending follow request to remote inbox:")
             print(f"URL: {inbox_url}")
             print(f"Headers: {headers}")
             print(f"Payload: {request_data}")
 
+            # Authenticate with the remote node
+            remote_domain = object_FQID.split("/")[2]
+            remote_node = RemoteNode.objects.get(url=f"http://{remote_domain}/")
+            auth = HTTPBasicAuth(remote_node.username, remote_node.password)
+
+            # Send the follow request to the remote inbox
             response = requests.post(
                 inbox_url,
                 json=request_data,
@@ -1112,14 +1123,24 @@ def createForeignFollowRequest(request):
                 auth=auth
             )
             response.raise_for_status()
+
+            # Add the actor to the object's followers
+            object_user.followers.add(actor)
+
+            # If they are mutually following, add each other as friends
+            if actor.followers.filter(id=object_user.id).exists():
+                actor.friends.add(object_user)
+                object_user.friends.add(actor)
+
+            # Delete the follow request after processing
+            follow_request.delete()
+
             return Response({"message": "Follow request sent successfully"}, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST) 
-
-
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
@@ -1748,15 +1769,24 @@ class SearchUsersView(APIView):
         remote_nodes = RemoteNode.objects.filter(is_active=True, is_my_node=False)
         for node in remote_nodes:
             try:
+                print("Fetching authors from remote node:", node.url)
                 url = f"{node.url.rstrip('/')}/api/authors/"
                 response = requests.get(url, auth=HTTPBasicAuth(node.username, node.password))
                 response.raise_for_status()  # Raise an error for bad status codes
                 authors = response.json()  # Get the response JSON
 
+                print("Raw authors: ", authors)
+
                 # Check if the response is a dictionary with an "items" key
                 if isinstance(authors, dict) and "items" in authors:
                     authors = authors["items"]
+                
+                # Check if with authors key
+                if isinstance(authors, dict) and "authors" in authors:
+                    authors = authors["authors"]
 
+                print("List authors: ", authors)
+                
                 # Handle cases where the response is a list
                 if isinstance(authors, list):
                     for author in authors:
@@ -1767,8 +1797,11 @@ class SearchUsersView(APIView):
                         if current_user_uuid and author_uuid == current_user_uuid:
                             continue
 
-                        if query.lower() in author.get("username", "").lower():  # Filter by query
+                        displayName = author.get("displayName", "")
+
+                        if displayName and (query.lower() in displayName.lower()):
                             remote_authors.append(author)
+
             except requests.exceptions.RequestException as e:
                 print(f"Error fetching authors from {node.url}: {e}")
 
