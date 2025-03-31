@@ -27,9 +27,9 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = bool(os.environ.get("DEBUG", default=False))
-ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", default='').split(" ")
+ALLOWED_HOSTS = ["*"]
 
-ALLOWED_ADMIN_IPS = os.getenv("ALLOWED_ADMIN_IPS", "").split(",")
+ALLOWED_ADMIN_IPS = ["*"]
 
 # For handling the uploaded images
 MEDIA_URL = '/media/'
@@ -64,6 +64,11 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware'
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    "http://[2605:fd00:4:1001:f816:3eff:fe50:bc21]",
+    "http://[2605:fd00:4:1001:f816:3eff:fe7a:cb80]"
+]
+
 ROOT_URLCONF = 'socialnetwork.urls'
 
 TEMPLATES = [
@@ -85,7 +90,8 @@ TEMPLATES = [
 WSGI_APPLICATION = 'socialnetwork.wsgi.application'
 
 # Allow React App to connect to the backend
-CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
+# CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
+CORS_ALLOW_ALL_ORIGINS = True
 # settings.py
 SECURE_CROSS_ORIGIN_OPENER_POLICY = None # Switch back TODO
 

@@ -7,7 +7,7 @@ const CreatePostPage = () => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [image, setImage] = useState(null);
-  const [visibility, setVisibility] = useState("public"); // Default to "public"
+  const [visibility, setVisibility] = useState("PUBLIC"); // Default to "PUBLIC"
   const [createPost] = useCreatePostMutation();
   const { refetch } = useGetPublicFeedQuery();
   const navigate = useNavigate();
@@ -65,9 +65,9 @@ const CreatePostPage = () => {
           value={visibility}
           onChange={(e) => setVisibility(e.target.value)}
         >
-          <option value="public">Public</option>
-          <option value="friends-only">Friends Only</option>
-          <option value="unlisted">Unlisted</option>
+          <option value="PUBLIC">Public</option>
+          <option value="FRIENDS">Friends Only</option>
+          <option value="UNLISTED">Unlisted</option>
         </select>
         <input
           className="image-upload-input"

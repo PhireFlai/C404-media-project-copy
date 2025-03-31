@@ -11,9 +11,15 @@ class FollowAPITestCase(APITestCase):
 
     @classmethod
     def setUpTestData(cls):
-        """Creates test data once before all tests in the class."""
         cls.user = User.objects.create_user(username='testuser', password='password')
         cls.other_user = User.objects.create_user(username='otheruser', password='password')
+
+        cls.user.remote_fqid = f"http://[2605:fd00:4:1001:f816:3eff:fe6e:788d]:8000/api/authors/{cls.user.id}"
+        cls.user.save()
+
+        cls.other_user.remote_fqid = f"http://[2605:fd00:4:1001:f816:3eff:fe6e:788d]:8000/api/authors/{cls.other_user.id}"
+        cls.other_user.save()
+
         cls.token = Token.objects.create(user=cls.user)
         cls.other_token = Token.objects.create(user=cls.other_user)
 
@@ -26,7 +32,37 @@ class FollowAPITestCase(APITestCase):
     def test_send_follow_request(self):
         """Test sending a follow request."""
         summary = f'{self.user.username} wants to follow {self.other_user.username}'
-        data = {"summary": summary}
+
+        actor_id = self.user.remote_fqid.rstrip("/") + "/"
+        object_id = self.other_user.remote_fqid.rstrip("/") + "/"
+
+        data = {
+            "type": "follow",
+            "summary": summary,
+            "actor": {
+                "id": actor_id,
+                "username": self.user.username,
+                "email": self.user.email,
+                "profile_picture": self.user.profile_picture.url,
+                "followers": [],
+                "following": [],
+                "friends": [],
+                "remote_fqid": actor_id,
+            },
+            "object": {
+                "id": object_id,
+                "username": self.other_user.username,
+                "email": self.other_user.email,
+                "profile_picture": self.other_user.profile_picture.url,
+                "followers": [],
+                "following": [],
+                "friends": [],
+                "remote_fqid": object_id,
+            }
+        }
+
+        print("Actor ID:", actor_id)
+        print("Object ID:", object_id)
 
         response = self.client.post(
             f'/api/authors/{self.user.id}/follow/authors/{self.other_user.id}/',
@@ -79,4 +115,3 @@ class FollowAPITestCase(APITestCase):
         self.assertNotIn(self.other_user, self.user.followers.all())
         self.assertNotIn(self.other_user, self.user.friends.all())
         self.assertNotIn(self.user, self.other_user.friends.all())
-

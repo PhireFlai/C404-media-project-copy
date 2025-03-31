@@ -193,9 +193,9 @@ const PostPage = () => {
             onChange={(e) => setEditVisibility(e.target.value)}
             className="post-visibility-select"
           >
-            <option value="public">Public</option>
-            <option value="friends-only">Friends Only</option>
-            <option value="unlisted">Unlisted</option>
+            <option value="PUBLIC">Public</option>
+            <option value="FRIENDS">Friends Only</option>
+            <option value="UNLISTED">Unlisted</option>
           </select>
 
           {/* image upload input */}
@@ -232,7 +232,7 @@ const PostPage = () => {
             <strong>Visibility:</strong> {post.visibility}
           </p>
           <p className="text-muted">
-            Last updated: {format(new Date(post.updated_at), "PPPppp")}
+            Last updated: {format(new Date(post.published), "PPPppp")}
           </p>
         </>
       )}

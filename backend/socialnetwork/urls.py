@@ -37,7 +37,7 @@ urlpatterns = [
     path('api/authors/<uuid:userId>/', UserProfileView.as_view(), name='user-profile'),  # Endpoint to retrieve and update a user's profile
     path('api/authors/<uuid:userId>/update-picture/', updateUserProfile, name='update-user-profile'),  # Endpoint to update a user's profile picture
     path("api/authors/<uuid:userId>/posts/<uuid:pk>/", PostDetailView.as_view(), name="post-detail"),  # Endpoint to retrieve, update, and delete a specific post
-    path("api/authors/<uuid:receiver>/inbox/", PostToInbox, name='post-to-inbox'),  # Endpoint to post to author's inbox
+    path("api/authors/<uuid:receiver>/inbox/", IncomingPostToInbox, name='post-to-inbox'),  # Endpoint to post to author's inbox
     path("api/authors/<uuid:userId>/posts/<uuid:pk>/comment/", CreateComment, name='comment'),  # Endpoint to create a comment on a post
     path("api/authors/<uuid:userId>/posts/<uuid:pk>/comments/", CommentsList.as_view(), name="comment-list"),  # Endpoint to list and create comments for a specific post
     path("api/authors/<uuid:userId>/posts/<uuid:pk>/comments/<uuid:commentId>/", GetComment.as_view(), name="get-comment"),  # Endpoint to get a specific comment on a specific post
@@ -66,8 +66,7 @@ urlpatterns = [
     path("api/authors/followers-feed/", FollowersFeedView.as_view(), name="followers-feed"),
     path("api/search-users/", SearchUsersView.as_view(), name="search-users"),
     path('api/forward/<path:encoded_url>/', ForwardGetView.as_view(), name='forward'),
-    path("api/authors/<uuid:actorId>/follow/authors/<path:objectFQID>/", createForeignFollowRequest, name='create-foreign=follow-request'),
-    path('api/fetch-authors/', fetch_authors, name='fetch-authors'),
+    path("api/authors/follow/", createForeignFollowRequest, name="create-foreign-follow-request"),
 ]
 
 # Serve media files during development

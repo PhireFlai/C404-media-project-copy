@@ -77,10 +77,16 @@ class LikeAPITestCase(APITestCase):
         like_id = response.data['id']
 
         # Retrieve the single like
-        url = f'/api/authors/{self.user.id}/liked/{like_id}/'
+        # Get the full like ID from the POST response
+        like_url = response.data['id']
+        like_uuid = like_url.rstrip('/').split('/')[-1]  # extract UUID
+
+        # Now use that UUID in the GET URL
+        url = f'/api/authors/{self.user.id}/liked/{like_uuid}/'
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['id'], like_id)
+        self.assertEqual(response.data['id'].rstrip('/').split('/')[-1], like_uuid)
+
 
     def test_get_single_like(self):
         """Test endpoint api/liked/<uuid:id>/"""
@@ -92,7 +98,10 @@ class LikeAPITestCase(APITestCase):
         url = f'/api/liked/{like.id}/'
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['id'], str(like.id))
+        #self.assertEqual(response.data['id'], str(like.id))
+        returned_uuid = response.data['id'].rstrip('/').split('/')[-1]
+        self.assertEqual(returned_uuid, str(like.id))
+
 
     def test_get_comment_likes(self):
         """Test retrieving likes for a comment."""
