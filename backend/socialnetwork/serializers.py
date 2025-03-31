@@ -11,7 +11,7 @@ print(my_ip)
 
 # Serializer for the User model
 class UserSerializer(serializers.ModelSerializer):
-    id = serializers.SerializerMethodField()  # Add this field
+    id = serializers.UUIDField(required=False)  # Allow the `id` field to be explicitly set
     friends = serializers.SerializerMethodField()
     followers = serializers.SerializerMethodField()
     following = serializers.SerializerMethodField()
