@@ -1064,7 +1064,6 @@ def CreateFollowRequest(request, actorId, objectId):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    
 
 
-@csrf_exempt
 @api_view(['POST'])
 @permission_classes([ConditionalMultiAuthPermission])
 def createForeignFollowRequest(request):

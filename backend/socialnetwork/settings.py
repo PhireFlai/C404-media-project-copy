@@ -56,12 +56,17 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    # 'django.middleware.csrf.CsrfViewMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware', 
     'django.middleware.common.CommonMiddleware'
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://[2605:fd00:4:1001:f816:3eff:fe50:bc21]",
+    "http://[2605:fd00:4:1001:f816:3eff:fe7a:cb80]"
 ]
 
 ROOT_URLCONF = 'socialnetwork.urls'
