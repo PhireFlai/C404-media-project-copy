@@ -1342,7 +1342,7 @@ def Unfollow(request, followedId, followerId):
             }
 
             inbox_url = f"{followed.remote_fqid}inbox/"
-            print("Sending unfollow to:", inbox_url)
+            #print("Sending unfollow to:", inbox_url)
             print("Payload:", unfollow_data)
             headers = {"Content-Type": "application/json"}
             response = requests.post(inbox_url, auth=auth, json=unfollow_data, headers=headers)
@@ -1454,13 +1454,13 @@ def AddLikeOnPost(request, userId, object_id):
     post = get_object_or_404(Post, id=object_id)
 
     # Check if the user has already liked the post
-    if Like.objects.filter(user=user, object_id=post.id, content_type=ContentType.objects.get_for_model(Post)).exists():
+    if Like.objects.filter(author=user, object_id=post.id, content_type=ContentType.objects.get_for_model(Post)).exists():
         return Response({'error': 'You have already liked this post.'}, status=status.HTTP_400_BAD_REQUEST)
 
     # Create the Like object
     content_type = ContentType.objects.get_for_model(Post)
     like = Like.objects.create(
-        user=user, 
+        author=user, 
         content_type=content_type, 
         object_id=post.id
     )
@@ -1468,9 +1468,8 @@ def AddLikeOnPost(request, userId, object_id):
     like_serializer = LikeSerializer(like)
 
     followers_with_remote_fqid = post.author.followers.filter(remote_fqid__isnull=False)
-    
     for follower in followers_with_remote_fqid:
-            
+        
         parsed_url = follower.remote_fqid.split('/')
         print("Parsed URL 1:", parsed_url)
         remote_domain_base = parsed_url[2]
@@ -1621,13 +1620,13 @@ def AddCommentLike(request, userId, pk, ck):
     comment = get_object_or_404(Comment, id=ck)
 
     # Check if the user has already liked the comment
-    if Like.objects.filter(user=user, object_id=comment.id, content_type=ContentType.objects.get_for_model(Comment)).exists():
+    if Like.objects.filter(author=user, object_id=comment.id, content_type=ContentType.objects.get_for_model(Comment)).exists():
         return Response({'error': 'You have already liked this comment.'}, status=status.HTTP_400_BAD_REQUEST)
 
     # Create the Like object
     content_type = ContentType.objects.get_for_model(Comment)
     like = Like.objects.create(
-        user=user, 
+        author=user, 
         content_type=content_type, 
         object_id=comment.id
     )

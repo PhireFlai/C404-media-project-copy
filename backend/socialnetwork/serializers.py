@@ -191,7 +191,7 @@ class FollowRequestSerializer(serializers.ModelSerializer):
 #   api/liked/<uuid:id>/
 class LikeSerializer(serializers.ModelSerializer):
     id = serializers.SerializerMethodField()  # Add this field
-    user = UserSerializer(read_only=True)
+    author = UserSerializer(read_only=True)
     content_type = serializers.SlugRelatedField(
         queryset=ContentType.objects.all(),
         slug_field='model'  # This will display the model name (e.g., 'post' or 'comment')
@@ -199,7 +199,7 @@ class LikeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Like
-        fields = ['id', 'user', 'content_type', 'object_id', 'created_at', 'type',]        
+        fields = ['id', 'author', 'content_type', 'object_id', 'published', 'type',]        
             
     def get_id(self, obj) -> str:
         return f"http://[{my_ip}]:8000/api/liked/{obj.id}/"
