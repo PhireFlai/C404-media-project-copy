@@ -784,7 +784,7 @@ def IncomingPostToInbox(request, receiver):
 
             # Handle post timestamps
             created_at = post_data.get("created_at") 
-            published = post_data.get("published") 
+            published = post_data.get("published")
 
             # Create/update post
             post, _ = Post.objects.update_or_create(
@@ -794,7 +794,6 @@ def IncomingPostToInbox(request, receiver):
                     "content": post_data.get("content"),
                     "author": author_obj,
                     "visibility": post_data.get("visibility"),
-                    "created_at": created_at,
                     "published": published,
                     "remote_fqid": post_data.get("id"),
                     "image": post_data.get("image"),
@@ -831,6 +830,7 @@ def IncomingPostToInbox(request, receiver):
                         "type": comment_data.get("type", "comment")
                     }
                 )
+            print('handled comments for new/updated post')
 
             # Return complete post data
             return Response({
