@@ -1819,6 +1819,8 @@ class SearchUsersView(APIView):
 
                         displayName = author.get("displayName", "")
 
+                        author['id'] = author['host'] + 'authors/' + author_uuid + '/'
+
                         if displayName and (query.lower() in displayName.lower()):
                             remote_authors.append(author)
 
