@@ -79,7 +79,7 @@ class Like(models.Model):
     published = models.DateTimeField(default=timezone.now, editable=False)
 
     def __str__(self):
-        return f"{self.user.username} likes {self.content_object}"
+        return f"{self.author.username} likes {self.content_object}"
     
 class Post(models.Model):
     PUBLIC = 'PUBLIC'

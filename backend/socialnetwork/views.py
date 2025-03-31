@@ -853,10 +853,13 @@ def IncomingPostToInbox(request, receiver):
             author = request.data.get("user")
             created_at = request.data.get("created_at")
             id = request.data.get("id")
-            object_id = request.data.get("object_id")
+            object_id = request.data.get("object_id", "")
             content = request.data.get("content_type")
             author_id = author['id'].rstrip('/').split('/')[-1]
             like_id = id.rstrip('/').split('/')[-1]
+
+            if not object_id:
+                object_id = request.data("object").rstrip('/').split('/')[-1]
 
             if content == "post":
                 content_type = ContentType.objects.get_for_model(Post)
