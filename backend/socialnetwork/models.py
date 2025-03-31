@@ -82,16 +82,16 @@ class Like(models.Model):
         return f"{self.user.username} likes {self.content_object}"
     
 class Post(models.Model):
-    PUBLIC = 'public'
-    FRIENDS_ONLY = 'friends-only'
-    UNLISTED = 'unlisted'
-    DELETED = 'deleted'
+    PUBLIC = 'PUBLIC'
+    FRIENDS = 'FRIENDS'
+    UNLISTED = 'UNLISTED'
+    DELETED = 'DELETED'
 
     VISIBILITY_CHOICES = [
-        (PUBLIC, 'Public'),
-        (FRIENDS_ONLY, 'Friends Only'),
-        (UNLISTED, 'Unlisted'),
-        (DELETED, 'Deleted')
+        (PUBLIC, 'PUBLIC'),
+        (FRIENDS, 'FRIENDS'),
+        (UNLISTED, 'UNLISTED'),
+        (DELETED, 'DELETED')
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

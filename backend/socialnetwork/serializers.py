@@ -72,8 +72,11 @@ class UserSerializer(serializers.ModelSerializer):
             # Extract the host from the user ID
             host_base = user_id_str.split('authors')[0]
             user.host = host_base
-        else:
-            user.host = user_id_str
+        
+        # If the user id does not have http, append our remote node url
+        if 'http' not in user_id_str:
+            our_host = RemoteNode.objects.filter(is_my_node=True).first()
+            user_id_str = our_host.url + 'api/'
 
         current_remote_node = None
         try:
