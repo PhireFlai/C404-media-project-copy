@@ -11,7 +11,7 @@ print(my_ip)
 
 # Serializer for the User model
 class UserSerializer(serializers.ModelSerializer):
-    id = serializers.UUIDField(required=False)  # Allow the `id` field to be explicitly set
+    id = serializers.SerializerMethodField()  # Dynamically generate the ID
     friends = serializers.SerializerMethodField()
     followers = serializers.SerializerMethodField()
     following = serializers.SerializerMethodField()
@@ -28,7 +28,7 @@ class UserSerializer(serializers.ModelSerializer):
         
         
     def get_id(self, obj) -> str:
-        return f"http://[{my_ip}]/api/authors/{obj.id}/"
+        return f"{obj.host}authors/{obj.id}/"
     
     def get_friends(self, obj):
         return [f"http://[{my_ip}]/api/authors/{friend.id}/" for friend in obj.friends.all()]
@@ -45,6 +45,9 @@ class UserSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
+        # Pop the `id` from the validated data if present
+        user_id = validated_data.pop('id', None)
+
         # Extract and remove many-to-many fields
         followers_data = validated_data.pop('followers', [])
         friends_data = validated_data.pop('friends', [])
@@ -53,8 +56,15 @@ class UserSerializer(serializers.ModelSerializer):
         password = validated_data.pop('password')
         hashed_password = make_password(password)
 
+        if validated_data.get('remote_fqid'):
+            # If remote_fqid is provided, use it as the ID
+            user_id = validated_data['remote_fqid'].rstrip("/").split("/")[-1] 
+
+        print(f"Creating user with ID: {user_id}")
+
         # Create the user instance
         user = User.objects.create(
+            id=user_id,  # Use the provided ID or let the database generate one
             **validated_data,
             password=hashed_password,  # Use the hashed password
         )

@@ -556,14 +556,20 @@ def IncomingPostToInbox(request, receiver):
             print(f"Actor: {actor}\n Object: {follow_object}\n Actor_Id: {actor_id}\nObject_Id: {object_id}")
 
             # Get or create the actor and object users
-            actor_obj, created_actor = User.objects.get_or_create(
-                id=actor_id,
-                defaults={
-                    "remote_fqid": actor['id'],
-                    "username": actor.get('displayName'),
-                    "displayName": actor.get('displayName'),
-                }
-            )
+            try:
+                # Try to get the actor
+                actor_obj = User.objects.get(id=actor_id)
+                print("user found", actor_obj)
+            except User.DoesNotExist:
+                print("user not found")
+                # If the actor does not exist, create it
+                
+                actor_obj = User.objects.create(
+                    id=actor_id,
+                    remote_fqid=actor['id'],
+                    username=actor.get('displayName'),
+                    displayName=actor.get('displayName'),
+                )
 
             try:
                 object_obj = User.objects.get(id=object_id)
