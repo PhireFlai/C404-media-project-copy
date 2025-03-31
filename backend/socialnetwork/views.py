@@ -565,16 +565,13 @@ def IncomingPostToInbox(request, receiver):
                 }
             )
 
-            object_obj, created_object = User.objects.get_or_create(
-                id=object_id,
-                defaults={
-                    "remote_fqid": follow_object['id'],
-                    "username": follow_object.get('displayName'),
-                    "displayName": follow_object.get('displayName'),
-                }
-            )
+            try:
+                object_obj = User.objects.get(id=object_id)
+            except User.DoesNotExist:
+                return Response({"error": f"Object with ID {object_id} not found"}, status=status.HTTP_404_NOT_FOUND)
 
-            print("Created both, if applicable")
+
+            print("Found both")
 
             # Make sure the object followers does not already contain the actor
             if object_obj.followers.filter(id=actor_obj.id).exists():
