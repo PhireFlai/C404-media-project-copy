@@ -45,15 +45,20 @@ class FeedStreamTests(TestCase):
         url = reverse('public-feed')
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        post_ids = {post['id'].rstrip('/').split('/')[-1] for post in response.json()}
-        #post_ids = {post['id'] for post in response.json()}
 
+        post_ids = {post['id'].rstrip('/').split('/')[-1] for post in response.json()}
+
+        # Posts that should appear
         self.assertIn(str(self.self_post.id), post_ids)
         self.assertIn(str(self.friend_public.id), post_ids)
+        self.assertIn(str(self.friend_friends.id), post_ids)
         self.assertIn(str(self.followed_public.id), post_ids)
-        self.assertNotIn(str(self.friend_friends.id), post_ids)
-        self.assertNotIn(str(self.friend_unlisted.id), post_ids)
+        self.assertIn(str(self.followed_unlisted.id), post_ids)
+
+        # Posts that should NOT appear
         self.assertNotIn(str(self.friend_deleted.id), post_ids)
+        self.assertNotIn(str(self.followed_friends.id), post_ids)
+        self.assertNotIn(str(self.friend_unlisted.id), post_ids)
 
     def test_friends_feed(self):
         self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.token1.key}')

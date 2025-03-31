@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.test import APITestCase
 from rest_framework import status
 from rest_framework.authtoken.models import Token
-from ..models import FollowRequest
+from ..models import FollowRequest, RemoteNode
 
 User = get_user_model()
 
@@ -14,14 +14,24 @@ class FollowAPITestCase(APITestCase):
         cls.user = User.objects.create_user(username='testuser', password='password')
         cls.other_user = User.objects.create_user(username='otheruser', password='password')
 
-        cls.user.remote_fqid = f"http://[2605:fd00:4:1001:f816:3eff:fe6e:788d]:8000/api/authors/{cls.user.id}"
+        cls.user.remote_fqid = f"http://testserver/api/authors/{cls.user.id}/"
         cls.user.save()
 
-        cls.other_user.remote_fqid = f"http://[2605:fd00:4:1001:f816:3eff:fe6e:788d]:8000/api/authors/{cls.other_user.id}"
+        cls.other_user.remote_fqid = f"http://testserver/api/authors/{cls.other_user.id}/"
         cls.other_user.save()
 
         cls.token = Token.objects.create(user=cls.user)
         cls.other_token = Token.objects.create(user=cls.other_user)
+
+        # Create a dummy RemoteNode to satisfy the lookup
+        RemoteNode.objects.create(
+            url="http://testserver/",
+            username="testuser",
+            password="testpass",
+            is_active=True,
+            is_my_node=False
+        )
+
 
     def setUp(self):
         """Login a user for testing."""
