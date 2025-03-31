@@ -50,7 +50,7 @@ const CommentItem = ({ comment, postId, userId, refetchComments }) => {
       console.error("Error fetching likes:", likesError);
     } else if (likes && likes.length > 0) {
       likes.forEach((like) => {
-        if (parseId(like.user.id) === parseId(userId)) {
+        if (parseId(like.author?.id) === parseId(userId)) {
           setIsLiked(true);
         }
       });
@@ -60,14 +60,14 @@ const CommentItem = ({ comment, postId, userId, refetchComments }) => {
   return (
     <div className="comment-item" key={parseId(comment.id)}>
       <div>
-        <p>{comment.content}</p>
+        <p>{comment.comment}</p>
         <p>
           <Link to={`/${parseId(comment.author?.id)}/`}>
             <strong>{comment.author?.username || ""}</strong>
           </Link>
         </p>
         <p>
-          <small>{comment.created_at}</small>
+          <small>{comment.published}</small>
         </p>
       </div>
       <div>
