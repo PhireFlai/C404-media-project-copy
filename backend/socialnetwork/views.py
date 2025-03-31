@@ -1141,7 +1141,6 @@ def createForeignFollowRequest(request):
             )
             print(response.json())
 
-            response.raise_for_status()
 
             # Add the actor to the object's followers
             object_user.followers.add(actor)
@@ -1157,6 +1156,8 @@ def createForeignFollowRequest(request):
 
             # Delete the follow request after processing
             serializer.instance.delete()
+
+            response.raise_for_status()
 
             return Response({"message": "Follow request sent successfully"}, status=status.HTTP_201_CREATED)
         else:
