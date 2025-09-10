@@ -1,0 +1,31 @@
+@import url('../../components/css/button.css');
+@import url('../../components/css/links.css');
+@import url('../../components/css/text.css');
+@import url('../../components/css/input.css');
+
+.heading {
+    text-align: center;
+}
+
+.login-form {
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+  
+.login-form div {
+    margin-bottom: 15px;
+}
+  
+.login-form .login-button-row {
+    display: flex;
+    justify-content: space-between;
+}
+  
+.login-form .message {
+    text-align: center;
+    margin-top: 10px;
+} 

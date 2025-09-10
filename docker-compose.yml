@@ -1,35 +1,52 @@
 services:
-    db:
-        container_name: db
-        image: postgres
-        ports:
-        - "5432:5432"
-        volumes:
-        - db_data:/var/lib/postgresql/data
-        env_file:
-        - .env.db
+  db:
+    container_name: db
+    image: postgres
+    networks:
+      app_network:
+        ipv6_address: fd00:dead:beef:1::2  # Static ULA (optional)
+    ports:
+      - "5432:5432"  # Or "[::]:5432:5432" for explicit IPv6 binding
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    env_file:
+      - .env.db
 
-    backend:
-        build: ./backend
-        command: python manage.py runserver 0.0.0.0:8000
-        ports:
-        - "8000:8000"
-        depends_on:
-        - db
-        volumes:
-        - ./backend:/app
-        env_file:
-        - .env
+  backend:
+    build: ./backend
+    networks:
+      - app_network
+    volumes:
+      - ./socialnetwork/media:/app/socialnetwork/media
+      - staticfiles:/app/staticfiles
+    ports:
+      - "[::]:8000:8000"  # Listen on all host IPv6 addresses
+    depends_on:
+      - db
+    env_file:
+      - .env
 
-    frontend:
-        build: ./frontend
-        command: npm start
-        ports:
-        - "3000:3000"
-        volumes:
-        - ./frontend:/app
-        depends_on:
-        - backend
+  frontend:
+    build: ./frontend
+    networks:
+      - app_network
+    ports:
+      - "[::]:80:80"  # IPv6 port mapping
+    depends_on:
+      - backend
+    volumes:
+      - staticfiles:/staticfiles
 
 volumes:
-    db_data:
+  db_data:
+  media:
+  staticfiles:
+
+networks:
+  app_network:
+    enable_ipv6: true
+    ipam:
+      driver: default
+      config:
+        - subnet: "fd00:dead:beef:1::/64"  # ULA subnet
+          gateway: "fd00:dead:beef:1::1"

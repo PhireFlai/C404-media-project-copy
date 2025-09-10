@@ -16,6 +16,8 @@ import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+MEDIA_URL = '/media/'  # URL prefix for media files
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # Directory where media files are stored
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -25,9 +27,13 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = bool(os.environ.get("DEBUG", default=False))
+ALLOWED_HOSTS = ["*"]
 
-ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", default='*').split(" ")
+ALLOWED_ADMIN_IPS = ["*"]
 
+# For handling the uploaded images
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'socialnetwork/media/')
 
 # Application definition
 
@@ -39,8 +45,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'core',
+    'socialnetwork',
     'corsheaders',
-    'rest_framework'
+    'rest_framework',
+    'rest_framework.authtoken',
+    'drf_yasg',
 ]
 
 MIDDLEWARE = [
@@ -53,6 +62,11 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware', 
     'django.middleware.common.CommonMiddleware'
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://[2605:fd00:4:1001:f816:3eff:fe50:bc21]",
+    "http://[2605:fd00:4:1001:f816:3eff:fe7a:cb80]"
 ]
 
 ROOT_URLCONF = 'socialnetwork.urls'
@@ -76,24 +90,32 @@ TEMPLATES = [
 WSGI_APPLICATION = 'socialnetwork.wsgi.application'
 
 # Allow React App to connect to the backend
-CORS_ALLOWED_ORIGINS = [ "http://localhost:3000" ]
+# CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
+CORS_ALLOW_ALL_ORIGINS = True
+# settings.py
+SECURE_CROSS_ORIGIN_OPENER_POLICY = None # Switch back TODO
+
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+# with this setting it should work for people that want to use
+# dev_script and for those who only want to use docker for both fronts
 DATABASES = {
     "default": {
-        "ENGINE": os.environ.get("DB_ENGINE", "django.db.backends.sqlite3"),
-        "NAME": os.environ.get("DB_DATABASE", BASE_DIR / "db.sqlite3"),
+        "ENGINE": os.environ.get("DB_ENGINE", "django.db.backends.postgresql"),
+        "NAME": os.environ.get("DB_DATABASE", "primary_db"),
         "USER": os.environ.get("DB_USER", "user"),
         "PASSWORD": os.environ.get("DB_PASSWORD", "password"),
-        "HOST": os.environ.get("DB_HOST", "postgres"),
+        "HOST": os.environ.get("DB_HOST", "localhost"),
         "PORT": os.environ.get("DB_PORT", "5432"),
     }
 }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
+
+AUTH_USER_MODEL = 'socialnetwork.User'
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -126,9 +148,44 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = "/staticfiles/"
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ]
+}
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',  # Log all messages at DEBUG level and above
+            'class': 'logging.FileHandler',
+            'filename': 'app.log',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],  # Use the file handler for Django logs
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'socialnetwork': {
+            'handlers': ['file'],  # Use the file handler for socialnetwork logs
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}

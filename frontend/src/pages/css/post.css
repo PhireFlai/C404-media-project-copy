@@ -1,0 +1,26 @@
+@import url('../../components/css/button.css');
+@import url('../../components/css/links.css');
+@import url('../../components/css/text.css');
+@import url('../../components/css/input.css');
+
+.post-container {
+    max-width: 600px;
+    margin: 50px auto;
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.create-post-form {
+    display: flex;
+    flex-direction: column;
+}
+
+.visibility-select {
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+}

@@ -16,3 +16,6 @@ npm install
 
 # Start the React development server
 npm start
+#pkill -f "npm start" # kill previous run
+#HOST='::' nohup npm start > frontend.log 2>&1 &
+#disown

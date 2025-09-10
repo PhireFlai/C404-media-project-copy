@@ -1,21 +1,54 @@
-import React from "react";
-import { useGetTestQuery } from "../Api";
+import React, {useEffect} from "react";
+import { useGetPublicFeedQuery} from "../Api"; // Import new feed query
+import PostItem from "../components/PostItem";
+import { useNavigate } from "react-router-dom";
+import "./css/home.css";
+import parseId from "../utils/parseId";
 const HomePage = () => {
-  const { data, error, isLoading } = useGetTestQuery();
+  const { data: posts, refetch } = useGetPublicFeedQuery(); // Fetch user feed
+  // console.log(posts);  // Debugging output
+  const navigate = useNavigate(); // Initialize navigation
 
-  // Handle loading state
-  if (isLoading) return <p>Loading...</p>;
+  // Handle the click event for creating a new post
+  const handleCreatePostClick = () => {
+    navigate("/create"); // Navigate to the create post page
+  };
 
-  // Handle error state
-  if (error) {
-    return <p>Error: {error.data?.message || "Something went wrong"}</p>;
-  }
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
 
   return (
-    <div>
-      <h1>Home Page</h1>
-      <h2>Test connection with backend, data from API:</h2>
-      <pre>{JSON.stringify(data, null, 2)}</pre>
+    <div className="recent-posts-container">
+      <h1 className="title">Your Feed</h1>
+
+      <button
+        className="button-primary create-post"
+        onClick={handleCreatePostClick}
+      >
+        Create a Post
+      </button>
+
+      {/* Render the list of posts if there are any, otherwise display a message */}
+      {posts && posts.length > 0 ? (
+        posts.map((post) => {
+          // Parse the ID from the URL
+          const parsedPost = {
+            ...post,
+            id: parseId(post.id)  // Transform the ID
+          };
+
+          return (
+            <PostItem
+              key={parsedPost.id}  // Use parsed UUID as the key
+              post={parsedPost}    // Pass the modified post object
+              refetchPosts={refetch}
+            />
+          );
+        })
+      ) : (
+        <p className="text-muted">No posts in your feed yet.</p>
+      )}
     </div>
   );
 };
